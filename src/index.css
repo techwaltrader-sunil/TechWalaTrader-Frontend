@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+
+
+.react-calendar {
+  width: 100% !important;
+  border: none !important;
+  font-family: inherit !important;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  padding: 20px;
+}
+
+.react-calendar__month-view__days {
+  /* Buttons ke grid ke liye */
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+/* Base Tile Style (Har Din ke liye) */
+.react-calendar__tile {
+  height: 90px !important; /* Height thodi badhai */
+  display: flex !important;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 10px !important;
+  font-weight: bold;
+  font-size: 14px;
+  
+  /* 🔥 GAP TRICK: Mota White Border lagao jo Gap jaisa dikhega */
+  border: 6px solid white !important; 
+  background-clip: padding-box !important;
+}
+
+/* PROFIT DAY (Green) */
+.profit-day {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  
+  /* Border ki jagah 'Shadow' use karenge taaki White Border (Gap) kharab na ho */
+  box-shadow: inset 0 0 0 1.5px #86efac !important; 
+  
+  border-radius: 12px !important; /* Thoda zyada curve */
+}
+
+/* LOSS DAY (Red) */
+.loss-day {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  
+  /* Border ki jagah 'Shadow' */
+  box-shadow: inset 0 0 0 1.5px #fca5a5 !important;
+  
+  border-radius: 12px !important;
+}
+
+/* Navigation Buttons (Gap Fix) */
+.react-calendar__navigation button {
+  min-width: 44px;
+  background: none;
+  font-size: 18px;
+  margin: 0 4px !important; /* Buttons me gap */
+  border-radius: 8px;
+}
+
+.react-calendar__navigation button:hover {
+  background-color: #f3f4f6 !important;
+}
+
+
+/* 👇 Ye line add karein. Isse Tailwind ko pata chalega ki .dark class dhundni hai */
+@variant dark (&:where(.dark, .dark *));
