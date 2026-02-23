@@ -9,7 +9,7 @@ import io from 'socket.io-client'; // ✅ Import Socket Client
 import { getConnectedBrokers, updateBrokerStatus } from '../../data/AlogoTrade/brokerService';
 
 // ✅ Connect to Backend Socket
-const socket = io.connect("http://localhost:5500");
+const socket = io.connect(import.meta.env.VITE_SOCKET_URL);
 
 const AlgoDashboard = () => {
   const navigate = useNavigate();

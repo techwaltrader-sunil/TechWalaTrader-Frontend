@@ -116,7 +116,8 @@ const JournalPage = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/trades/${id}`);
+      // await axios.delete(`http://localhost:5000/api/trades/${id}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/trades/${id}`);
       refreshTrades(); 
     } catch (error) {
       console.error(error);
