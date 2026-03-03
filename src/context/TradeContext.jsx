@@ -14,14 +14,16 @@ export const TradeProvider = ({ children }) => {
   const refreshTrades = async () => {
     try {
       // Backend se saara data mangwao (Stats ke liye)
-      const res = await axios.get("http://localhost:5000/api/trades?limit=10000");
-      
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/trades?limit=10000`,
+      );
+
       // 1. State Update karo (App me dikhane ke liye)
       setAllTrades(res.data.trades);
-      
+
       // 2. LocalStorage me Save karo (Offline/Refresh ke liye)
       localStorage.setItem("tradeMasterData", JSON.stringify(res.data.trades));
-      
+
       setLoading(false);
     } catch (error) {
       console.error("Error fetching global trades:", error);
@@ -33,7 +35,7 @@ export const TradeProvider = ({ children }) => {
   useEffect(() => {
     // Step A: Sabse pahle check karo kya LocalStorage me purana data hai?
     const cachedData = localStorage.getItem("tradeMasterData");
-    
+
     if (cachedData) {
       // Agar hai, to TURANT state me set kar do (User ko wait nahi karna padega)
       setAllTrades(JSON.parse(cachedData));

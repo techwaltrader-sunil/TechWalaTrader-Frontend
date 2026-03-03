@@ -1,5 +1,11 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import axios from "axios"; 
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
+import axios from "axios";
 import TradeForm from "../../components/forms/TradeForm";
 import { Filter, Search, X } from "lucide-react";
 import TradeCard from "../../components/TradeCard";
@@ -11,7 +17,7 @@ const usePersistState = (key, defaultValue) => {
     try {
       const saved = localStorage.getItem(key);
       if (saved) {
-        return JSON.parse(saved); 
+        return JSON.parse(saved);
       }
     } catch (error) {
       console.error("Error reading localStorage key “" + key + "”:", error);
@@ -28,7 +34,11 @@ const usePersistState = (key, defaultValue) => {
 
 const JournalPage = () => {
   // --- CONTEXT DATA (Global Store) ---
-  const { allTrades, loading: contextLoading, refreshTrades } = useTradeContext();
+  const {
+    allTrades,
+    loading: contextLoading,
+    refreshTrades,
+  } = useTradeContext();
 
   // --- UI STATES ---
   const [showForm, setShowForm] = useState(false);
@@ -41,74 +51,96 @@ const JournalPage = () => {
   // --- 🔥 FILTER STATES (Persisted) ---
   // ✅ Added "timeframe: 'All'" to default state
   const [filters, setFilters] = usePersistState("journal_filters_v2", {
-    startDate: "", 
-    endDate: "", 
-    pair: "All", 
+    startDate: "",
+    endDate: "",
+    pair: "All",
     timeframe: "All", // 🔥 New Filter Key
-    setup: "All", 
-    result: "All", 
+    setup: "All",
+    result: "All",
     mode: "All",
   });
 
   // --- 🔥 1. FILTERING LOGIC ---
   const filteredTrades = useMemo(() => {
-    if (!allTrades) return []; 
+    if (!allTrades) return [];
 
     let data = [...allTrades];
 
     // 1. Date Filter
-    if (filters.startDate) data = data.filter(t => new Date(t.date) >= new Date(filters.startDate));
-    if (filters.endDate) data = data.filter(t => new Date(t.date) <= new Date(filters.endDate));
+    if (filters.startDate)
+      data = data.filter(
+        (t) => new Date(t.date) >= new Date(filters.startDate),
+      );
+    if (filters.endDate)
+      data = data.filter((t) => new Date(t.date) <= new Date(filters.endDate));
 
     // 2. Dropdown Filters
-    if (filters.pair !== "All") data = data.filter(t => t.pair === filters.pair);
-    
-    // ✅ 2.1 Timeframe Filter Logic
-    if (filters.timeframe !== "All") data = data.filter(t => t.timeframe === filters.timeframe);
+    if (filters.pair !== "All")
+      data = data.filter((t) => t.pair === filters.pair);
 
-    if (filters.setup !== "All") data = data.filter(t => t.setup === filters.setup);
-    if (filters.mode !== "All") data = data.filter(t => t.mode === filters.mode);
-    
+    // ✅ 2.1 Timeframe Filter Logic
+    if (filters.timeframe !== "All")
+      data = data.filter((t) => t.timeframe === filters.timeframe);
+
+    if (filters.setup !== "All")
+      data = data.filter((t) => t.setup === filters.setup);
+    if (filters.mode !== "All")
+      data = data.filter((t) => t.mode === filters.mode);
+
     // 3. Result Filter
     if (filters.result !== "All") {
-        if (filters.result === "Win") data = data.filter(t => t.result.includes("TARGET") || t.result === "Win");
-        else if (filters.result === "Loss") data = data.filter(t => t.result.includes("STOPLOSS") || t.result === "Loss");
+      if (filters.result === "Win")
+        data = data.filter(
+          (t) => t.result.includes("TARGET") || t.result === "Win",
+        );
+      else if (filters.result === "Loss")
+        data = data.filter(
+          (t) => t.result.includes("STOPLOSS") || t.result === "Loss",
+        );
     }
 
     // 4. Sort (Newest First)
     return data.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [allTrades, filters]); 
-
+  }, [allTrades, filters]);
 
   // --- 🔥 2. VIRTUAL PAGINATION ---
   const visibleTrades = filteredTrades.slice(0, page * ITEMS_PER_PAGE);
   const hasMore = visibleTrades.length < filteredTrades.length;
 
-
   // --- OBSERVER LOGIC ---
   const observer = useRef();
-  const lastTradeElementRef = useCallback(node => {
-    if (contextLoading) return; 
-    if (observer.current) observer.current.disconnect(); 
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        setPage(prevPage => prevPage + 1); 
-      }
-    });
-    if (node) observer.current.observe(node);
-  }, [contextLoading, hasMore]);
-
+  const lastTradeElementRef = useCallback(
+    (node) => {
+      if (contextLoading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [contextLoading, hasMore],
+  );
 
   // --- ACTIONS ---
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
-    setPage(1); 
+    setPage(1);
   };
 
   const resetFilters = () => {
     // ✅ Reset me timeframe bhi All kar diya
-    setFilters({ startDate: "", endDate: "", pair: "All", timeframe: "All", setup: "All", result: "All", mode: "All" });
+    setFilters({
+      startDate: "",
+      endDate: "",
+      pair: "All",
+      timeframe: "All",
+      setup: "All",
+      result: "All",
+      mode: "All",
+    });
     setPage(1);
   };
 
@@ -116,9 +148,11 @@ const JournalPage = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure?")) return;
     try {
-      // await axios.delete(`http://localhost:5000/api/trades/${id}`);
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/trades/${id}`);
-      refreshTrades(); 
+      // await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/trades/${id}`);
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/trades/${id}`,
+      );
+      refreshTrades();
     } catch (error) {
       console.error(error);
     }
@@ -128,8 +162,8 @@ const JournalPage = () => {
   const handleSuccess = () => {
     setShowForm(false);
     setEditingTrade(null);
-    setPage(1);      
-    refreshTrades(); 
+    setPage(1);
+    refreshTrades();
   };
 
   const handleEdit = (trade) => {
@@ -137,30 +171,35 @@ const JournalPage = () => {
     setShowForm(true);
   };
 
-
   // --- LOADING STATE ---
   if (contextLoading && (!allTrades || allTrades.length === 0)) {
     return (
-        <div className="flex flex-col justify-center items-center h-screen bg-slate-50">
-           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-gray-500 mt-2 text-sm animate-pulse">Syncing Journal...</p>
-        </div>
+      <div className="flex flex-col justify-center items-center h-screen bg-slate-50">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-500 mt-2 text-sm animate-pulse">
+          Syncing Journal...
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
-      
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">📒 Trade Journal</h1>
+          <h1 className="text-3xl font-bold text-slate-800">
+            📒 Trade Journal
+          </h1>
           <p className="text-slate-500">
-              Showing {visibleTrades.length} of {filteredTrades.length} trades
+            Showing {visibleTrades.length} of {filteredTrades.length} trades
           </p>
         </div>
         <button
-          onClick={() => { setShowForm(true); setEditingTrade(null); }}
+          onClick={() => {
+            setShowForm(true);
+            setEditingTrade(null);
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           + Add New Trade
@@ -172,13 +211,20 @@ const JournalPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar animate-in zoom-in-95 duration-200">
             <button
-              onClick={() => { setShowForm(false); setEditingTrade(null); }}
+              onClick={() => {
+                setShowForm(false);
+                setEditingTrade(null);
+              }}
               className="absolute top-4 right-4 z-10 bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 p-2 rounded-full transition"
             >
               <X size={20} />
             </button>
             <div className="p-1">
-              <TradeForm mode="LIVE" initialData={editingTrade} onSuccess={handleSuccess} />
+              <TradeForm
+                mode="LIVE"
+                initialData={editingTrade}
+                onSuccess={handleSuccess}
+              />
             </div>
           </div>
         </div>
@@ -187,21 +233,41 @@ const JournalPage = () => {
       {/* FILTER BAR */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
         <div className="flex flex-wrap gap-4 items-end">
-          
           {/* Date Inputs */}
           <div className="flex gap-2">
             <div>
-              <label className="text-xs pr-3 text-gray-500 font-bold ml-1">From</label>
-              <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50" />
+              <label className="text-xs pr-3 text-gray-500 font-bold ml-1">
+                From
+              </label>
+              <input
+                type="date"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+                className="border p-2 rounded-lg text-sm bg-gray-50"
+              />
             </div>
             <div>
-              <label className="text-xs pr-3 text-gray-500 font-bold ml-1">To</label>
-              <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50" />
+              <label className="text-xs pr-3 text-gray-500 font-bold ml-1">
+                To
+              </label>
+              <input
+                type="date"
+                name="endDate"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+                className="border p-2 rounded-lg text-sm bg-gray-50"
+              />
             </div>
           </div>
 
           {/* Pair Filter */}
-          <select name="pair" value={filters.pair} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]">
+          <select
+            name="pair"
+            value={filters.pair}
+            onChange={handleFilterChange}
+            className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]"
+          >
             <option value="All">All Pairs</option>
             <option>NIFTY</option>
             <option>BANKNIFTY</option>
@@ -212,7 +278,12 @@ const JournalPage = () => {
           </select>
 
           {/* 🔥 New Timeframe Filter (Next to Pair) */}
-          <select name="timeframe" value={filters.timeframe} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[80px]">
+          <select
+            name="timeframe"
+            value={filters.timeframe}
+            onChange={handleFilterChange}
+            className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[80px]"
+          >
             <option value="All">All TF</option>
             <option>5M</option>
             <option>15M</option>
@@ -222,7 +293,12 @@ const JournalPage = () => {
           </select>
 
           {/* Setup Filter */}
-          <select name="setup" value={filters.setup} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]">
+          <select
+            name="setup"
+            value={filters.setup}
+            onChange={handleFilterChange}
+            className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]"
+          >
             <option value="All">All Setups</option>
             <option>IDM-SWEEP</option>
             <option>D-OB</option>
@@ -231,21 +307,35 @@ const JournalPage = () => {
           </select>
 
           {/* Result Filter */}
-          <select name="result" value={filters.result} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]">
+          <select
+            name="result"
+            value={filters.result}
+            onChange={handleFilterChange}
+            className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]"
+          >
             <option value="All">All Results</option>
             <option value="Win">Wins Only 🟢</option>
             <option value="Loss">Losses Only 🔴</option>
           </select>
 
           {/* Mode Filter */}
-          <select name="mode" value={filters.mode} onChange={handleFilterChange} className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]">
+          <select
+            name="mode"
+            value={filters.mode}
+            onChange={handleFilterChange}
+            className="border p-2 rounded-lg text-sm bg-gray-50 min-w-[100px]"
+          >
             <option value="All">All Modes</option>
             <option value="LIVE">Live</option>
             <option value="BACKTEST">Backtest</option>
           </select>
 
           {/* Reset Button */}
-          <button onClick={resetFilters} className="bg-gray-100 p-2 rounded-lg text-gray-600 hover:bg-gray-200 hover:text-red-500 transition" title="Reset Filters">
+          <button
+            onClick={resetFilters}
+            className="bg-gray-100 p-2 rounded-lg text-gray-600 hover:bg-gray-200 hover:text-red-500 transition"
+            title="Reset Filters"
+          >
             <Filter size={20} />
           </button>
         </div>
@@ -253,23 +343,31 @@ const JournalPage = () => {
 
       {/* TRADES LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
-        
         {visibleTrades.map((trade, index) => {
           if (visibleTrades.length === index + 1) {
-             return (
-               <div ref={lastTradeElementRef} key={trade._id}>
-                 <TradeCard trade={trade} onDelete={handleDelete} onEdit={handleEdit} onClone={handleSuccess} />
-               </div>
-             );
+            return (
+              <div ref={lastTradeElementRef} key={trade._id}>
+                <TradeCard
+                  trade={trade}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onClone={handleSuccess}
+                />
+              </div>
+            );
           } else {
-             return (
-               <div key={trade._id}>
-                 <TradeCard trade={trade} onDelete={handleDelete} onEdit={handleEdit} onClone={handleSuccess} />
-               </div>
-             );
+            return (
+              <div key={trade._id}>
+                <TradeCard
+                  trade={trade}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onClone={handleSuccess}
+                />
+              </div>
+            );
           }
         })}
-
       </div>
 
       {!contextLoading && visibleTrades.length === 0 && (
@@ -278,13 +376,12 @@ const JournalPage = () => {
           <p className="text-gray-400">No trades match your filters.</p>
         </div>
       )}
-      
-      {!hasMore && visibleTrades.length > 0 && (
-         <p className="text-center text-gray-400 text-sm mb-10">
-           🎉 End of list
-         </p>
-      )}
 
+      {!hasMore && visibleTrades.length > 0 && (
+        <p className="text-center text-gray-400 text-sm mb-10">
+          🎉 End of list
+        </p>
+      )}
     </div>
   );
 };

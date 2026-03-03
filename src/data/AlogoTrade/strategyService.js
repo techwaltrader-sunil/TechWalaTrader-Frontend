@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5500/api/strategies';
+const API_URL = '${import.meta.env.VITE_BACKEND_URL}/api/strategies';
 
 // 1. Create New Strategy
 export const createStrategy = async (strategyData) => {
@@ -26,33 +26,33 @@ export const getStrategies = async () => {
 
 // // 3. Update Strategy
 export const updateStrategy = async (id, updateData) => {
-    try {
-        const response = await axios.put(`${API_URL}/${id}`, updateData);
-        return response.data;
-    } catch (error) {
-        console.error('Error updating strategy:', error);
-        throw error;
-    }
+  try {
+    const response = await axios.put(`${API_URL}/${id}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating strategy:', error);
+    throw error;
+  }
 };
 
 // 4. Toggle Active Status
 export const toggleStrategyStatus = async (id) => {
-    try {
-        const response = await axios.put(`${API_URL}/toggle/${id}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error toggling strategy:', error);
-        throw error;
-    }
+  try {
+    const response = await axios.put(`${API_URL}/toggle/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling strategy:', error);
+    throw error;
+  }
 }
 
 // ✅ NEW FUNCTION: Delete Strategy
 export const deleteStrategy = async (id) => {
-    try {
-        const response = await axios.delete(`${API_URL}/${id}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error deleting strategy:', error);
-        throw error;
-    }
+  try {
+    const response = await axios.delete(`${API_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting strategy:', error);
+    throw error;
+  }
 };
