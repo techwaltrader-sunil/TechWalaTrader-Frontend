@@ -14,9 +14,11 @@ export const TradeProvider = ({ children }) => {
   const refreshTrades = async () => {
     try {
       // Backend se saara data mangwao (Stats ke liye)
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/trades?limit=10000`,
-      );
+      // const res = await axios.get(
+      //   `${import.meta.env.VITE_API_URL}/api/trades?limit=10000`,
+      // );
+      // ✅ नया और सही कोड (Multi-Backend के लिए)
+      const res = await axios.get(`${import.meta.env.VITE_ANALYSIS_API}/api/trades?limit=10000`);
 
       // 1. State Update karo (App me dikhane ke liye)
       setAllTrades(res.data.trades);
