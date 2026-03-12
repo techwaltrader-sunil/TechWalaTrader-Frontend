@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '${import.meta.env.VITE_BACKEND_URL}/api/strategies';
+const API_URL = `${import.meta.env.VITE_API_URL}/api/strategies`;
 
 // 1. Create New Strategy
 export const createStrategy = async (strategyData) => {
