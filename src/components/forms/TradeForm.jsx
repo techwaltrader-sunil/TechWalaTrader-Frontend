@@ -346,8 +346,8 @@ const TradeForm = ({
         existingImages.forEach((url) => data.append("existingImageUrls", url));
 
       let url = initialData
-        ? `${import.meta.env.VITE_BACKEND_URL}/api/trades/${initialData._id}`
-        : `${import.meta.env.VITE_BACKEND_URL}/api/trades`;
+        ? `${import.meta.env.VITE_ANALYSIS_API}/api/trades/${initialData._id}`
+        : `${import.meta.env.VITE_ANALYSIS_API}/api/trades`;
       let method = initialData ? "PUT" : "POST";
 
       const response = await fetch(url, { method: method, body: data });
