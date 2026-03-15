@@ -52,7 +52,7 @@ const JournalPage = () => {
   // ✅ 3. टोस्ट ट्रिगर करने के लिए हेल्पर
   const triggerToast = (message, type = "success") => {
     setToast({ message, type });
-  }
+  };
 
   // --- PAGINATION STATE ---
   const [page, setPage] = useState(1);
@@ -164,16 +164,16 @@ const JournalPage = () => {
       );
       refreshTrades();
       // 🔥 सफलता का मैसेज दिखाएँ
-      showToast("Trade deleted successfully!", "success");
+      triggerToast("Trade deleted successfully!", "success");
     } catch (error) {
       console.error(error);
       // 🔥 एरर का मैसेज दिखाएँ
-      showToast("Failed to delete trade. Please try again.", "error");
+      triggerToast("Failed to delete trade. Please try again.", "error");
     }
   };
 
   // ✅ CREATE/EDIT Success
-  const handleSuccess = () => {
+  const handleSuccess = (isEdit = false) => {
     setShowForm(false);
     setEditingTrade(null);
     setPage(1);
@@ -245,7 +245,7 @@ const JournalPage = () => {
               <TradeForm
                 mode="LIVE"
                 initialData={editingTrade}
-                onSuccess={handleSuccess}
+                onSuccess={() => handleSuccess(!!editingTrade)} // ✅ Passing isEdit status
               />
             </div>
           </div>
