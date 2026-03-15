@@ -150,7 +150,7 @@ const JournalPage = () => {
     try {
       // await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/trades/${id}`);
       await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/trades/${id}`,
+        `${import.meta.env.VITE_ANALYSIS_API}/api/trades/${id}`,
       );
       refreshTrades();
     } catch (error) {
