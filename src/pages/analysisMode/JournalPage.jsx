@@ -11,7 +11,9 @@ import { Filter, Search, X } from "lucide-react";
 import TradeCard from "../../components/TradeCard";
 import { useTradeContext } from "../../context/TradeContext";
 
-// ✅ CUSTOM HOOK: To Persist Object State in LocalStorage
+// ✅ 1. Toast कॉम्पोनेंट को इम्पोर्ट करें
+import ToastNotification from "../../components/ToastNotification";
+
 const usePersistState = (key, defaultValue) => {
   const [state, setState] = useState(() => {
     try {
@@ -43,6 +45,14 @@ const JournalPage = () => {
   // --- UI STATES ---
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
+
+  // ✅ 2. Toast के लिए स्टेट बनाएँ
+  const [toast, setToast] = useState(null);
+
+  // ✅ 3. टोस्ट ट्रिगर करने के लिए हेल्पर
+  const triggerToast = (message, type = "success") => {
+    setToast({ message, type });
+  }
 
   // --- PAGINATION STATE ---
   const [page, setPage] = useState(1);
@@ -153,8 +163,12 @@ const JournalPage = () => {
         `${import.meta.env.VITE_ANALYSIS_API}/api/trades/${id}`,
       );
       refreshTrades();
+      // 🔥 सफलता का मैसेज दिखाएँ
+      showToast("Trade deleted successfully!", "success");
     } catch (error) {
       console.error(error);
+      // 🔥 एरर का मैसेज दिखाएँ
+      showToast("Failed to delete trade. Please try again.", "error");
     }
   };
 
@@ -164,6 +178,7 @@ const JournalPage = () => {
     setEditingTrade(null);
     setPage(1);
     refreshTrades();
+    triggerToast(isEdit ? "Trade updated!" : "New trade added!", "success");
   };
 
   const handleEdit = (trade) => {
@@ -184,7 +199,14 @@ const JournalPage = () => {
   }
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="p-6 bg-slate-50 min-h-screen relative">
+      {toast && (
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
