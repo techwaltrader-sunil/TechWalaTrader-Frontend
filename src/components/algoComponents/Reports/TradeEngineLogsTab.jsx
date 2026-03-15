@@ -25,7 +25,7 @@ const TradeEngineLogsTab = () => {
     fetchLogs();
 
     // 🔥 2. Socket Connect karo (Dhyan dein: Apne backend ka port daalein, usually 5500 ya 6000)
-    const socket = io("${import.meta.env.VITE_BACKEND_URL}");
+    const socket = io(`${import.meta.env.VITE_BACKEND_URL}`);
 
     // 🔥 3. Jaise hi naya log aaye, usko state me sabse aage (top par) jod do
     socket.on("new-trade-log", (newLog) => {
