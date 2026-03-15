@@ -75,7 +75,7 @@ export const updateEngineStatus = async (id, engineOn) => {
 export const getAlgoLogs = async () => {
     try {
         // Dhyan dein: Port 5500 ya jo bhi aapka backend port ho
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/algo-logs`);
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/algo-logs`);
         return response.data;
     } catch (error) {
         console.error('Error fetching algo logs:', error);
