@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Backend URL (Make sure ye port wahi ho jo backend me chal raha hai - 5500)
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/brokers`;
+const API_URL = `${import.meta.env.VITE_API_URL}/api/brokers`;
 
 // 1. Get All Brokers (Backend se list laao)
 export const getConnectedBrokers = async () => {
