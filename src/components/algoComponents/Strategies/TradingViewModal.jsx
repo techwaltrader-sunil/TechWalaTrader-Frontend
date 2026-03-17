@@ -367,11 +367,19 @@ const TradingViewModal = ({ isOpen, onClose, strategy, onSave, onRemove }) => {
       default: break;
     }
 
+    
+
     // Dynamic data extraction with fallback to your specific requirements
     const symbolName = strategy.data?.instruments?.[0]?.name || strategy.symbol ;
     const qty = strategy.legs?.[0]?.qty;
     const strikePrice = strategy.legs?.[0]?.strike;
-    const optType = strategy.legs?.[0]?.optionType;
+    // const optType = strategy.legs?.[0]?.optionType;
+
+    // ✅ THE FIX: optionType ke alag-alag naam (keys) check karega
+    const optType = strategy.legs?.[0]?.optionType 
+                 || strategy.legs?.[0]?.type 
+                 || strategy.legs?.[0]?.right 
+                 || strategy.legs?.[0]?.option_type;
 
     // ✅ Naya JSON Format
     const data = {
@@ -398,7 +406,7 @@ const TradingViewModal = ({ isOpen, onClose, strategy, onSave, onRemove }) => {
   const webhookUrl = `${import.meta.env.VITE_API_URL || 'https://techwalatrader-algobackend.onrender.com'}/api/webhook/tv`;
 
   const guideSteps = [
-    { id: 1, title: "Open Alert", desc: "Clicgitk 'Create Alert' in TV.", img: step1Img },
+    { id: 1, title: "Open Alert", desc: "Click 'Create Alert' in TV.", img: step1Img },
     { id: 2, title: "Paste JSON", desc: "Paste JSON in 'Message' box.", img: step2Img },
     { id: 3, title: "Webhook URL", desc: "Paste Webhook URL in settings.", img: step3Img },
   ];
