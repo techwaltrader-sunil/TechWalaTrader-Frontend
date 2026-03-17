@@ -370,7 +370,16 @@ const TradingViewModal = ({ isOpen, onClose, strategy, onSave, onRemove }) => {
     
 
     // Dynamic data extraction with fallback to your specific requirements
-    const symbolName = strategy.data?.instruments?.[0]?.name || strategy.symbol ;
+    // const symbolName = strategy.data?.instruments?.[0]?.name || strategy.symbol ;
+    let rawSymbolName = strategy.data?.instruments?.[0]?.name || strategy.symbol || "";
+    
+    // ✅ THE FIX: Dhan API ke hisab se Exact Symbol Mapping karein
+    let finalSymbolName = rawSymbolName.toUpperCase();
+    if (finalSymbolName === "NIFTY 50") finalSymbolName = "NIFTY";
+    if (finalSymbolName === "NIFTY BANK") finalSymbolName = "BANKNIFTY";
+    if (finalSymbolName === "NIFTY FIN SERVICE" || finalSymbolName === "FIN NIFTY") finalSymbolName = "FINNIFTY";
+
+
     const qty = strategy.legs?.[0]?.qty;
     const strikePrice = strategy.legs?.[0]?.strike;
     // const optType = strategy.legs?.[0]?.optionType;
@@ -385,7 +394,7 @@ const TradingViewModal = ({ isOpen, onClose, strategy, onSave, onRemove }) => {
     const data = {
       secret_token: "TradeMaster@Algo2026",
       strategy_id: strategy.id || "",
-      symbol: symbolName,
+      symbol: finalSymbolName,
       // अगर strikePrice है तो स्ट्रिंग में बदलो, नहीं तो खाली छोड़ दो
       strike: strikePrice ? strikePrice.toString() : "", 
       option_type: optType || "",
