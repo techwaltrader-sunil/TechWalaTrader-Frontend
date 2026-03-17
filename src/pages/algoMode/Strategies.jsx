@@ -74,7 +74,55 @@ const Strategies = () => {
   };
 
   // ✅ 1. FETCH DATA FROM API
-  const fetchStrategies = async () => {
+//   const fetchStrategies = async () => {
+//     setLoading(true);
+//     try {
+//         const data = await getStrategies(); 
+        
+//         const formattedData = data.map(s => {
+//             const coreData = s.data || {};
+//             const firstInstrument = coreData.instruments?.[0];
+//             let instrumentName = "NIFTY";
+//             if(firstInstrument) instrumentName = firstInstrument.name || s.name;
+
+//             return {
+//                 id: s._id,
+//                 name: s.name,
+//                 author: "By You",
+//                 type: s.type,
+//                 status: s.status,
+//                 createdDate: s.createdDate,
+                
+//                 segment: firstInstrument?.segment || "Options",
+//                 startTime: coreData.config?.startTime || "09:15",
+//                 endTime: coreData.config?.squareOff || "15:15",
+                
+//                 // Leg Mapping with Fix
+//                 legs: (coreData.legs || []).map(l => ({
+//                     action: l.action || "BUY",
+//                     symbol: instrumentName,
+//                     type: l.optionType === "Call" ? "CE" : (l.optionType === "Put" ? "PE" : "FUT"),
+//                     qty: l.quantity || 1,
+//                     strike: formatStrikeDisplay(l) // 🔥 Fix applied here
+//                 })),
+
+//                 originalData: s,
+//                 data: coreData,
+                
+//                 // ✅ Backend Persistence Fields
+//                 isSignalActive: s.isSignalActive || false,
+//                 configuredAlerts: s.configuredAlerts || [] // Important for Modal Green Badge
+//             };
+//         });
+//         setStrategies(formattedData);
+//     } catch (error) {
+//         console.error("Error fetching strategies:", error);
+//         setNotification({ message: "Failed to load strategies", type: "error" });
+//     } finally {
+//         setLoading(false);
+//     }
+//   };
+const fetchStrategies = async () => {
     setLoading(true);
     try {
         const data = await getStrategies(); 
@@ -97,21 +145,31 @@ const Strategies = () => {
                 startTime: coreData.config?.startTime || "09:15",
                 endTime: coreData.config?.squareOff || "15:15",
                 
-                // Leg Mapping with Fix
-                legs: (coreData.legs || []).map(l => ({
-                    action: l.action || "BUY",
-                    symbol: instrumentName,
-                    type: l.optionType === "Call" ? "CE" : (l.optionType === "Put" ? "PE" : "FUT"),
-                    qty: l.quantity || 1,
-                    strike: formatStrikeDisplay(l) // 🔥 Fix applied here
-                })),
+                // 🔥 THE FIX: Smart Leg Mapping for CE/PE 🔥
+                legs: (coreData.legs || []).map(l => {
+                    // 1. Database se alag-alag naam check karo
+                    const rawOpt = (l.optionType || l.type || l.right || l.option_type || "").toString().toUpperCase();
+                    
+                    // 2. Sahi CE / PE set karo
+                    let finalOptType = "FUT";
+                    if (rawOpt === "CALL" || rawOpt === "CE") finalOptType = "CE";
+                    else if (rawOpt === "PUT" || rawOpt === "PE") finalOptType = "PE";
+
+                    return {
+                        action: l.action || "BUY",
+                        symbol: instrumentName,
+                        type: finalOptType, // ✅ Ab yahan hamesha dynamically sahi aayega
+                        qty: l.quantity || 1,
+                        strike: formatStrikeDisplay(l) 
+                    };
+                }),
 
                 originalData: s,
                 data: coreData,
                 
                 // ✅ Backend Persistence Fields
                 isSignalActive: s.isSignalActive || false,
-                configuredAlerts: s.configuredAlerts || [] // Important for Modal Green Badge
+                configuredAlerts: s.configuredAlerts || [] 
             };
         });
         setStrategies(formattedData);
