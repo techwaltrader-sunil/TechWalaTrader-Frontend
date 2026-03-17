@@ -112,16 +112,72 @@ const StrategyBuilder = () => {
   
   const isEquityOrFutureMode = selectedStrategyType === "Indicator Based" && instruments.length > 0 && (instruments[0].segment === "Equity" || instruments[0].segment === "Future");
 
+  // // ✅ NEW SAVE LOGIC (Handles Create AND Update)
+  // const handleSaveStrategy = async () => {
+  //   // 1. Validation (Same as before)
+  //   if (!strategyName.trim()) { alert("⚠️ Please enter a Strategy Name!"); return; }
+  //   if (instruments.length === 0) { alert("⚠️ Please select at least one Instrument!"); return; }
+  //   if (!isEquityOrFutureMode && legs.length === 0) { alert("⚠️ Please add at least one Strategy Leg!"); return; }
+
+  //   setLoading(true);
+
+  //   const legsToSave = isEquityOrFutureMode ? [] : legs;
+
+  //   const strategyPayload = {
+  //     name: strategyName,
+  //     type: selectedStrategyType,
+  //     status: "Inactive",
+  //     data: {
+  //         type: selectedStrategyType,
+  //         instruments: instruments,
+  //         legs: legsToSave,
+  //         config: config,
+  //         advanceSettings: advanceSettings,
+  //         entrySettings: entrySettings,
+  //         riskManagement: riskSettings 
+  //     }
+  //   };
+
+  //   try {
+  //     if (isEditMode) {
+  //         // 🔥 FIXED: Call Update API instead of Create
+  //         // 'editingId' wo ID hai jo strategies page se aayi thi (_id)
+  //         await updateStrategy(editingId, strategyPayload);
+  //         alert("✅ Strategy Updated Successfully!");
+  //     } else {
+  //         // Create New
+  //         await createStrategy(strategyPayload);
+  //         alert("✅ Strategy Created Successfully!");
+  //     }
+  //     navigate("/strategies"); 
+  //   } catch (error) {
+  //     console.error("Save Error:", error);
+  //     alert("❌ Failed to save strategy.");
+  //   } finally {
+  //     setLoading(false); 
+  //   }
+  // };
+
   // ✅ NEW SAVE LOGIC (Handles Create AND Update)
   const handleSaveStrategy = async () => {
-    // 1. Validation (Same as before)
+    // 1. Validation 
     if (!strategyName.trim()) { alert("⚠️ Please enter a Strategy Name!"); return; }
     if (instruments.length === 0) { alert("⚠️ Please select at least one Instrument!"); return; }
     if (!isEquityOrFutureMode && legs.length === 0) { alert("⚠️ Please add at least one Strategy Leg!"); return; }
 
     setLoading(true);
 
-    const legsToSave = isEquityOrFutureMode ? [] : legs;
+    // 🔥 THE FIX: Indicator Based Strategy me 'longCondition' se 'optionType' sync karein 🔥
+    const legsToSave = isEquityOrFutureMode ? [] : legs.map(leg => {
+        let updatedLeg = { ...leg };
+        
+        if (selectedStrategyType === "Indicator Based") {
+            // User ne jo UI me chuna (PE ya CE), wahi asli Option Type ban jayega
+            updatedLeg.optionType = leg.longCondition === "PE" ? "Put" : "Call";
+        }
+        
+        return updatedLeg;
+    });
 
     const strategyPayload = {
       name: strategyName,
@@ -130,7 +186,7 @@ const StrategyBuilder = () => {
       data: {
           type: selectedStrategyType,
           instruments: instruments,
-          legs: legsToSave,
+          legs: legsToSave, // ✅ Yahan updated legs payload me jayega
           config: config,
           advanceSettings: advanceSettings,
           entrySettings: entrySettings,
@@ -140,12 +196,9 @@ const StrategyBuilder = () => {
 
     try {
       if (isEditMode) {
-          // 🔥 FIXED: Call Update API instead of Create
-          // 'editingId' wo ID hai jo strategies page se aayi thi (_id)
           await updateStrategy(editingId, strategyPayload);
           alert("✅ Strategy Updated Successfully!");
       } else {
-          // Create New
           await createStrategy(strategyPayload);
           alert("✅ Strategy Created Successfully!");
       }
