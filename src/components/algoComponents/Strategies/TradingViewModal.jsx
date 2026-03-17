@@ -398,7 +398,7 @@ const TradingViewModal = ({ isOpen, onClose, strategy, onSave, onRemove }) => {
   const webhookUrl = `${import.meta.env.VITE_API_URL || 'https://techwalatrader-algobackend.onrender.com'}/api/webhook/tv`;
 
   const guideSteps = [
-    { id: 1, title: "Open Alert", desc: "Click 'Create Alert' in TV.", img: step1Img },
+    { id: 1, title: "Open Alert", desc: "Clicgitk 'Create Alert' in TV.", img: step1Img },
     { id: 2, title: "Paste JSON", desc: "Paste JSON in 'Message' box.", img: step2Img },
     { id: 3, title: "Webhook URL", desc: "Paste Webhook URL in settings.", img: step3Img },
   ];
