@@ -394,30 +394,26 @@ const Backtest = () => {
   };
 
   // --- 🔥 THE NEW REAL API ENGINE 🔥 ---
-  const runBacktest = async () => {
+ const runBacktest = async () => {
     if (selectedStrategyIds.length === 0) return;
     
     setIsLoading(true);
     setResult(null);
 
     try {
-      // ✅ 1. Get Base URL (Make sure aapki .env me VITE_API_URL set ho)
-      const API_URL = "https://techwalatrader-algobackend.onrender.com/api";
-      
-      // ✅ 2. Call the new Simulator API (Abhi hum pehli selected strategy bhej rahe hain)
+      const API_URL = "https://techwalatrader-algobackend.onrender.com/api"; 
       const targetId = selectedStrategyIds[0];
-      const response = await axios.get(`${API_URL}/backtest/run/${targetId}`);
+      
+      // ✅ THE FIX: API url ke end me '?period=1M' lagaya taaki backend ko pata chale
+      const response = await axios.get(`${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}`);
       
       if (response.data.success) {
           const backendData = response.data.data;
 
-          // ✅ 3. Map Backend Data to Match Frontend Components Requirement
-          // Aapke UI components "transactions" array expect karte hain, toh hum data ko format kar denge
           const formattedResult = {
               summary: backendData.summary,
               equityCurve: backendData.equityCurve,
               transactions: backendData.daywiseBreakdown.map(day => {
-                  // Equity curve se us din ka total PnL nikalna
                   const eqData = backendData.equityCurve.find(e => e.date === day.date);
                   return {
                       date: day.date,
@@ -432,7 +428,7 @@ const Backtest = () => {
       }
     } catch (error) {
       console.error("Backtest Failed:", error);
-      alert("Error running backtest. Make sure backend is running and strategy ID is valid MongoDB _id.");
+      alert("Error running backtest. Make sure backend is running.");
     } finally {
       setIsLoading(false);
     }
