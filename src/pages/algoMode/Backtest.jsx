@@ -593,7 +593,7 @@ const Backtest = () => {
               <BacktestSummary summary={result.summary} /> 
 
               <div className="mt-6">
-                  <EquityCurveChart transactions={result.transactions} />
+                  <EquityCurveChart transactions={[...result.transactions].reverse()} />
               </div>
 
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
