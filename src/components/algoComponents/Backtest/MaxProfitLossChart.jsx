@@ -193,9 +193,17 @@ const MaxProfitLossChart = ({ transactions, summary }) => {
       const pnl = data.pnl; 
       const isLoss = pnl < 0; 
 
+      // ✅ NAYA: Date ko Indian Format (DD/MM/YY) me convert karna
+      const formatDate = (dateStr) => {
+          if(!dateStr) return '';
+          const [year, month, day] = dateStr.split('-');
+          return `${day}/${month}/${year.slice(-2)}`; // Ex: 17/10/25
+      };
+
       return (
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-3 rounded-lg shadow-xl z-50 transition-colors">
-          <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">{data.date}</p>
+          {/* ✅ NAYA: Yahan data.date ki jagah formatDate(data.date) kar diya */}
+          <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">{formatDate(data.date)}</p>
           <p className="text-sm font-bold text-gray-800 dark:text-white mb-1">
             {data.symbol || 'Daily P&L'}
           </p>
