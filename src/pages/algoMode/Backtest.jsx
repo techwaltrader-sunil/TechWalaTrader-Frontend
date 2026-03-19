@@ -304,6 +304,7 @@ import {
   ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square
 } from 'lucide-react';
 import axios from 'axios'; // ✅ Naya Import: Axios for API calls
+import { getStrategies } from '../../data/AlogoTrade/strategyService';
 
 // Components Imports (Inhe waise hi rehne dein)
 import EquityCurveChart from '../../components/algoComponents/Backtest/EquityCurveChart';
@@ -330,21 +331,29 @@ const Backtest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  // --- LOAD STRATEGIES ---
+
+  // --- LOAD STRATEGIES FROM REAL DATABASE ---
   useEffect(() => {
-    // 💡 Note: Agar aap strategies API se mangwa rahe hain, to aage chal ke ise API call me badal dijiyega.
-    // Abhi ke liye localStorage theek hai, bas dhyan rakhein ki s.id MongoDb ka _id hona chahiye
-    const savedData = localStorage.getItem("myStrategies");
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      setStrategies(parsed);
-      if (strategyId) {
-        setSelectedStrategyIds([strategyId]);
-      } else if (parsed.length > 0) {
-        setSelectedStrategyIds([parsed[0].id || parsed[0]._id]);
+    const fetchAndSetStrategies = async () => {
+      try {
+        // Backend se asli strategies mangwao
+        const data = await getStrategies();
+        setStrategies(data);
+        
+        if (strategyId) {
+          setSelectedStrategyIds([strategyId]);
+        } else if (data && data.length > 0) {
+          // Default: Pehli strategy select kar lo
+          setSelectedStrategyIds([data[0]._id || data[0].id]);
+        }
+      } catch (error) {
+        console.error("Failed to load strategies:", error);
       }
-    }
+    };
+
+    fetchAndSetStrategies();
     
+    // Dropdown close karne ka logic
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
@@ -428,7 +437,7 @@ const Backtest = () => {
       setIsLoading(false);
     }
   };
-  
+
   return (
     // ✅ Main Container: Themed Background & Text
     <div className="p-4 md:p-6 text-gray-900 dark:text-white min-h-screen bg-gray-100 dark:bg-slate-950 font-sans transition-colors duration-300">
