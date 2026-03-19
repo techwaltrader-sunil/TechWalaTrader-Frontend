@@ -402,7 +402,7 @@ const Backtest = () => {
 
     try {
       // ✅ 1. Get Base URL (Make sure aapki .env me VITE_API_URL set ho)
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+      const API_URL = "https://techwalatrader-algobackend.onrender.com/api";
       
       // ✅ 2. Call the new Simulator API (Abhi hum pehli selected strategy bhej rahe hain)
       const targetId = selectedStrategyIds[0];
