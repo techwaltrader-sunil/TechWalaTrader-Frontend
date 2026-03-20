@@ -203,11 +203,13 @@ const TradeEngineLogsTab = () => {
                     <td className="px-6 py-4 text-center whitespace-nowrap">
                       {log.action === "BUY" ? (
                         <span className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-md font-bold text-[10px] uppercase border border-green-200 dark:border-green-500/20">
-                          <ArrowUpRight size={14} /> BUY
+                          {/* <ArrowUpRight size={14} />  */}
+                          BUY
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 px-2.5 py-1 rounded-md font-bold text-[10px] uppercase border border-red-200 dark:border-red-500/20">
-                          <ArrowDownRight size={14} /> SELL
+                          {/* <ArrowDownRight size={14} /> */}
+                          SELL
                         </span>
                       )}
                     </td>
