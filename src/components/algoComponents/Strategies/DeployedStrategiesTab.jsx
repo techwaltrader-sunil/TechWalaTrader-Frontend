@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PlayCircle, StopCircle, Activity, AlertCircle } from 'lucide-react';
-import { fetchActiveDeployments } from '../../../data/AlogoTrade/deploymentService'; // Apna path daalein
+import { fetchActiveDeployments, stopDeployment } from '../../../data/AlogoTrade/deploymentService'; // Apna path daalein
 
 const DeployedStrategiesTab = () => {
     const [deployments, setDeployments] = useState([]);
@@ -15,6 +15,26 @@ const DeployedStrategiesTab = () => {
             setLoading(false);
         };
         loadDeployments();
+
+        // 🔥 STOP ALGO LOGIC 🔥
+    const handleStopAlgo = async (deploymentId) => {
+        if (window.confirm("Are you sure you want to stop this algorithm? All active monitoring will halt.")) {
+            setStoppingId(deploymentId); // Button pe loading start
+            try {
+                await stopDeployment(deploymentId); // Backend API call
+                
+                // UI se us card ko hata do kyunki ab wo ACTIVE nahi hai
+                setDeployments(prev => prev.filter(dep => dep._id !== deploymentId));
+                alert("Algo Stopped Successfully!");
+                
+            } catch (error) {
+                console.error("Failed to stop algo:", error);
+                alert("Failed to stop algo. Please try again.");
+            } finally {
+                setStoppingId(null); // Loading stop
+            }
+        }
+    };
 
         // Optional: Har 10 second me P&L update karne ke liye interval laga sakte hain
         // const interval = setInterval(loadDeployments, 10000);
@@ -84,11 +104,20 @@ const DeployedStrategiesTab = () => {
                                 </p>
                             </div>
                             
-                            <button 
+                            {/* <button 
                                 onClick={() => alert("Stop Logic Backend mein banayenge!")}
                                 className="flex items-center gap-1.5 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg border border-red-200 dark:border-red-500/30 transition-colors"
                             >
                                 <StopCircle size={16} /> Stop Algo
+                            </button> */}
+                            {/* ✅ STOP BUTTON UPDATE */}
+                            <button 
+                                onClick={() => handleStopAlgo(dep._id)}
+                                disabled={isStopping}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-red-200 dark:border-red-500/30 transition-all active:scale-95"
+                            >
+                                {isStopping ? <Loader2 size={16} className="animate-spin" /> : <StopCircle size={16} />} 
+                                {isStopping ? 'Stopping...' : 'Stop Algo'}
                             </button>
                         </div>
                     </div>
