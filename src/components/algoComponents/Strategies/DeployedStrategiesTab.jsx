@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PlayCircle, StopCircle, Activity, AlertCircle } from 'lucide-react';
-import { fetchActiveDeployments } from './path-to-your-service'; // Apna path daalein
+import { fetchActiveDeployments } from '../../../data/AlogoTrade/deploymentService'; // Apna path daalein
 
 const DeployedStrategiesTab = () => {
     const [deployments, setDeployments] = useState([]);
