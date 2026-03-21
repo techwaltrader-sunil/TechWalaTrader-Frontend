@@ -268,26 +268,17 @@ const AdvanceFeaturesSection = ({ advanceSettings, setAdvanceSettings, legs, add
     }
   }, [legs, advanceSettings, setAdvanceSettings]);
 
-  // 🔥 THE SMART LOGIC BRAIN (UPDATED) 🔥
+  // 🔥 THE SMART LOGIC BRAIN 🔥
   const getDisabledState = (key) => {
       if (!advanceSettings) return false;
       const { moveSLToCost, exitAllOnSLTgt, trailSL, waitAndTrade, reEntryExecute } = advanceSettings;
 
-      // ✅ Exit All hamesha Re-Entry ka dushman rahega (Ek marega to sab marenge vs Wapas zinda hona)
       if (key === 'exitAllOnSLTgt') return moveSLToCost || reEntryExecute;
-      
-      // ✅ Move SL to Cost ON hone par ye teeno band rahenge
       if (key === 'prePunchSL') return moveSLToCost || trailSL;
       if (key === 'waitAndTrade') return moveSLToCost;
       if (key === 'trailSL') return moveSLToCost;
-      
-      // 🔥 THE FIX: Re-Entry ab Move SL to Cost ke sath ACTIVE rahega!
       if (key === 'reEntryExecute') return exitAllOnSLTgt; 
-
-      // 🔥 THE FIX: Move SL to Cost bhi Re-Entry ke sath ACTIVE rahega
       if (key === 'moveSLToCost') return exitAllOnSLTgt || waitAndTrade || trailSL;
-      
-      // ✅ Rule 3: Premium Difference needs 2+ Legs
       if (key === 'premiumDifference') return legs && legs.length < 2;
 
       return false;
@@ -298,9 +289,16 @@ const AdvanceFeaturesSection = ({ advanceSettings, setAdvanceSettings, legs, add
       setAdvanceSettings(prev => ({ ...prev, [key]: false }));
     } else {
         
-      // AUTO DUPLICATE LOGIC: Move SL to Cost pe click karte hi 1st leg copy ho jayega
+      // 🔥 THE MAGIC FIX: Auto-Duplicate with Opposite Option Type 🔥
       if (key === 'moveSLToCost' && legs?.length === 1 && addLeg) {
-          addLeg(legs[0]); 
+          const baseLeg = legs[0];
+          addLeg({
+              ...baseLeg,
+              // Agar Call hai to Put karo, CE hai to PE karo
+              optionType: baseLeg.optionType === 'Call' ? 'Put' : 'Call',
+              longCondition: baseLeg.longCondition === 'CE' ? 'PE' : 'CE',
+              shortCondition: baseLeg.shortCondition === 'PE' ? 'CE' : 'PE'
+          }); 
       }
 
       if (['waitAndTrade', 'premiumDifference', 'reEntryExecute', 'trailSL'].includes(key)) {
