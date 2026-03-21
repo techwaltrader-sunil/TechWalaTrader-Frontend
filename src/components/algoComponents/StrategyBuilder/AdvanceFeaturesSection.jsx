@@ -298,9 +298,21 @@ const AdvanceFeaturesSection = ({ advanceSettings, setAdvanceSettings, legs, add
       setAdvanceSettings(prev => ({ ...prev, [key]: false }));
     } else {
         
-      // AUTO DUPLICATE LOGIC: Move SL to Cost pe click karte hi 1st leg copy ho jayega
+      // // AUTO DUPLICATE LOGIC: Move SL to Cost pe click karte hi 1st leg copy ho jayega
+      // if (key === 'moveSLToCost' && legs?.length === 1 && addLeg) {
+      //     addLeg(legs[0]); 
+      // }
+
+      // 🔥 THE MAGIC FIX: Auto-Duplicate with Opposite Option Type 🔥
       if (key === 'moveSLToCost' && legs?.length === 1 && addLeg) {
-          addLeg(legs[0]); 
+          const baseLeg = legs[0];
+          addLeg({
+              ...baseLeg,
+              // Agar Call hai to Put karo, CE hai to PE karo
+              optionType: baseLeg.optionType === 'Call' ? 'Put' : 'Call',
+              longCondition: baseLeg.longCondition === 'CE' ? 'PE' : 'CE',
+              shortCondition: baseLeg.shortCondition === 'PE' ? 'CE' : 'PE'
+          }); 
       }
 
       if (['waitAndTrade', 'premiumDifference', 'reEntryExecute', 'trailSL'].includes(key)) {
