@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { PlayCircle, StopCircle, Activity, AlertCircle } from 'lucide-react';
-import { fetchActiveDeployments, stopDeployment } from '../../../data/AlogoTrade/deploymentService'; // Apna path daalein
+// 🔥 FIX 1: Loader2 ko import me add kar diya
+import { PlayCircle, StopCircle, Activity, AlertCircle, Loader2 } from 'lucide-react'; 
+import { fetchActiveDeployments, stopDeployment } from '../../../data/AlogoTrade/deploymentService'; 
 
 const DeployedStrategiesTab = () => {
     const [deployments, setDeployments] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // 🔥 FIX 2: Ye line miss ho gayi thi, jiske wajah se "stoppingId not defined" aa raha tha
+    const [stoppingId, setStoppingId] = useState(null); 
 
     // API se data mangwana
     useEffect(() => {
@@ -15,8 +19,9 @@ const DeployedStrategiesTab = () => {
             setLoading(false);
         };
         loadDeployments();
+    }, []); // 🔥 FIX 3: useEffect ko yahin close kar diya
 
-        // 🔥 STOP ALGO LOGIC 🔥
+    // 🔥 FIX 4: handleStopAlgo ko useEffect ke BAHAR nikal diya
     const handleStopAlgo = async (deploymentId) => {
         if (window.confirm("Are you sure you want to stop this algorithm? All active monitoring will halt.")) {
             setStoppingId(deploymentId); // Button pe loading start
@@ -35,11 +40,6 @@ const DeployedStrategiesTab = () => {
             }
         }
     };
-
-        // Optional: Har 10 second me P&L update karne ke liye interval laga sakte hain
-        // const interval = setInterval(loadDeployments, 10000);
-        // return () => clearInterval(interval);
-    }, []);
 
     if (loading) {
         return <div className="flex justify-center py-10"><Activity className="animate-spin text-blue-500" size={32} /></div>;
@@ -99,18 +99,12 @@ const DeployedStrategiesTab = () => {
                         <div className="p-5 flex items-center justify-between bg-gray-50 dark:bg-slate-800/50">
                             <div>
                                 <p className="text-xs font-bold text-gray-500 mb-1">Live P&L</p>
-                                {/* Abhi ke liye dummy PnL, baad me backend se aayega */}
+                                {/* 🔥 FIX 5: dep.pnl agar null ho to error na aaye isliye ?. lagaya */}
                                 <p className={`text-xl font-bold flex items-center gap-1 ${dep.pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    ₹ {dep.pnl >= 0 ? `+${dep.pnl.toFixed(2)}` : dep.pnl.toFixed(2)}
+                                    ₹ {dep.pnl >= 0 ? `+${dep.pnl?.toFixed(2) || '0.00'}` : dep.pnl?.toFixed(2) || '0.00'}
                                 </p>
                             </div>
                             
-                            {/* <button 
-                                onClick={() => alert("Stop Logic Backend mein banayenge!")}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg border border-red-200 dark:border-red-500/30 transition-colors"
-                            >
-                                <StopCircle size={16} /> Stop Algo
-                            </button> */}
                             {/* ✅ STOP BUTTON UPDATE */}
                             <button 
                                 onClick={() => handleStopAlgo(dep._id)}
