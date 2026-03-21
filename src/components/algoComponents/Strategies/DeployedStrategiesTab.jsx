@@ -60,6 +60,7 @@ const DeployedStrategiesTab = () => {
             {deployments.map((dep) => {
                 const strategyName = dep.strategyId?.name || 'Unknown Strategy';
                 const isLive = dep.executionType === 'LIVE';
+                const isStopping = stoppingId === dep._id;
 
                 return (
                     <div key={dep._id} className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
