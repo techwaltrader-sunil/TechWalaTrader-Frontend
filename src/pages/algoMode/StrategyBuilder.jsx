@@ -277,7 +277,7 @@ const StrategyBuilder = () => {
                     setRiskSettings={setRiskSettings} 
                     isComingSoon={false} 
                 />
-                {selectedStrategyType === "Time Based" && (<AdvanceFeaturesSection advanceSettings={advanceSettings} setAdvanceSettings={setAdvanceSettings} legs={legs} />)}
+                {selectedStrategyType === "Time Based" && (<AdvanceFeaturesSection advanceSettings={advanceSettings} setAdvanceSettings={setAdvanceSettings} legs={legs} addLeg={addLeg}/>)}
             </div>
         )}
 
