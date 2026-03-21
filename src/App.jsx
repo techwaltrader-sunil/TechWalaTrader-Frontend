@@ -50,6 +50,7 @@ function App() {
           <Route path="/brokers" element={<BrokersPage />} />
           <Route path="/add-brokers" element={<AddBrokers />} />
           <Route path="/backtest" element={<BacktestPage />} />
+          <Route path="/backtest/:strategyId" element={<BacktestPage />} />
           {/* <Route path="/algo-logs" element={<AlgoLogsPage />} /> */}
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />

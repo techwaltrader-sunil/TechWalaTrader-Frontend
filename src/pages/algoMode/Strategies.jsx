@@ -437,18 +437,21 @@ const fetchStrategies = async () => {
                       />
                   ) : (
                   <StrategyCard 
-                      key={strat.id} 
-                      strategy={strat}
-                      viewMode={viewMode}
-                      isMenuOpen={activeMenu === strat.id}
-                      onToggleMenu={() => setActiveMenu(activeMenu === strat.id ? null : strat.id)}
-                      onEdit={() => handleEdit(strat)}
-                      onDuplicate={() => openDuplicateModal(strat)}
-                      onDelete={() => handleDelete(strat.id)}
-                      onOpenWebhook={() => setSelectedStrategyForWebhook(strat)}
-                      onBacktest={() => handleBacktest(strat.id)} 
-                      onDeploy={() => openDeployModal(strat)} 
-                  />
+                        key={strat._id || strat.id} // ✅ FIXED: key me bhi _id
+                        strategy={strat}
+                        viewMode={viewMode}
+                        isMenuOpen={activeMenu === (strat._id || strat.id)} // ✅ FIXED
+                        onToggleMenu={() => setActiveMenu(activeMenu === (strat._id || strat.id) ? null : (strat._id || strat.id))} // ✅ FIXED
+                        onEdit={() => handleEdit(strat)}
+                        onDuplicate={() => openDuplicateModal(strat)}
+                        onDelete={() => handleDelete(strat._id || strat.id)} // ✅ FIXED
+                        onOpenWebhook={() => setSelectedStrategyForWebhook(strat)}
+                        
+                        // 🔥 MAIN FIX FOR BACKTEST CRASH 🔥
+                        onBacktest={() => handleBacktest(strat._id || strat.id)} 
+                        
+                        onDeploy={() => openDeployModal(strat)} 
+                    />
                   )
             ))}
           </div>
