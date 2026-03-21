@@ -126,27 +126,264 @@
 // export default DeployModal;
 
 
+// import React, { useState, useEffect } from 'react';
+// import { X, Clock } from 'lucide-react';
+
+// const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
+//   // --- STATE MANAGEMENT ---
+//   const [isLive, setIsLive] = useState(true); // true = Live, false = Forward Test
+//   const [multiplier, setMultiplier] = useState(1);
+//   const [maxProfit, setMaxProfit] = useState(0);
+//   const [maxLoss, setMaxLoss] = useState(0);
+//   const [squareOffTime, setSquareOffTime] = useState('15:15'); // 03:15 PM
+//   const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+//   // 💡 DUMMY BROKERS (Aap ise props ya API se replace kar sakte hain)
+//   const availableBrokers = [
+//       { id: '1', name: 'Groww', clientId: '7010511859' },
+//       { id: '2', name: 'Dhan', clientId: '1000728652' }
+//   ];
+  
+//   const [selectedBrokers, setSelectedBrokers] = useState([]);
+
+//   // Reset states when modal opens
+//   useEffect(() => {
+//       if (isOpen) {
+//           setIsLive(true);
+//           setMultiplier(1);
+//           setMaxProfit(0);
+//           setMaxLoss(0);
+//           setSquareOffTime('15:15');
+//           setAcceptedTerms(false);
+//           // Auto-select all brokers by default
+//           setSelectedBrokers(availableBrokers.map(b => b.id));
+//       }
+//   }, [isOpen]);
+
+//   if (!isOpen || !strategy) return null;
+
+//   // --- HANDLERS ---
+//   const handleSelectAllBrokers = () => {
+//       if (selectedBrokers.length === availableBrokers.length) {
+//           setSelectedBrokers([]); // Deselect All
+//       } else {
+//           setSelectedBrokers(availableBrokers.map(b => b.id)); // Select All
+//       }
+//   };
+
+//   const handleToggleBroker = (id) => {
+//       if (selectedBrokers.includes(id)) {
+//           setSelectedBrokers(selectedBrokers.filter(bId => bId !== id));
+//       } else {
+//           setSelectedBrokers([...selectedBrokers, id]);
+//       }
+//   };
+
+//   const handleDeploy = () => {
+//       if (!acceptedTerms) return;
+      
+//       const payload = {
+//           strategyId: strategy._id || strategy.id,
+//           executionType: isLive ? 'LIVE' : 'FORWARD_TEST',
+//           brokers: selectedBrokers,
+//           multiplier: Number(multiplier),
+//           maxProfit: Number(maxProfit),
+//           maxLoss: Number(maxLoss),
+//           squareOffTime
+//       };
+      
+//       onConfirmDeploy(payload);
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center z-50 backdrop-blur-sm animate-in fade-in duration-200 transition-colors">
+        
+//         {/* ✅ Modal Container (Matches Algorooms Style) */}
+//         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-[550px] shadow-2xl relative transition-colors duration-300">
+            
+//             {/* Header */}
+//             <div className="p-6 pb-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800 transition-colors">
+//                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Deploy Strategy</h2>
+//                 <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors">
+//                     Close
+//                 </button>
+//             </div>
+
+//             {/* Body */}
+//             <div className="p-6 space-y-6">
+                
+//                 {/* 1. Deployment Type & Brokers Grid */}
+//                 <div className="grid grid-cols-2 gap-6">
+                    
+//                     {/* Left: Toggle Switch */}
+//                     <div>
+//                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3 block">Deployment Type</label>
+//                         <div className="flex items-center gap-3">
+//                             <span className={`text-sm font-bold transition-colors ${isLive ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400 dark:text-gray-500'}`}>Live</span>
+                            
+//                             {/* Switch */}
+//                             <div 
+//                                 onClick={() => setIsLive(!isLive)}
+//                                 className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${!isLive ? 'bg-gray-300 dark:bg-slate-600' : 'bg-blue-600 dark:bg-blue-500'}`}
+//                             >
+//                                 <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${!isLive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+//                             </div>
+                            
+//                             <span className={`text-sm font-bold transition-colors ${!isLive ? 'text-gray-800 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>Forward Test</span>
+//                         </div>
+//                     </div>
+
+//                     {/* Right: Brokers List */}
+//                     <div>
+//                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Brokers</label>
+//                         <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-3 space-y-3 bg-gray-50 dark:bg-slate-900/50 max-h-32 overflow-y-auto custom-scrollbar transition-colors">
+                            
+//                             {/* Select All Checkbox */}
+//                             <label className="flex items-center gap-2 cursor-pointer group">
+//                                 <input 
+//                                     type="checkbox" 
+//                                     checked={selectedBrokers.length === availableBrokers.length}
+//                                     onChange={handleSelectAllBrokers}
+//                                     className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
+//                                 />
+//                                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 transition-colors">Select All</span>
+//                             </label>
+                            
+//                             {/* Individual Brokers */}
+//                             {availableBrokers.map(b => (
+//                                 <label key={b.id} className="flex items-center gap-2 cursor-pointer group pl-1">
+//                                     <input 
+//                                         type="checkbox" 
+//                                         checked={selectedBrokers.includes(b.id)}
+//                                         onChange={() => handleToggleBroker(b.id)}
+//                                         className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
+//                                     />
+//                                     <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+//                                         {b.name} ({b.clientId})
+//                                     </span>
+//                                 </label>
+//                             ))}
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 {/* 2. Inputs Grid (2x2) */}
+//                 <div className="grid grid-cols-2 gap-5">
+                    
+//                     {/* Qty Multiplier */}
+//                     <div>
+//                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 block">Qty Multiplier</label>
+//                         <input 
+//                             type="number" 
+//                             min="1"
+//                             value={multiplier}
+//                             onChange={(e) => setMultiplier(e.target.value)}
+//                             className="w-full border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+//                         />
+//                     </div>
+
+//                     {/* Max Profit */}
+//                     <div>
+//                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 block">Max Profit (optional)</label>
+//                         <input 
+//                             type="number" 
+//                             min="0"
+//                             value={maxProfit}
+//                             onChange={(e) => setMaxProfit(e.target.value)}
+//                             className="w-full border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+//                         />
+//                     </div>
+
+//                     {/* Max Loss */}
+//                     <div>
+//                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 block">Max Loss (optional)</label>
+//                         <input 
+//                             type="number" 
+//                             min="0"
+//                             value={maxLoss}
+//                             onChange={(e) => setMaxLoss(e.target.value)}
+//                             className="w-full border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+//                         />
+//                     </div>
+
+//                     {/* Auto Square Off Time */}
+//                     <div>
+//                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 block">Auto Square Off Time</label>
+//                         <div className="relative">
+//                             <input 
+//                                 type="time" 
+//                                 value={squareOffTime}
+//                                 onChange={(e) => setSquareOffTime(e.target.value)}
+//                                 className="w-full border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all appearance-none"
+//                             />
+//                             <Clock className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={18} />
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 {/* 3. Terms & Conditions */}
+//                 <div className="pt-2">
+//                     <label className="flex items-center gap-2 cursor-pointer group w-fit">
+//                         <input 
+//                             type="checkbox" 
+//                             checked={acceptedTerms}
+//                             onChange={() => setAcceptedTerms(!acceptedTerms)}
+//                             className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
+//                         />
+//                         <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+//                             I accept all the <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">terms & conditions</a>
+//                         </span>
+//                     </label>
+//                 </div>
+
+//             </div>
+
+//             {/* Footer Buttons */}
+//             <div className="p-6 pt-0 flex justify-end gap-3 transition-colors">
+//                 <button 
+//                     onClick={onClose} 
+//                     className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+//                 >
+//                     Cancel
+//                 </button>
+//                 <button 
+//                     onClick={handleDeploy}
+//                     disabled={!acceptedTerms || selectedBrokers.length === 0}
+//                     className="px-8 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed rounded-lg shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+//                 >
+//                     Deploy
+//                 </button>
+//             </div>
+
+//         </div>
+//     </div>
+//   );
+// };
+
+// export default DeployModal;
+
+
+
 import React, { useState, useEffect } from 'react';
-import { X, Clock } from 'lucide-react';
+import { X, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+// ✅ IMPORT API (Agar path alag ho toh theek kar lena)
+import { getConnectedBrokers } from '../../data/AlogoTrade/brokerService';
 
 const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
   // --- STATE MANAGEMENT ---
-  const [isLive, setIsLive] = useState(true); // true = Live, false = Forward Test
+  const [isLive, setIsLive] = useState(true); 
   const [multiplier, setMultiplier] = useState(1);
   const [maxProfit, setMaxProfit] = useState(0);
   const [maxLoss, setMaxLoss] = useState(0);
-  const [squareOffTime, setSquareOffTime] = useState('15:15'); // 03:15 PM
+  const [squareOffTime, setSquareOffTime] = useState('15:15'); 
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // 💡 DUMMY BROKERS (Aap ise props ya API se replace kar sakte hain)
-  const availableBrokers = [
-      { id: '1', name: 'Groww', clientId: '7010511859' },
-      { id: '2', name: 'Dhan', clientId: '1000728652' }
-  ];
-  
+  // ✅ REAL BROKERS STATE
+  const [availableBrokers, setAvailableBrokers] = useState([]);
   const [selectedBrokers, setSelectedBrokers] = useState([]);
+  const [isLoadingBrokers, setIsLoadingBrokers] = useState(false);
 
-  // Reset states when modal opens
+  // Reset states & Fetch Brokers when modal opens
   useEffect(() => {
       if (isOpen) {
           setIsLive(true);
@@ -155,8 +392,26 @@ const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
           setMaxLoss(0);
           setSquareOffTime('15:15');
           setAcceptedTerms(false);
-          // Auto-select all brokers by default
-          setSelectedBrokers(availableBrokers.map(b => b.id));
+          
+          // 🔥 FETCH REAL BROKERS FROM DB 🔥
+          const fetchBrokers = async () => {
+              setIsLoadingBrokers(true);
+              try {
+                  const data = await getConnectedBrokers();
+                  // Sirf wahi brokers dikhao jo Engine me On hain (Terminal connected hai)
+                  const activeBrokers = data.filter(b => b.terminalOn);
+                  setAvailableBrokers(activeBrokers);
+                  
+                  // Auto-select all by default
+                  setSelectedBrokers(activeBrokers.map(b => b._id || b.id));
+              } catch (error) {
+                  console.error("Failed to load brokers in modal:", error);
+              } finally {
+                  setIsLoadingBrokers(false);
+              }
+          };
+
+          fetchBrokers();
       }
   }, [isOpen]);
 
@@ -164,10 +419,10 @@ const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
 
   // --- HANDLERS ---
   const handleSelectAllBrokers = () => {
-      if (selectedBrokers.length === availableBrokers.length) {
+      if (selectedBrokers.length === availableBrokers.length && availableBrokers.length > 0) {
           setSelectedBrokers([]); // Deselect All
       } else {
-          setSelectedBrokers(availableBrokers.map(b => b.id)); // Select All
+          setSelectedBrokers(availableBrokers.map(b => b._id || b.id)); // Select All
       }
   };
 
@@ -198,7 +453,6 @@ const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center z-50 backdrop-blur-sm animate-in fade-in duration-200 transition-colors">
         
-        {/* ✅ Modal Container (Matches Algorooms Style) */}
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-[550px] shadow-2xl relative transition-colors duration-300">
             
             {/* Header */}
@@ -221,7 +475,6 @@ const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
                         <div className="flex items-center gap-3">
                             <span className={`text-sm font-bold transition-colors ${isLive ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400 dark:text-gray-500'}`}>Live</span>
                             
-                            {/* Switch */}
                             <div 
                                 onClick={() => setIsLive(!isLive)}
                                 className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${!isLive ? 'bg-gray-300 dark:bg-slate-600' : 'bg-blue-600 dark:bg-blue-500'}`}
@@ -238,31 +491,46 @@ const DeployModal = ({ isOpen, onClose, strategy, onConfirmDeploy }) => {
                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Brokers</label>
                         <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-3 space-y-3 bg-gray-50 dark:bg-slate-900/50 max-h-32 overflow-y-auto custom-scrollbar transition-colors">
                             
-                            {/* Select All Checkbox */}
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input 
-                                    type="checkbox" 
-                                    checked={selectedBrokers.length === availableBrokers.length}
-                                    onChange={handleSelectAllBrokers}
-                                    className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
-                                />
-                                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 transition-colors">Select All</span>
-                            </label>
-                            
-                            {/* Individual Brokers */}
-                            {availableBrokers.map(b => (
-                                <label key={b.id} className="flex items-center gap-2 cursor-pointer group pl-1">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedBrokers.includes(b.id)}
-                                        onChange={() => handleToggleBroker(b.id)}
-                                        className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
-                                    />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                                        {b.name} ({b.clientId})
-                                    </span>
-                                </label>
-                            ))}
+                            {isLoadingBrokers ? (
+                                <div className="flex items-center justify-center py-4">
+                                    <Loader2 className="animate-spin text-blue-500" size={20} />
+                                </div>
+                            ) : availableBrokers.length === 0 ? (
+                                <div className="py-2 text-center">
+                                    <AlertTriangle className="mx-auto text-yellow-500 mb-1" size={16} />
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">No active brokers found.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Select All Checkbox */}
+                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={selectedBrokers.length === availableBrokers.length && availableBrokers.length > 0}
+                                            onChange={handleSelectAllBrokers}
+                                            className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
+                                        />
+                                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 transition-colors">Select All</span>
+                                    </label>
+                                    
+                                    {/* Individual Brokers (Mapped from DB) */}
+                                    {availableBrokers.map(b => {
+                                        const currentId = b._id || b.id;
+                                        return (
+                                        <label key={currentId} className="flex items-center gap-2 cursor-pointer group pl-1">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedBrokers.includes(currentId)}
+                                                onChange={() => handleToggleBroker(currentId)}
+                                                className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer accent-blue-600"
+                                            />
+                                            <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                                                {b.name} ({b.clientId})
+                                            </span>
+                                        </label>
+                                    )})}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
