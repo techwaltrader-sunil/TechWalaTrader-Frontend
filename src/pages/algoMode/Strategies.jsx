@@ -729,7 +729,7 @@ const fetchStrategies = async () => {
       
        <div className="flex flex-col gap-6 mb-8">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          {/* <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
                 <span className="bg-blue-600 w-1 h-6 rounded-full shadow-lg shadow-blue-500/50"></span>
                 My Strategies
@@ -737,7 +737,7 @@ const fetchStrategies = async () => {
             <button onClick={() => navigate("/strategy-builder")} className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95">
                 + Create Strategy
             </button>
-          </div>
+          </div> */}
           
           {/* Tabs & Filters */}
           <div className="flex flex-col md:flex-row justify-between items-end md:items-center border-b border-gray-200 dark:border-slate-800 pb-1 gap-4 transition-colors">
