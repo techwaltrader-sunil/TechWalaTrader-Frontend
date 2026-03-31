@@ -94,7 +94,13 @@ const ReportTab = () => {
     try {
       // NOTE: Apna actual backend URL yahan daalein ya .env use karein
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'; 
-      const response = await axios.get(`${apiUrl}/api/reports/summary`, {
+      
+      // const response = await axios.get(`${apiUrl}/api/reports/summary`, {
+      //   params: { startDate, endDate }
+      // });
+
+      // Isko badal kar aisa kar dijiye (deployments add kar dijiye):
+      const response = await axios.get(`${apiUrl}/api/deployments/reports/summary`, {
         params: { startDate, endDate }
       });
 
