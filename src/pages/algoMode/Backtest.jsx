@@ -937,7 +937,8 @@ const Backtest = () => {
               </div>
 
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-10 duration-700">
-                <DaywiseBreakdown transactions={result.transactions} period={selectedPeriod} />
+                {/* <DaywiseBreakdown transactions={result.transactions} period={selectedPeriod} /> */}
+                <DaywiseBreakdown transactions={result.transactions} data={backtestResult.daywiseBreakdown} />
               </div>
 
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 pb-10">
