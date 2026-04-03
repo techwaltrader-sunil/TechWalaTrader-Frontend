@@ -726,8 +726,18 @@ const Backtest = () => {
     try {
       const API_URL = "https://techwalatrader-algobackend.onrender.com/api"; 
       const targetId = selectedStrategyIds[0];
+
+      let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}`;
+      if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
+            requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
+        }
+      const response = await axios.get(requestUrl);
+        
       
-      const response = await axios.get(`${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}`);
+    //   const response = await axios.get(`${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}`);
+
+      // 🔥 FIX: Custom date range API me bhej rahe hain
+        
       
       if (response.data.success) {
           const backendData = response.data.data;
