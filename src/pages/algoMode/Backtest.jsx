@@ -745,6 +745,8 @@ const Backtest = () => {
           const formattedResult = {
               summary: backendData.summary,
               equityCurve: backendData.equityCurve,
+              // 🔥 FIX 1: daywiseBreakdown ko bhi result me save karein
+              daywiseBreakdown: backendData.daywiseBreakdown, 
               transactions: backendData.daywiseBreakdown.map(day => {
                   const eqData = backendData.equityCurve.find(e => e.date === day.date);
                   return {
@@ -938,7 +940,7 @@ const Backtest = () => {
 
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-10 duration-700">
                 {/* <DaywiseBreakdown transactions={result.transactions} period={selectedPeriod} /> */}
-                <DaywiseBreakdown transactions={result.transactions} data={backtestResult.daywiseBreakdown} />
+                <DaywiseBreakdown data={result.daywiseBreakdown || []} />
               </div>
 
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 pb-10">
