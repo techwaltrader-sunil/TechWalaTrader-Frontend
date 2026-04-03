@@ -760,7 +760,13 @@ const Backtest = () => {
       }
     } catch (error) {
       console.error("Backtest Failed:", error);
-      alert("Error running backtest. Make sure backend is running.");
+      
+      // Agar backend ne hamara NO_DATA wala error bheja hai
+      if (error.response && error.response.data && error.response.data.errorType === "NO_DATA") {
+          alert(`⚠️ ${error.response.data.message}`);
+      } else {
+          alert("❌ Failed to fetch backtest data. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
