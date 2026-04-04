@@ -208,15 +208,21 @@ const IndicatorModal = ({ isOpen, onClose, onSelect, initialData }) => {
     item.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Confirm Selection
+ // Confirm Selection
   const handleOk = () => {
     if (!selectedId) return;
     const indicatorInfo = INDICATOR_LIST.find(i => i.id === selectedId);
     
-    // Construct Display String (e.g., "RSI(14)")
+    // Construct Display String
     let displayString = indicatorInfo.label;
     const paramValues = Object.values(params);
-    if (paramValues.length > 0) {
+    
+    // 🔥 THE FIX: Agar "Number" select kiya hai, to sirf number dikhao (e.g., "50")
+    if (selectedId === 'number' || selectedId === 'static') {
+        displayString = `${paramValues[0] || 0}`;
+    } 
+    // Baaki indicators ke liye (e.g., "RSI(14)")
+    else if (paramValues.length > 0) {
         displayString = `${indicatorInfo.id.toUpperCase()}(${paramValues.join(',')})`;
     }
 
@@ -224,7 +230,9 @@ const IndicatorModal = ({ isOpen, onClose, onSelect, initialData }) => {
         id: selectedId,
         label: indicatorInfo.label,
         display: displayString,
-        params: params
+        params: params,
+        // Backend ke liye direct value bhej do agar number hai
+        value: (selectedId === 'number' || selectedId === 'static') ? Number(paramValues[0]) : null 
     });
     onClose();
   };
@@ -283,7 +291,7 @@ const IndicatorModal = ({ isOpen, onClose, onSelect, initialData }) => {
                         </div>
 
                         {/* ✅ PARAMETERS INPUTS */}
-                        {isSelected && indicator.params.length > 0 && (
+                        {isSelected && indicator.params?.length > 0 && (
                             <div className="mt-3 ml-7 grid grid-cols-2 gap-3 animate-in slide-in-from-top-1">
                                 {indicator.params.map((param) => (
                                     <div key={param.name} onClick={(e) => e.stopPropagation()}>
