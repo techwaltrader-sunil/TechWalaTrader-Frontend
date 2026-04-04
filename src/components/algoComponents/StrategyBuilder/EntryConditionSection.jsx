@@ -386,7 +386,6 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
     }
   };
 
-  // --- Render Row Helper ---
   const renderRow = (cond, index, type, section, conditionsArray, setConditionsArray) => {
     let labelText = "";
     if (section === 'entry') {
@@ -396,7 +395,9 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
     }
 
 
-    // 🔥 THE FIX: Infinite Loop (React Error #310) ko rokne ke liye Smart Sync
+    // ==========================================
+    // 2. THE BRAIN (useEffect ko yahan, renderRow ke bahar aur main return se pehle rakhna hai)
+    // ==========================================
     React.useEffect(() => {
         if (typeof setEntrySettings === 'function') {
             setEntrySettings(prev => {
@@ -416,14 +417,12 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
                     }
                 ] : [];
 
-                // 🛑 THE BRAIN: Infinite loop break karne ke liye check karein
-                // Agar purana data aur naya data bilkul same hai, to update rok do!
+                // Infinite loop break karne ka logic
                 if (JSON.stringify(prev?.entryConditions) === JSON.stringify(newEntryConditions) &&
                     JSON.stringify(prev?.exitConditions) === JSON.stringify(newExitConditions)) {
-                    return prev; // Loop yahan toot jayega
+                    return prev; 
                 }
 
-                // Agar data naya hai, tabhi parent ko update karo
                 return {
                     ...prev,
                     entryConditions: newEntryConditions,
@@ -431,9 +430,7 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
                 };
             });
         }
-        // Dependency array se 'setEntrySettings' hata diya taaki loop na bane
     }, [longConditions, shortConditions, entryLogicalOps, showExitConditions, longExitConditions, shortExitConditions, exitLogicalOps]);
-        
 
     return (
         // ✅ Row Container: Light (White) | Dark (Slate-900)
