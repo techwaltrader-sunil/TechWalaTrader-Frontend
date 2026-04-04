@@ -396,31 +396,44 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
     }
 
 
-    // 🔥 THE FIX: Local UI state ko Parent ke entrySettings me sync karna
-    useEffect(() => {
+    // 🔥 THE FIX: Infinite Loop (React Error #310) ko rokne ke liye Smart Sync
+    React.useEffect(() => {
         if (typeof setEntrySettings === 'function') {
-            setEntrySettings(prev => ({
-                ...prev,
-                // Entry ki saari conditions array me pack karke bhej rahe hain
-                entryConditions: [
+            setEntrySettings(prev => {
+                const newEntryConditions = [
                     {
                         longRules: longConditions,
                         shortRules: shortConditions,
                         logicalOps: entryLogicalOps
                     }
-                ],
-                // Agar exit conditions on hain, to unhe bhi bhej do
-                exitConditions: showExitConditions ? [
+                ];
+                
+                const newExitConditions = showExitConditions ? [
                     {
                         longRules: longExitConditions,
                         shortRules: shortExitConditions,
                         logicalOps: exitLogicalOps
                     }
-                ] : []
-            }));
+                ] : [];
+
+                // 🛑 THE BRAIN: Infinite loop break karne ke liye check karein
+                // Agar purana data aur naya data bilkul same hai, to update rok do!
+                if (JSON.stringify(prev?.entryConditions) === JSON.stringify(newEntryConditions) &&
+                    JSON.stringify(prev?.exitConditions) === JSON.stringify(newExitConditions)) {
+                    return prev; // Loop yahan toot jayega
+                }
+
+                // Agar data naya hai, tabhi parent ko update karo
+                return {
+                    ...prev,
+                    entryConditions: newEntryConditions,
+                    exitConditions: newExitConditions
+                };
+            });
         }
-    }, [longConditions, shortConditions, entryLogicalOps, showExitConditions, longExitConditions, shortExitConditions, exitLogicalOps, setEntrySettings]);
-    
+        // Dependency array se 'setEntrySettings' hata diya taaki loop na bane
+    }, [longConditions, shortConditions, entryLogicalOps, showExitConditions, longExitConditions, shortExitConditions, exitLogicalOps]);
+        
 
     return (
         // ✅ Row Container: Light (White) | Dark (Slate-900)
