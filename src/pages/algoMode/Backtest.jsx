@@ -944,7 +944,7 @@ const Backtest = () => {
               </div>
 
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 pb-10">
-                  <TransactionTable transactions={result.transactions} />
+                  <TransactionTable transactions={result.daywiseBreakdown} />
               </div>
 
           </div>
