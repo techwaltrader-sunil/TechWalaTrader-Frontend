@@ -736,7 +736,7 @@ const TransactionTable = ({ transactions }) => {
                         >
                           <td className="py-3 pl-2">
                             <p className="text-sm font-bold text-gray-900 dark:text-white">
-                              {/* 🔥 DYNAMIC: Symbol */}
+                              {/* 🔥 FIX 1: Exact Symbol */}
                               {trade.symbol || "NIFTY/BANKNIFTY"}
                             </p>
                             <p className="text-[10px] text-gray-500 dark:text-gray-500">
@@ -753,42 +753,38 @@ const TransactionTable = ({ transactions }) => {
                                                         : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
                                                     }`}
                             >
-                              {/* 🔥 DYNAMIC: Transaction Type */}
-                              {trade.transaction || (trade.pnl >= 0 ? "BUY" : "SELL")}
+                              {trade.transaction || "BUY"}
                             </span>
                           </td>
 
-                          <td className="py-3 text-sm text-gray-700 dark:text-gray-300">
-                            {/* 🔥 DYNAMIC: Quantity */}
+                          <td className="py-3 text-sm font-bold text-gray-700 dark:text-gray-300">
+                            {/* 🔥 FIX 2: Exact Quantity */}
                             {trade.quantity || "-"}
                           </td>
 
                           <td className="py-3">
                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {/* 🔥 DYNAMIC: Entry Price */}
+                              {/* 🔥 FIX 3: Entry Price (Entry Time) */}
                               ₹{trade.entryPrice ? trade.entryPrice.toFixed(2) : "-"}
-                            </p>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-500">
-                              {/* 🔥 DYNAMIC: Entry Time */}
-                              {trade.entryTime || "-"}
+                              <span className="text-[11px] font-normal text-gray-500 ml-1">
+                                ({trade.entryTime || "09:15:00"})
+                              </span>
                             </p>
                           </td>
 
                           <td className="py-3">
                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {/* 🔥 DYNAMIC: Exit Price */}
+                              {/* 🔥 FIX 4: Exit Price (Exit Time) */}
                               ₹{trade.exitPrice ? trade.exitPrice.toFixed(2) : "-"}
-                            </p>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-500">
-                              {/* 🔥 DYNAMIC: Exit Time */}
-                              {trade.exitTime || "-"}
+                              <span className="text-[11px] font-normal text-gray-500 ml-1">
+                                ({trade.exitTime || "15:30:00"})
+                              </span>
                             </p>
                           </td>
 
                           <td
                             className={`py-3 text-right font-bold text-sm ${trade.pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
                           >
-                            {/* 🔥 DYNAMIC: P&L */}
                             {trade.pnl >= 0 ? "+" : "-"}
                             {fmt(trade.pnl)}
                           </td>
@@ -796,9 +792,8 @@ const TransactionTable = ({ transactions }) => {
                           <td className="py-3 text-right pr-2">
                             <a
                               href="#"
-                              className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-end gap-1 transition-colors"
+                              className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-end gap-1 transition-colors uppercase"
                             >
-                              {/* 🔥 DYNAMIC: Exit Type (M2M / EOD / TIME) */}
                               {trade.exitType || "TIME_SQUAREOFF"} <ExternalLink size={10} />
                             </a>
                           </td>
