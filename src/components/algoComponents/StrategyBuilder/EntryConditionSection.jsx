@@ -1,5 +1,7 @@
 
-// import React, { useState } from 'react';
+
+
+// import React, { useState, useEffect } from 'react';
 // import { Info, Plus, Trash2 } from 'lucide-react';
 // import IndicatorModal from './IndicatorModal';
 
@@ -105,7 +107,9 @@
 //     }
 //   };
 
-//   // --- Render Row Helper ---
+//   // ==========================================
+//   // 1. RENDER ROW HELPER (Bina kisi hook ke)
+//   // ==========================================
 //   const renderRow = (cond, index, type, section, conditionsArray, setConditionsArray) => {
 //     let labelText = "";
 //     if (section === 'entry') {
@@ -115,9 +119,7 @@
 //     }
 
 //     return (
-//         // ✅ Row Container: Light (White) | Dark (Slate-900)
 //         <div key={`${section}-${type}-${index}`} className={`flex flex-col md:flex-row gap-3 items-start p-4 bg-gray-50 dark:bg-slate-900/80 rounded-lg border border-gray-200 dark:border-slate-700 border-l-4 ${type === 'long' ? 'border-l-green-500' : 'border-l-red-500'} transition-all hover:border-gray-300 dark:hover:border-slate-600`}>
-            
 //             <div className="w-full md:w-24 shrink-0 pt-2">
 //                 <span className={`text-[11px] font-bold ${type === 'long' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'} uppercase tracking-wide`}>
 //                     {labelText}
@@ -125,7 +127,6 @@
 //             </div>
 
 //             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
-                
 //                 {/* Indicator 1 */}
 //                 <div className="flex flex-col gap-1">
 //                     <div onClick={() => openModal(section, type, index, 'ind1', cond.ind1)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer hover:border-blue-500 transition-colors flex items-center justify-between min-h-[34px]">
@@ -160,9 +161,48 @@
 //     );
 //   };
 
+//   // ==========================================
+//   // 2. THE BRAIN (Ekdam sahi jagah par)
+//   // ==========================================
+//   useEffect(() => {
+//     if (typeof setEntrySettings === 'function') {
+//         setEntrySettings(prev => {
+//             const newEntryConditions = [
+//                 {
+//                     longRules: longConditions,
+//                     shortRules: shortConditions,
+//                     logicalOps: entryLogicalOps
+//                 }
+//             ];
+            
+//             const newExitConditions = showExitConditions ? [
+//                 {
+//                     longRules: longExitConditions,
+//                     shortRules: shortExitConditions,
+//                     logicalOps: exitLogicalOps
+//                 }
+//             ] : [];
+
+//             if (JSON.stringify(prev?.entryConditions) === JSON.stringify(newEntryConditions) &&
+//                 JSON.stringify(prev?.exitConditions) === JSON.stringify(newExitConditions)) {
+//                 return prev; 
+//             }
+
+//             return {
+//                 ...prev,
+//                 entryConditions: newEntryConditions,
+//                 exitConditions: newExitConditions
+//             };
+//         });
+//     }
+//   }, [longConditions, shortConditions, entryLogicalOps, showExitConditions, longExitConditions, shortExitConditions, exitLogicalOps, setEntrySettings]);
+
+
+//   // ==========================================
+//   // 3. MAIN COMPONENT RETURN
+//   // ==========================================
 //   return (
 //     <>
-//         {/* ✅ Main Container: Light (White) | Dark (Slate-800) */}
 //         <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-200 dark:border-slate-700 mt-4 animate-in fade-in slide-in-from-bottom-4 shadow-sm dark:shadow-none transition-colors duration-300">
             
 //             {/* Header */}
@@ -279,6 +319,10 @@
 // export default EntryConditionSection;
 
 
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { Info, Plus, Trash2 } from 'lucide-react';
 import IndicatorModal from './IndicatorModal';
@@ -291,16 +335,28 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeField, setActiveField] = useState(null); 
 
-  // ENTRY DATA STATES
-  const [longConditions, setLongConditions] = useState([{ id: Date.now(), ind1: null, op: 'Crosses Above', ind2: null }]);
-  const [shortConditions, setShortConditions] = useState([{ id: Date.now(), ind1: null, op: 'Crosses Below', ind2: null }]);
-  const [entryLogicalOps, setEntryLogicalOps] = useState([]); 
+  // 🔥 THE FIX: Parent (Database) se aaye hue data ko extract karna
+  const existingEntry = entrySettings?.entryConditions?.[0] || null;
+  const existingExit = entrySettings?.exitConditions?.[0] || null;
 
-  // EXIT DATA STATES
-  const [showExitConditions, setShowExitConditions] = useState(false);
-  const [longExitConditions, setLongExitConditions] = useState([{ id: Date.now() + 1, ind1: null, op: 'Crosses Below', ind2: null }]);
-  const [shortExitConditions, setShortExitConditions] = useState([{ id: Date.now() + 1, ind1: null, op: 'Crosses Above', ind2: null }]);
-  const [exitLogicalOps, setExitLogicalOps] = useState([]);
+  // ENTRY DATA STATES (Ab ye database se data uthayega, blank nahi karega)
+  const [longConditions, setLongConditions] = useState(
+      existingEntry?.longRules?.length > 0 ? existingEntry.longRules : [{ id: Date.now(), ind1: null, op: 'Crosses Above', ind2: null }]
+  );
+  const [shortConditions, setShortConditions] = useState(
+      existingEntry?.shortRules?.length > 0 ? existingEntry.shortRules : [{ id: Date.now(), ind1: null, op: 'Crosses Below', ind2: null }]
+  );
+  const [entryLogicalOps, setEntryLogicalOps] = useState(existingEntry?.logicalOps || []); 
+
+  // EXIT DATA STATES (Ab ye database se data uthayega)
+  const [showExitConditions, setShowExitConditions] = useState(!!existingExit);
+  const [longExitConditions, setLongExitConditions] = useState(
+      existingExit?.longRules?.length > 0 ? existingExit.longRules : [{ id: Date.now() + 1, ind1: null, op: 'Crosses Below', ind2: null }]
+  );
+  const [shortExitConditions, setShortExitConditions] = useState(
+      existingExit?.shortRules?.length > 0 ? existingExit.shortRules : [{ id: Date.now() + 1, ind1: null, op: 'Crosses Above', ind2: null }]
+  );
+  const [exitLogicalOps, setExitLogicalOps] = useState(existingExit?.logicalOps || []);
 
   // --- Handlers: ENTRY ---
   const addEntryPair = () => {
