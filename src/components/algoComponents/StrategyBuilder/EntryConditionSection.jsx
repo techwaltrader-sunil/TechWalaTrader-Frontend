@@ -327,7 +327,7 @@ import React, { useState, useEffect } from 'react';
 import { Info, Plus, Trash2 } from 'lucide-react';
 import IndicatorModal from './IndicatorModal';
 
-const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
+const EntryConditionSection = ({ entrySettings = {}, setEntrySettings, transactionType = "Both Side" }) => {
 
   const isSpecialChart = entrySettings?.useCombinedChart || entrySettings?.useOptionsChart;
 
@@ -571,8 +571,13 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
                             </div>
                         )}
                         <div className="space-y-3 relative group/pair">
-                            {renderRow(longConditions[index], index, 'long', 'entry', longConditions, setLongConditions)}
-                            {!isSpecialChart && renderRow(shortConditions[index], index, 'short', 'entry', shortConditions, setShortConditions)}
+                            {/* 🔥 'Only Short' nahi hai, tabhi Long Entry dikhao */}
+                            {transactionType !== 'Only Short' && 
+                                renderRow(longConditions[index], index, 'long', 'entry', longConditions, setLongConditions)}
+                            
+                            {/* 🔥 'Only Long' nahi hai, tabhi Short Entry dikhao */}
+                            {!isSpecialChart && transactionType !== 'Only Long' && 
+                                renderRow(shortConditions[index], index, 'short', 'entry', shortConditions, setShortConditions)}
                             
                             {longConditions.length > 1 && (
                                 <div className="flex justify-end mt-1">
@@ -621,8 +626,13 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings }) => {
                                 </div>
                             )}
                             <div className="space-y-3 relative group/pair">
-                                {renderRow(longExitConditions[index], index, 'long', 'exit', longExitConditions, setLongExitConditions)}
-                                {!isSpecialChart && renderRow(shortExitConditions[index], index, 'short', 'exit', shortExitConditions, setShortExitConditions)}
+                                {/* 🔥 'Only Short' nahi hai, tabhi Long Exit dikhao */}
+                                {transactionType !== 'Only Short' && 
+                                    renderRow(longExitConditions[index], index, 'long', 'exit', longExitConditions, setLongExitConditions)}
+                                
+                                {/* 🔥 'Only Long' nahi hai, tabhi Short Exit dikhao */}
+                                {!isSpecialChart && transactionType !== 'Only Long' && 
+                                    renderRow(shortExitConditions[index], index, 'short', 'exit', shortExitConditions, setShortExitConditions)}
                                 
                                 {longExitConditions.length > 1 && (
                                     <div className="flex justify-end mt-1">

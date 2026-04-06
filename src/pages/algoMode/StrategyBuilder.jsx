@@ -212,7 +212,14 @@ const StrategyBuilder = () => {
             </div>
         </div>
 
-        {selectedStrategyType === "Indicator Based" && (<EntryConditionSection entrySettings={entrySettings} setEntrySettings={setEntrySettings} />)}
+        
+        {selectedStrategyType === "Indicator Based" && (
+            <EntryConditionSection 
+                entrySettings={entrySettings} 
+                setEntrySettings={setEntrySettings} 
+                transactionType={config.transactionType} 
+            />
+        )}
 
         {/* ✅ PASSING PROPS TO RISK MANAGEMENT */}
         {selectedStrategyType === "Indicator Based" ? (
