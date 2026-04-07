@@ -207,7 +207,20 @@ const StrategyBuilder = () => {
                       <OrderConfigSection config={config} setConfig={setConfig} strategyType={selectedStrategyType} isComingSoon={false} entrySettings={entrySettings} />
                    </div>
                 ) : (
-                    <StrategyLegsSection legs={legs} addLeg={addLeg} updateLeg={updateLeg} removeLeg={removeLeg} isComingSoon={selectedStrategyType === 'Price Action Based'} strategyType={selectedStrategyType} instruments={instruments} advanceSettings={advanceSettings} entrySettings={entrySettings} />
+                    // <StrategyLegsSection legs={legs} addLeg={addLeg} updateLeg={updateLeg} removeLeg={removeLeg} isComingSoon={selectedStrategyType === 'Price Action Based'} strategyType={selectedStrategyType} instruments={instruments} advanceSettings={advanceSettings} entrySettings={entrySettings} />
+                    <StrategyLegsSection 
+                        config={config} // 🔥 बस ये ऐड करना था!
+                        legs={legs} 
+                        addLeg={addLeg} 
+                        updateLeg={updateLeg} 
+                        removeLeg={removeLeg} 
+                        isComingSoon={selectedStrategyType === 'Price Action Based'} 
+                        strategyType={selectedStrategyType} 
+                        instruments={instruments} 
+                        advanceSettings={advanceSettings} 
+                        entrySettings={entrySettings} 
+                    />
+                
                 )}
             </div>
         </div>
