@@ -1443,17 +1443,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                             <option value="High Break">High Break</option>
                         </select>
                     </div>
-                    <div>
-                        <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold block mb-1.5">Short When</label>
-                        <select 
-                            className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-white outline-none"
-                            value={scConfig.shortWhen || 'Low Break'}
-                            onChange={(e) => handleSignalChange('shortWhen', e.target.value)}
-                        >
-                            <option value="Low Break">Low Break</option>
-                            <option value="Close < Low">Close &lt; Low</option>
-                        </select>
-                    </div>
+
                     <div className="col-span-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input 
