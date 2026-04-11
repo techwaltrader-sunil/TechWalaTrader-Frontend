@@ -952,16 +952,30 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   const prevLegsLength = useRef(legs.length);
 
 
-  // 🔥 THE FIX: Signal Candle Data Handler
+  // 🔥 THE FIX: Signal Candle Data Handler (Updated for Auto-Tick)
   const handleSignalChange = (field, value) => {
       if (setEntrySettings) {
-          setEntrySettings(prev => ({
-              ...prev,
-              signalCandle: {
-                  ...(prev.signalCandle || { enabled: false, tradeOnTrigger: false, buyWhen: 'High Break', shortWhen: 'Low Break', continuousCandle: false }),
-                  [field]: value
+          setEntrySettings(prev => {
+              // Pehle purana state nikal lo
+              const currentConfig = prev.signalCandle || { enabled: false, tradeOnTrigger: false, buyWhen: 'High Break', shortWhen: 'Low Break', continuousCandle: false };
+              
+              // Jo naya update aaya hai use ek object me daalo
+              const updates = { [field]: value };
+
+              // 🔥 LOGIC: Agar user ne 'enabled' (main checkbox) par tick kiya hai, 
+              // toh 'tradeOnTrigger' ko bhi automatically true kar do!
+              if (field === 'enabled' && value === true) {
+                  updates.tradeOnTrigger = true;
               }
-          }));
+
+              return {
+                  ...prev,
+                  signalCandle: {
+                      ...currentConfig,
+                      ...updates
+                  }
+              };
+          });
       }
   };
 
