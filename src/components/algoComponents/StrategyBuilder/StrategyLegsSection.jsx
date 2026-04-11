@@ -443,19 +443,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Minus, Copy, AlertCircle, TrendingUp, XCircle, Shield, Clock, Scale, Repeat, ChevronsUp, CandlestickChart, Edit } from 'lucide-react';
 import ComingSoonOverlay from './ComingSoonOverlay';
 
+
 // Import Data
 import { EXPIRY_TYPES, STRIKE_CRITERIA, ATM_POINT_STEPS, ATM_PERCENT_STEPS } from '../../../data/instrumentData';
 
-// 🔥 THE FIX 1: Default Expiry nikalne ka smart logic
-const getDefaultExpiry = (instrumentName) => {
-    if (!instrumentName) return "WEEKLY";
-    const name = instrumentName.toUpperCase();
-    // Agar NIFTY hai toh Weekly, baki sab (BankNifty, Finnifty, Sensex, etc.) ke liye Monthly
-    if (name.includes("NIFTY 50") || name === "NIFTY") {
-        return "WEEKLY";
-    }
-    return "MONTHLY";
-};
+import { getDefaultExpiry, getAllowedExpiries } from '../../../data/InstrumentsExpiryList';
+
+// // 🔥 THE FIX 1: Default Expiry nikalne ka smart logic
+// const getDefaultExpiry = (instrumentName) => {
+//     if (!instrumentName) return "WEEKLY";
+//     const name = instrumentName.toUpperCase();
+//     // Agar NIFTY hai toh Weekly, baki sab (BankNifty, Finnifty, Sensex, etc.) ke liye Monthly
+//     if (name.includes("NIFTY 50") || name === "NIFTY") {
+//         return "WEEKLY";
+//     }
+//     return "MONTHLY";
+// };
 
 const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, entrySettings }) => {
   
@@ -465,6 +468,9 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   
   // 🔥 THE FIX 2: Current instrument ke hisab se expected expiry
   const defaultExpiry = getDefaultExpiry(selectedInstrumentName);
+
+  // 🔥 THE NEW UX FIX: Dropdown ki list yahan se aayegi
+  const allowedExpiriesList = getAllowedExpiries(selectedInstrumentName);
 
   const [expandedLegId, setExpandedLegId] = useState(legs.length > 0 ? legs[0].id : null);
   const prevLegsLength = useRef(legs.length);
@@ -749,7 +755,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
 
                                 <div className="grid grid-cols-3 gap-4">
                                     {/* 🔥 THE FIX 5: Fallback as defaultExpiry */}
-                                    <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Expiry</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.expiry || defaultExpiry} onChange={(e) => updateLeg(leg.id, 'expiry', e.target.value)}>{EXPIRY_TYPES.map(exp => <option key={exp} value={exp}>{exp}</option>)}</select></div>
+                                    <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Expiry</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.expiry || defaultExpiry} onChange={(e) => updateLeg(leg.id, 'expiry', e.target.value)}>{allowedExpiriesList.map(exp => <option key={exp} value={exp}>{exp}</option>)}</select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Strike Criteria</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.strikeCriteria || "ATM pt"} onChange={(e) => { const newCriteria = e.target.value; let newInitialValue = "ATM"; if (newCriteria === 'Delta') newInitialValue = 0.5; if (newCriteria === 'CP') newInitialValue = ""; if (newCriteria.includes('CP')) newInitialValue = 0; updateLeg(leg.id, 'strikeCriteria', newCriteria); updateLeg(leg.id, 'strikeType', newInitialValue); }}>{STRIKE_CRITERIA.map(cri => <option key={cri}>{cri}</option>)}</select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Strike Type</label>{renderStrikeTypeInput(leg)}</div>
                                 </div>
