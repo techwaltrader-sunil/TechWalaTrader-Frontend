@@ -449,17 +449,6 @@ import { EXPIRY_TYPES, STRIKE_CRITERIA, ATM_POINT_STEPS, ATM_PERCENT_STEPS } fro
 
 import { getDefaultExpiry, getAllowedExpiries } from '../../../data/InstrumentsExpiryList';
 
-// // 🔥 THE FIX 1: Default Expiry nikalne ka smart logic
-// const getDefaultExpiry = (instrumentName) => {
-//     if (!instrumentName) return "WEEKLY";
-//     const name = instrumentName.toUpperCase();
-//     // Agar NIFTY hai toh Weekly, baki sab (BankNifty, Finnifty, Sensex, etc.) ke liye Monthly
-//     if (name.includes("NIFTY 50") || name === "NIFTY") {
-//         return "WEEKLY";
-//     }
-//     return "MONTHLY";
-// };
-
 const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, entrySettings }) => {
   
   const hasInstrument = instruments && instruments.length > 0;
@@ -753,6 +742,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     )}
                                 </div>
 
+
                                 <div className="grid grid-cols-3 gap-4">
                                     {/* 🔥 THE FIX 5: Fallback as defaultExpiry */}
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Expiry</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.expiry || defaultExpiry} onChange={(e) => updateLeg(leg.id, 'expiry', e.target.value)}>{allowedExpiriesList.map(exp => <option key={exp} value={exp}>{exp}</option>)}</select></div>
@@ -760,17 +750,41 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Strike Type</label>{renderStrikeTypeInput(leg)}</div>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4">
+                                 <div className="grid grid-cols-3 gap-4">
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.slType || 'SL%'} onChange={(e) => updateLeg(leg.id, 'slType', e.target.value)}><option value="SL%">SL%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL</label><input type="number" value={leg.slValue} onChange={(e) => updateLeg(leg.id, 'slValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
-                                    <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">On Price</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors"><option>On Price</option><option>On Trigger</option></select></div>
+                                    
+                                    {/* 🔥 THE FIX: SL On Price - value aur onChange add kiya */}
+                                    <div>
+                                        <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">On Price</label>
+                                        <select 
+                                            className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors"
+                                            value={leg.slExecuteType || 'On Price'} 
+                                            onChange={(e) => updateLeg(leg.id, 'slExecuteType', e.target.value)}
+                                        >
+                                            <option value="On Price">On Price</option>
+                                            <option value="On Close">On Close</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-4">
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.tpType || 'TP%'} onChange={(e) => updateLeg(leg.id, 'tpType', e.target.value)}><option value="TP%">TP%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP</label><input type="number" value={leg.tpValue} onChange={(e) => updateLeg(leg.id, 'tpValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
-                                    <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">On Price</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors"><option>On Price</option><option>On Trigger</option></select></div>
-                                </div>
+                                    
+                                    {/* 🔥 THE FIX: TP On Price - value aur onChange add kiya */}
+                                    <div>
+                                        <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">On Price</label>
+                                        <select 
+                                            className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors"
+                                            value={leg.tpExecuteType || 'On Price'} 
+                                            onChange={(e) => updateLeg(leg.id, 'tpExecuteType', e.target.value)}
+                                        >
+                                            <option value="On Price">On Price</option>
+                                            <option value="On Close">On Close</option>
+                                        </select>
+                                    </div>
+                                </div>   
 
                                 {hasInlineAdvanceFeatures && (
                                     <div className="mt-6 mb-2">
