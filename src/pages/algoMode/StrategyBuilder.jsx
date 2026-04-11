@@ -242,6 +242,7 @@ const StrategyBuilder = () => {
                         riskSettings={riskSettings} 
                         setRiskSettings={setRiskSettings} 
                         isComingSoon={false} 
+                        strategyType={selectedStrategyType}
                     />
                 </div>
             </div>
