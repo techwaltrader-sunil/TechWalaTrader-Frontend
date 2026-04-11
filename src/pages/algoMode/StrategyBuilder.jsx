@@ -219,6 +219,7 @@ const StrategyBuilder = () => {
                         instruments={instruments} 
                         advanceSettings={advanceSettings} 
                         entrySettings={entrySettings} 
+                        setEntrySettings={setEntrySettings} // 🔥 THE FIX: Ye Nayi line add karni hai
                     />
                 
                 )}
