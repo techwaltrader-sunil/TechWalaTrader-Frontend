@@ -1421,6 +1421,17 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
             
             {isScEnabled && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pl-6 border-l-2 border-blue-500/20">
+                    <div className="col-span-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="w-3 h-3 accent-blue-500" 
+                                checked={scConfig.tradeOnTrigger || false}
+                                onChange={(e) => handleSignalChange('tradeOnTrigger', e.target.checked)}
+                            />
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">Trade on Trigger Candle</span>
+                        </label>
+                    </div>
                     <div>
                         <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold block mb-1.5">Buy When</label>
                         <select 
@@ -1443,7 +1454,6 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                             <option value="High Break">High Break</option>
                         </select>
                     </div>
-
                     <div className="col-span-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input 
