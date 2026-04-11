@@ -515,13 +515,14 @@ const Strategies = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // ✅ HELPER: Format Strike Display (Clean Logic)
+ // ✅ HELPER: Format Strike Display (Clean Logic) - 🔥 FIXED FOR NUMBERS
   const formatStrikeDisplay = (leg) => {
       if (leg.strikeType && leg.strikeType !== "ATM") {
-          return leg.strikeType.replace(/\s?pts?/i, "").trim(); 
+          // String() me wrap kar diya taaki Delta(0.3) ya CP(150) pe crash na ho
+          return String(leg.strikeType).replace(/\s?pts?/i, "").trim(); 
       }
       if (leg.strikeCriteria) {
-          return leg.strikeCriteria.replace(/\s?pts?/i, "").trim();
+          return String(leg.strikeCriteria).replace(/\s?pts?/i, "").trim();
       }
       return "ATM";
   };
