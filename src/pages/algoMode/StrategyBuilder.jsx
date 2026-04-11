@@ -236,22 +236,21 @@ const StrategyBuilder = () => {
 
         {/* ✅ PASSING PROPS TO RISK MANAGEMENT */}
         {selectedStrategyType === "Indicator Based" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="h-full">
-                    <RiskManagementSection 
-                        riskSettings={riskSettings} 
-                        setRiskSettings={setRiskSettings} 
-                        isComingSoon={false} 
-                        strategyType={selectedStrategyType}
-                    />
-                </div>
-            </div>
+            // 🔥 THE FIX: Faltu grid aur divs hata diye. Ab seedha component render hoga
+            // jo khud ke andar md:col-span-2 lagakar full width le lega!
+            <RiskManagementSection 
+                riskSettings={riskSettings} 
+                setRiskSettings={setRiskSettings} 
+                isComingSoon={false} 
+                strategyType={selectedStrategyType}
+            />
         ) : (
             <div className={`grid grid-cols-1 ${selectedStrategyType === "Time Based" ? 'lg:grid-cols-2 gap-6' : 'lg:grid-cols-1 gap-6'}`}>
                 <RiskManagementSection 
                     riskSettings={riskSettings} 
                     setRiskSettings={setRiskSettings} 
                     isComingSoon={false} 
+                    strategyType={selectedStrategyType}
                 />
                 {selectedStrategyType === "Time Based" && (<AdvanceFeaturesSection advanceSettings={advanceSettings} setAdvanceSettings={setAdvanceSettings} legs={legs} addLeg={addLeg} removeLeg={removeLeg}/>)}
             </div>

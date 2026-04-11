@@ -295,7 +295,7 @@ const RiskManagementSection = ({ riskSettings, setRiskSettings, isComingSoon, st
 
   // 🔥 THE FIX: Agar Indicator Based hai, toh parent grid me 2 column (Full width) ki jagah lega
   const containerClass = `w-full bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-200 dark:border-slate-700 relative shadow-sm dark:shadow-none transition-colors duration-300 ${
-    strategyType === 'Indicator Based' ? 'md:col-span-2' : ''
+    strategyType === 'Indicator Based' ? 'md:col-span-2' : ''  
   }`;
 
   return (
