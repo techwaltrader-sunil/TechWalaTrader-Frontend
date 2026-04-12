@@ -1491,16 +1491,12 @@
 // export default StrategyLegsSection;
 
 
-
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Minus, Copy, AlertCircle, TrendingUp, XCircle, Shield, Clock, Scale, Repeat, ChevronsUp, CandlestickChart, Edit, Info } from 'lucide-react';
 import ComingSoonOverlay from './ComingSoonOverlay';
 
-
 // Import Data
 import { EXPIRY_TYPES, STRIKE_CRITERIA, ATM_POINT_STEPS, ATM_PERCENT_STEPS } from '../../../data/instrumentData';
-
 import { getDefaultExpiry, getAllowedExpiries } from '../../../data/InstrumentsExpiryList';
 
 const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, entrySettings, setEntrySettings }) => {
@@ -1508,10 +1504,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   const selectedInstrumentName = hasInstrument ? instruments[0].name : "NIFTY 50"; 
   const baseLotSize = hasInstrument ? (instruments[0].lot || 1) : 1;
   
-  // 🔥 THE FIX 2: Current instrument ke hisab se expected expiry
   const defaultExpiry = getDefaultExpiry(selectedInstrumentName);
-
-  // 🔥 THE NEW UX FIX: Dropdown ki list yahan se aayegi
   const allowedExpiriesList = getAllowedExpiries(selectedInstrumentName);
 
   const [expandedLegId, setExpandedLegId] = useState(legs.length > 0 ? legs[0].id : null);
@@ -1520,39 +1513,24 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   // 🔥 SMART TOOLTIP LANGUAGE STATE
   const [tooltipLang, setTooltipLang] = useState('hi');
 
-
-  // 🔥 THE FIX: Signal Candle Data Handler (Updated for Auto-Tick)
   const handleSignalChange = (field, value) => {
       if (setEntrySettings) {
           setEntrySettings(prev => {
-              // Pehle purana state nikal lo
               const currentConfig = prev.signalCandle || { enabled: false, tradeOnTrigger: false, buyWhen: 'High Break', shortWhen: 'Low Break', continuousCandle: false };
-              
-              // Jo naya update aaya hai use ek object me daalo
               const updates = { [field]: value };
 
-              // 🔥 LOGIC: Agar user ne 'enabled' (main checkbox) par tick kiya hai, 
-              // toh 'tradeOnTrigger' ko bhi automatically true kar do!
               if (field === 'enabled' && value === true) {
                   updates.tradeOnTrigger = true;
               }
 
-              return {
-                  ...prev,
-                  signalCandle: {
-                      ...currentConfig,
-                      ...updates
-                  }
-              };
+              return { ...prev, signalCandle: { ...currentConfig, ...updates } };
           });
       }
   };
 
   const scConfig = entrySettings?.signalCandle || {};
   const isScEnabled = scConfig.enabled || false;
-  
 
-  // Auto Expand Logic
   useEffect(() => {
     if (legs.length > prevLegsLength.current) {
         if (!entrySettings?.useCombinedChart) {
@@ -1567,7 +1545,6 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
     prevLegsLength.current = legs.length;
   }, [legs, entrySettings]);
 
-  // Sync Lot Size
   useEffect(() => {
     if (hasInstrument && legs.length > 0) {
       legs.forEach(leg => {
@@ -1578,11 +1555,9 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
     }
   }, [baseLotSize]);
 
-  // 🔥 THE FIX 3: Sync Expiry dynamically when Instrument changes
   useEffect(() => {
     if (hasInstrument && legs.length > 0) {
         legs.forEach(leg => {
-            // Agar pehle se jo expiry hai wo naye instrument ke default se match nahi karti, toh update kar do
             if (leg.expiry !== defaultExpiry) {
                 updateLeg(leg.id, 'expiry', defaultExpiry);
             }
@@ -1615,7 +1590,6 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
         typeLabel = leg.optionType === 'Call' ? 'CE' : 'PE';
     }
     const actionText = `${leg.action} ${typeLabel}`;
-    // 🔥 THE FIX 4: Summary me bhi defaultExpiry use karein
     const expiryText = leg.expiry || defaultExpiry;
     
     let strikeText = "";
@@ -1656,7 +1630,6 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
     const criteria = leg.strikeCriteria || "ATM pt";
     const generateStrikePoints = () => { const step = ATM_POINT_STEPS[selectedInstrumentName] || 50; const maxRange = 2000; let options = []; for (let i = maxRange; i >= step; i -= step) options.push(`ITM ${i}`); options.push("ATM"); for (let i = step; i <= maxRange; i += step) options.push(`OTM ${i}`); return options; };
     const generateStrikePercents = () => { const step = ATM_PERCENT_STEPS[selectedInstrumentName] || 1.0; const maxRange = 20.0; let options = []; for (let i = maxRange; i >= step; i -= step) options.push(`ITM ${i.toFixed(1)}%`); options.push("ATM"); for (let i = step; i <= maxRange; i += step) options.push(`OTM ${i.toFixed(1)}%`); return options; };
-
     const inputClass = "w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none custom-scrollbar focus:border-blue-500 transition-colors";
 
     if (criteria === "ATM pt" || criteria === "ATM %") { const options = criteria === "ATM pt" ? generateStrikePoints() : generateStrikePercents(); return (<select className={inputClass} value={leg.strikeType || "ATM"} onChange={(e) => updateLeg(leg.id, 'strikeType', e.target.value)}>{options.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>); }
@@ -1711,7 +1684,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
           }
 
           return (
-            <div key={leg.id} className={`rounded-lg relative group transition-all border shadow-sm 
+            <div key={leg.id} className={`rounded-lg relative transition-all border shadow-sm 
                 ${isExpanded 
                     ? 'bg-gray-50 dark:bg-slate-900 border-gray-300 dark:border-slate-700' 
                     : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'
@@ -1755,7 +1728,6 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                 
                                 {strategyType === 'Indicator Based' && (
                                     <div className={`grid ${gridColsClass} gap-4`}>
-                                            
                                             {/* Long Condition */}
                                             {showLongCondition && (
                                                 <div>
@@ -1829,9 +1801,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     )}
                                 </div>
                                 
-
                                 <div className="grid grid-cols-3 gap-4">
-                                    {/* 🔥 THE FIX 5: Fallback as defaultExpiry */}
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Expiry</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.expiry || defaultExpiry} onChange={(e) => updateLeg(leg.id, 'expiry', e.target.value)}>{allowedExpiriesList.map(exp => <option key={exp} value={exp}>{exp}</option>)}</select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Strike Criteria</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.strikeCriteria || "ATM pt"} onChange={(e) => { const newCriteria = e.target.value; let newInitialValue = "ATM"; if (newCriteria === 'Delta') newInitialValue = 0.5; if (newCriteria === 'CP') newInitialValue = ""; if (newCriteria.includes('CP')) newInitialValue = 0; updateLeg(leg.id, 'strikeCriteria', newCriteria); updateLeg(leg.id, 'strikeType', newInitialValue); }}>{STRIKE_CRITERIA.map(cri => <option key={cri}>{cri}</option>)}</select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Strike Type</label>{renderStrikeTypeInput(leg)}</div>
@@ -1841,19 +1811,19 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.slType || 'SL%'} onChange={(e) => updateLeg(leg.id, 'slType', e.target.value)}><option value="SL%">SL%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL</label><input type="number" value={leg.slValue} onChange={(e) => updateLeg(leg.id, 'slValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-                                    {/* 🔥 THE FIX: SL Execution Type (Strict Hover Area + Light/Dark Mode) */}
+                                    {/* 🔥 THE FIX: SL Execution Type with STRICT Hover Scope */}
                                     <div>
-                                        <div className="flex items-center mb-1.5">
-                                            <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block">Execution</label>
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                            <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Execution</label>
                                             
-                                            {/* Isolate the Group to ONLY the Icon */}
-                                            <div className="relative group inline-flex items-center justify-center ml-1.5">
+                                            {/* Isolated Group for Tooltip */}
+                                            <div className="relative group flex items-center">
                                                 <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
                                                 
-                                                {/* Smart Tooltip Box (Light & Dark Mode Supported) */}
+                                                {/* Smart Tooltip Box */}
                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
                                                     <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
-                                                        <span className="font-bold text-gray-500 dark:text-gray-400">Info / जानकारी</span>
+                                                        <span className="font-bold text-gray-500 dark:text-gray-400">SL Info / जानकारी</span>
                                                         <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
                                                             <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
                                                             <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
@@ -1878,7 +1848,6 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                                             </div>
                                                         </>
                                                     )}
-                                                    {/* Arrow Pointer matching background */}
                                                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-slate-700 rotate-45"></div>
                                                 </div>
                                             </div>
@@ -1898,19 +1867,19 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.tpType || 'TP%'} onChange={(e) => updateLeg(leg.id, 'tpType', e.target.value)}><option value="TP%">TP%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP</label><input type="number" value={leg.tpValue} onChange={(e) => updateLeg(leg.id, 'tpValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-                                    {/* 🔥 THE FIX: TP Execution Type (Strict Hover Area + Light/Dark Mode) */}
+                                    {/* 🔥 THE FIX: TP Execution Type with STRICT Hover Scope */}
                                     <div>
-                                        <div className="flex items-center mb-1.5">
-                                            <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block">Execution</label>
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                            <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Execution</label>
                                             
-                                            {/* Isolate the Group to ONLY the Icon */}
-                                            <div className="relative group inline-flex items-center justify-center ml-1.5">
+                                            {/* Isolated Group for Tooltip */}
+                                            <div className="relative group flex items-center">
                                                 <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
                                                 
-                                                {/* Smart Tooltip Box (Light & Dark Mode Supported) */}
+                                                {/* Smart Tooltip Box */}
                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
                                                     <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
-                                                        <span className="font-bold text-gray-500 dark:text-gray-400">Info / जानकारी</span>
+                                                        <span className="font-bold text-gray-500 dark:text-gray-400">TP Info / जानकारी</span>
                                                         <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
                                                             <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
                                                             <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
@@ -1922,7 +1891,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                                                 <strong className="text-blue-600 dark:text-blue-400">⚡ On Price:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">भाव (LTP) टारगेट टच करते ही तुरंत प्रॉफिट बुक हो जाएगा।</span>
                                                             </div>
                                                             <div>
-                                                                <strong className="text-green-600 dark:text-green-400">🧠 On Close:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">कैंडल टारगेट के ऊपर क्लोज होने का इंतज़ार करेगा। (बड़े ट्रेंड्स कैप्चर करने के लिए)</span>
+                                                                <strong className="text-green-600 dark:text-green-400">🧠 On Close:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">कैंडल के टारगेट के ऊपर क्लोज होने का इंतज़ार करेगा। (बड़े ट्रेंड्स कैप्चर करने के लिए)</span>
                                                             </div>
                                                         </>
                                                     ) : (
