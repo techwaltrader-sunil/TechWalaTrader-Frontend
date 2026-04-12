@@ -1841,41 +1841,46 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.slType || 'SL%'} onChange={(e) => updateLeg(leg.id, 'slType', e.target.value)}><option value="SL%">SL%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL</label><input type="number" value={leg.slValue} onChange={(e) => updateLeg(leg.id, 'slValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-                                    {/* 🔥 THE FIX: SL Execution Type with Smart Tooltip */}
+                                    {/* 🔥 THE FIX: SL Execution Type (Strict Hover Area + Light/Dark Mode) */}
                                     <div>
-                                        <div className="flex items-center gap-1.5 mb-1.5 relative group w-max">
+                                        <div className="flex items-center mb-1.5">
                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block">Execution</label>
-                                            <Info size={12} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
                                             
-                                            {/* Smart Tooltip Box */}
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[250px] bg-gray-900 dark:bg-slate-800 border border-gray-700 shadow-xl rounded-lg p-2.5 z-50 text-[10px] text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
-                                                <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-700">
-                                                    <span className="font-bold text-gray-400">Info / जानकारी</span>
-                                                    <div className="flex bg-gray-800 rounded p-0.5 border border-gray-600">
-                                                        <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>EN</button>
-                                                        <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>HI</button>
+                                            {/* Isolate the Group to ONLY the Icon */}
+                                            <div className="relative group inline-flex items-center justify-center ml-1.5">
+                                                <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
+                                                
+                                                {/* Smart Tooltip Box (Light & Dark Mode Supported) */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
+                                                        <span className="font-bold text-gray-500 dark:text-gray-400">Info / जानकारी</span>
+                                                        <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
+                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
+                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
+                                                        </div>
                                                     </div>
+                                                    {tooltipLang === 'hi' ? (
+                                                        <>
+                                                            <div className="mb-1.5 pb-1.5 border-b border-gray-100 dark:border-slate-700/50">
+                                                                <strong className="text-blue-600 dark:text-blue-400">⚡ On Price:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">स्कैल्पर्स (Scalpers) के लिए। भाव (LTP) टच होते ही तुरंत SL कट जाएगा।</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong className="text-green-600 dark:text-green-400">🧠 On Close:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">ट्रेंड फॉलोअर्स के लिए। कैंडल क्लोज होने का इंतज़ार करेगा ताकि फेक शैडो (Wicks) से SL हिट ना हो।</span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="mb-1.5 pb-1.5 border-b border-gray-100 dark:border-slate-700/50">
+                                                                <strong className="text-blue-600 dark:text-blue-400">⚡ On Price:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">For Scalpers. Exits instantly when LTP touches your SL.</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong className="text-green-600 dark:text-green-400">🧠 On Close:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">For Trend followers. Waits for candle close to prevent SL hunting by wicks.</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Arrow Pointer matching background */}
+                                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-slate-700 rotate-45"></div>
                                                 </div>
-                                                {tooltipLang === 'hi' ? (
-                                                    <>
-                                                        <div className="mb-1.5 pb-1.5 border-b border-gray-700/50">
-                                                            <strong className="text-blue-400">⚡ On Price:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">स्कैल्पर्स (Scalpers) के लिए। भाव (LTP) टच होते ही तुरंत SL कट जाएगा।</span>
-                                                        </div>
-                                                        <div>
-                                                            <strong className="text-green-400">🧠 On Close:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">ट्रेंड फॉलोअर्स के लिए। कैंडल क्लोज होने का इंतज़ार करेगा ताकि फेक शैडो (Wicks) से SL हिट ना हो।</span>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="mb-1.5 pb-1.5 border-b border-gray-700/50">
-                                                            <strong className="text-blue-400">⚡ On Price:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">For Scalpers. Exits instantly when LTP touches your SL.</span>
-                                                        </div>
-                                                        <div>
-                                                            <strong className="text-green-400">🧠 On Close:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">For Trend followers. Waits for candle close to prevent SL hunting by wicks.</span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-gray-900 dark:bg-slate-800 border-b border-r border-gray-700 rotate-45"></div>
                                             </div>
                                         </div>
                                         <select 
@@ -1893,41 +1898,45 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.tpType || 'TP%'} onChange={(e) => updateLeg(leg.id, 'tpType', e.target.value)}><option value="TP%">TP%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP</label><input type="number" value={leg.tpValue} onChange={(e) => updateLeg(leg.id, 'tpValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-                                    {/* 🔥 THE FIX: TP Execution Type with Smart Tooltip */}
+                                    {/* 🔥 THE FIX: TP Execution Type (Strict Hover Area + Light/Dark Mode) */}
                                     <div>
-                                        <div className="flex items-center gap-1.5 mb-1.5 relative group w-max">
+                                        <div className="flex items-center mb-1.5">
                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block">Execution</label>
-                                            <Info size={12} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
                                             
-                                            {/* Smart Tooltip Box */}
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[250px] bg-gray-900 dark:bg-slate-800 border border-gray-700 shadow-xl rounded-lg p-2.5 z-50 text-[10px] text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
-                                                <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-700">
-                                                    <span className="font-bold text-gray-400">Info / जानकारी</span>
-                                                    <div className="flex bg-gray-800 rounded p-0.5 border border-gray-600">
-                                                        <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>EN</button>
-                                                        <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>HI</button>
+                                            {/* Isolate the Group to ONLY the Icon */}
+                                            <div className="relative group inline-flex items-center justify-center ml-1.5">
+                                                <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
+                                                
+                                                {/* Smart Tooltip Box (Light & Dark Mode Supported) */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
+                                                        <span className="font-bold text-gray-500 dark:text-gray-400">Info / जानकारी</span>
+                                                        <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
+                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
+                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
+                                                        </div>
                                                     </div>
+                                                    {tooltipLang === 'hi' ? (
+                                                        <>
+                                                            <div className="mb-1.5 pb-1.5 border-b border-gray-100 dark:border-slate-700/50">
+                                                                <strong className="text-blue-600 dark:text-blue-400">⚡ On Price:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">भाव (LTP) टारगेट टच करते ही तुरंत प्रॉफिट बुक हो जाएगा।</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong className="text-green-600 dark:text-green-400">🧠 On Close:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">कैंडल टारगेट के ऊपर क्लोज होने का इंतज़ार करेगा। (बड़े ट्रेंड्स कैप्चर करने के लिए)</span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="mb-1.5 pb-1.5 border-b border-gray-100 dark:border-slate-700/50">
+                                                                <strong className="text-blue-600 dark:text-blue-400">⚡ On Price:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">Books profit instantly when LTP touches your target.</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong className="text-green-600 dark:text-green-400">🧠 On Close:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">Waits for candle to close above target. (Good for capturing bigger trends)</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-slate-700 rotate-45"></div>
                                                 </div>
-                                                {tooltipLang === 'hi' ? (
-                                                    <>
-                                                        <div className="mb-1.5 pb-1.5 border-b border-gray-700/50">
-                                                            <strong className="text-blue-400">⚡ On Price:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">भाव (LTP) टारगेट टच करते ही तुरंत प्रॉफिट बुक हो जाएगा।</span>
-                                                        </div>
-                                                        <div>
-                                                            <strong className="text-green-400">🧠 On Close:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">कैंडल के टारगेट के ऊपर क्लोज होने का इंतज़ार करेगा। (बड़े प्रॉफिट्स कैप्चर करने के लिए)</span>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="mb-1.5 pb-1.5 border-b border-gray-700/50">
-                                                            <strong className="text-blue-400">⚡ On Price:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">Books profit instantly when LTP touches your target.</span>
-                                                        </div>
-                                                        <div>
-                                                            <strong className="text-green-400">🧠 On Close:</strong> <span className="text-gray-300 block mt-0.5 leading-relaxed">Waits for candle to close above target. (Good for capturing bigger trends)</span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-gray-900 dark:bg-slate-800 border-b border-r border-gray-700 rotate-45"></div>
                                             </div>
                                         </div>
                                         <select 
