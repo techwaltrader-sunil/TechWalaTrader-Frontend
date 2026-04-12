@@ -2463,56 +2463,66 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     
                                     {/* 🔥 THE FIX: Strike Criteria Tooltip */}
                                     <div>
-                                        {/* 2. 🌟 DYNAMIC TOOLTIP JSX 🌟 */}
-                                        <div className="flex items-center gap-1.5 mb-1 relative group w-max">
-                                            <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                                        {/* 🌟 SMART DYNAMIC TOOLTIP (Desktop & Mobile Fixed) 🌟 */}
+                                        {/* FIX 3: tabIndex="0" लगाने से मोबाइल में इसे टच (Click) करते ही यह खुल जाएगा */}
+                                        <div className="flex items-center gap-1.5 mb-1 relative group w-max" tabIndex="0">
+                                            
+                                            {/* FIX 2: 'uppercase' हटाकर 'capitalize' कर दिया ताकि जगह कम ले (Strike Criteria) */}
+                                            <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold capitalize tracking-wider cursor-pointer">
                                                 Strike Criteria
                                             </label>
                                             
-                                            <Info size={14} className="text-blue-500 cursor-help" />
+                                            <Info size={14} className="text-blue-500 cursor-pointer" />
 
-                                            {/* Tooltip Box (Mobile Optimized & Theme Friendly) */}
-                                            <div className="absolute bottom-full right-[-20px] sm:left-1/2 sm:-translate-x-1/2 sm:right-auto mb-2 hidden group-hover:flex flex-col w-[250px] sm:w-[280px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-lg p-3 z-[60] text-[11px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 whitespace-normal break-words">
+                                            {/* FIX 1: The Invisible Bridge (pb-2) */}
+                                            {/* 'pb-2' (Padding Bottom) लगाने से आइकॉन और टूलटिप के बीच का गैप भर जाएगा और माउस ले जाते वक्त टूलटिप गायब नहीं होगा! */}
+                                            {/* 'focus-within:block' मोबाइल क्लिक/टैप के लिए है */}
+                                            <div className="absolute bottom-full right-[-15px] sm:left-1/2 sm:-translate-x-1/2 sm:right-auto pb-2 hidden group-hover:block focus-within:block z-[60] outline-none">
                                                 
-                                                {/* Header & Lang Toggle */}
-                                                <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                                                    <span className="font-bold text-gray-500 dark:text-gray-400">Strike Info / जानकारी</span>
-                                                    <div className="flex bg-gray-100 dark:bg-gray-800 rounded p-0.5 border border-gray-200 dark:border-gray-600">
-                                                        <button 
-                                                            onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }}
-                                                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
-                                                        >
-                                                            EN
-                                                        </button>
-                                                        <button 
-                                                            onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }}
-                                                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
-                                                        >
-                                                            HI
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* 🔥 THE MAGIC: Sirf Selected Option ka Data Dikhao 🔥 */}
-                                                {/* Yahan 'leg.strikeCriteria' wo variable hai jo dropdown ki current value hold karta hai */}
-                                                {(() => {
-                                                    const currentOption = leg.strikeCriteria || 'ATM pt'; // Dropdown ki current value
-                                                    const info = criteriaInfoData[currentOption] || criteriaInfoData['ATM pt']; // Dictionary se data nikalo
+                                                {/* Main Tooltip Box */}
+                                                <div className="flex flex-col w-[250px] sm:w-[280px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-lg p-3 text-[11px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 whitespace-normal break-words relative">
                                                     
-                                                    return (
-                                                        <div>
-                                                            <strong className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                                                                {info[tooltipLang].title}
-                                                            </strong> 
-                                                            <span className="text-gray-600 dark:text-gray-300 block mt-1 leading-relaxed">
-                                                                {info[tooltipLang].desc}
-                                                            </span>
+                                                    {/* Header & Lang Toggle */}
+                                                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                        <span className="font-bold text-gray-500 dark:text-gray-400">Strike Info / जानकारी</span>
+                                                        <div className="flex bg-gray-100 dark:bg-gray-800 rounded p-0.5 border border-gray-200 dark:border-gray-600">
+                                                            <button 
+                                                                type="button"
+                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTooltipLang('en'); }}
+                                                                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
+                                                            >
+                                                                EN
+                                                            </button>
+                                                            <button 
+                                                                type="button"
+                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTooltipLang('hi'); }}
+                                                                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
+                                                            >
+                                                                HI
+                                                            </button>
                                                         </div>
-                                                    );
-                                                })()}
-                                                
-                                                {/* Tooltip Arrow */}
-                                                <div className="absolute -bottom-1.5 right-5 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-3 h-3 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-gray-700 rotate-45"></div>
+                                                    </div>
+
+                                                    {/* Dynamic Content */}
+                                                    {(() => {
+                                                        const currentOption = leg.strikeCriteria || 'ATM pt';
+                                                        const info = criteriaInfoData[currentOption] || criteriaInfoData['ATM pt'];
+                                                        
+                                                        return (
+                                                            <div>
+                                                                <strong className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                                                    {info[tooltipLang].title}
+                                                                </strong> 
+                                                                <span className="text-gray-600 dark:text-gray-300 block mt-1 leading-relaxed">
+                                                                    {info[tooltipLang].desc}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                    
+                                                    {/* Tooltip Arrow */}
+                                                    <div className="absolute -bottom-1.5 right-[18px] sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-3 h-3 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-gray-700 rotate-45"></div>
+                                                </div>
                                             </div>
                                         </div>
 
