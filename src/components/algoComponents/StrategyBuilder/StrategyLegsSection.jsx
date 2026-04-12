@@ -1490,7 +1490,6 @@
 
 // export default StrategyLegsSection;
 
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Minus, Copy, AlertCircle, TrendingUp, XCircle, Shield, Clock, Scale, Repeat, ChevronsUp, CandlestickChart, Edit, Info } from 'lucide-react';
 import ComingSoonOverlay from './ComingSoonOverlay';
@@ -1510,8 +1509,16 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   const [expandedLegId, setExpandedLegId] = useState(legs.length > 0 ? legs[0].id : null);
   const prevLegsLength = useRef(legs.length);
   
-  // 🔥 SMART TOOLTIP LANGUAGE STATE
+  // 🔥 SMART TOOLTIP STATES (Language & Mobile Tap Logic)
   const [tooltipLang, setTooltipLang] = useState('hi');
+  const [activeTooltip, setActiveTooltip] = useState(null); // Mobile click ke liye state
+
+  // 🔥 CLICK OUTSIDE HANDLER (Mobile me screen par kahin click kare to tooltip band ho jaye)
+  useEffect(() => {
+      const handleClickOutside = () => setActiveTooltip(null);
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   const handleSignalChange = (field, value) => {
       if (setEntrySettings) {
@@ -1811,22 +1818,33 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.slType || 'SL%'} onChange={(e) => updateLeg(leg.id, 'slType', e.target.value)}><option value="SL%">SL%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL</label><input type="number" value={leg.slValue} onChange={(e) => updateLeg(leg.id, 'slValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-                                    {/* 🔥 THE FIX: SL Execution Type with STRICT Hover Scope */}
+                                    {/* 🔥 THE FIX: SL Execution Type (Hybrid: Desktop Hover + Mobile Click) */}
                                     <div>
                                         <div className="flex items-center gap-1.5 mb-1.5">
                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Execution</label>
                                             
-                                            {/* Isolated Group for Tooltip */}
-                                            <div className="relative group flex items-center">
-                                                <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
+                                            {/* Info Icon Area */}
+                                            <div className="relative group flex items-center" onClick={(e) => e.stopPropagation()}>
+                                                <button 
+                                                    className="focus:outline-none"
+                                                    onClick={(e) => { 
+                                                        e.preventDefault(); 
+                                                        setActiveTooltip(activeTooltip === `sl-${leg.id}` ? null : `sl-${leg.id}`); 
+                                                    }}
+                                                >
+                                                    <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors" />
+                                                </button>
                                                 
                                                 {/* Smart Tooltip Box */}
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
+                                                <div 
+                                                    className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 ${activeTooltip === `sl-${leg.id}` ? 'flex' : 'hidden md:group-hover:flex'}`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
                                                         <span className="font-bold text-gray-500 dark:text-gray-400">SL Info / जानकारी</span>
                                                         <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
-                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
-                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
+                                                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
+                                                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
                                                         </div>
                                                     </div>
                                                     {tooltipLang === 'hi' ? (
@@ -1867,22 +1885,33 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.tpType || 'TP%'} onChange={(e) => updateLeg(leg.id, 'tpType', e.target.value)}><option value="TP%">TP%</option><option value="Points">Points</option></select></div>
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP</label><input type="number" value={leg.tpValue} onChange={(e) => updateLeg(leg.id, 'tpValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-                                    {/* 🔥 THE FIX: TP Execution Type with STRICT Hover Scope */}
+                                    {/* 🔥 THE FIX: TP Execution Type (Hybrid: Desktop Hover + Mobile Click) */}
                                     <div>
                                         <div className="flex items-center gap-1.5 mb-1.5">
                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Execution</label>
                                             
-                                            {/* Isolated Group for Tooltip */}
-                                            <div className="relative group flex items-center">
-                                                <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-help transition-colors" />
+                                            {/* Info Icon Area */}
+                                            <div className="relative group flex items-center" onClick={(e) => e.stopPropagation()}>
+                                                <button 
+                                                    className="focus:outline-none"
+                                                    onClick={(e) => { 
+                                                        e.preventDefault(); 
+                                                        setActiveTooltip(activeTooltip === `tp-${leg.id}` ? null : `tp-${leg.id}`); 
+                                                    }}
+                                                >
+                                                    <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors" />
+                                                </button>
                                                 
                                                 {/* Smart Tooltip Box */}
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200">
+                                                <div 
+                                                    className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 ${activeTooltip === `tp-${leg.id}` ? 'flex' : 'hidden md:group-hover:flex'}`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
                                                         <span className="font-bold text-gray-500 dark:text-gray-400">TP Info / जानकारी</span>
                                                         <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
-                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
-                                                            <button onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
+                                                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTooltipLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
+                                                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTooltipLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
                                                         </div>
                                                     </div>
                                                     {tooltipLang === 'hi' ? (
