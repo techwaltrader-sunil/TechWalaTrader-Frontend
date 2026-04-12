@@ -2139,6 +2139,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Minus, Copy, AlertCircle, TrendingUp, XCircle, Shield, Clock, Scale, Repeat, ChevronsUp, CandlestickChart, Edit, Info } from 'lucide-react';
 import ComingSoonOverlay from './ComingSoonOverlay';
 
+import { criteriaInfoData } from '../../../data/criteriaInfoData';
+
 // Import Data
 import { EXPIRY_TYPES, STRIKE_CRITERIA, ATM_POINT_STEPS, ATM_PERCENT_STEPS } from '../../../data/instrumentData';
 import { getDefaultExpiry, getAllowedExpiries } from '../../../data/InstrumentsExpiryList';
@@ -2158,6 +2160,8 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   const [tooltipLang, setTooltipLang] = useState('hi');
   const [criteriaLang, setCriteriaLang] = useState('hi'); // Strike Criteria Lang State
   const [activeTooltip, setActiveTooltip] = useState(null); // Mobile click ke liye state
+
+  
 
   // 🔥 CLICK OUTSIDE HANDLER (Mobile me screen par kahin click kare to tooltip band ho jaye)
   useEffect(() => {
@@ -2459,48 +2463,59 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     
                                     {/* 🔥 THE FIX: Strike Criteria Tooltip */}
                                     <div>
-                                        <div className="flex items-center gap-1.5 mb-1.5">
-                                            <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Strike Criteria</label>
+                                        {/* 2. 🌟 DYNAMIC TOOLTIP JSX 🌟 */}
+                                        <div className="flex items-center gap-1.5 mb-1 relative group w-max">
+                                            <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                                                Strike Criteria
+                                            </label>
                                             
-                                            <div className="relative group flex items-center" onClick={(e) => e.stopPropagation()}>
-                                                <button 
-                                                    className="focus:outline-none"
-                                                    onClick={(e) => { 
-                                                        e.preventDefault(); 
-                                                        setActiveTooltip(activeTooltip === `sc-${leg.id}` ? null : `sc-${leg.id}`); 
-                                                    }}
-                                                >
-                                                    <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors" />
-                                                </button>
+                                            <Info size={14} className="text-blue-500 cursor-help" />
+
+                                            {/* Tooltip Box (Mobile Optimized & Theme Friendly) */}
+                                            <div className="absolute bottom-full right-[-20px] sm:left-1/2 sm:-translate-x-1/2 sm:right-auto mb-2 hidden group-hover:flex flex-col w-[250px] sm:w-[280px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-lg p-3 z-[60] text-[11px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 whitespace-normal break-words">
                                                 
-                                                <div 
-                                                    className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex-col w-[300px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 ${activeTooltip === `sc-${leg.id}` ? 'flex' : 'hidden md:group-hover:flex'}`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-gray-100 dark:border-slate-700">
-                                                        <span className="font-bold text-gray-500 dark:text-gray-400">Strike Info / जानकारी</span>
-                                                        <div className="flex bg-gray-100 dark:bg-slate-900 rounded p-0.5 border border-gray-200 dark:border-slate-700">
-                                                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCriteriaLang('en'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${criteriaLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>EN</button>
-                                                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCriteriaLang('hi'); }} className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${criteriaLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}>HI</button>
-                                                        </div>
+                                                {/* Header & Lang Toggle */}
+                                                <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                                    <span className="font-bold text-gray-500 dark:text-gray-400">Strike Info / जानकारी</span>
+                                                    <div className="flex bg-gray-100 dark:bg-gray-800 rounded p-0.5 border border-gray-200 dark:border-gray-600">
+                                                        <button 
+                                                            onClick={(e) => { e.preventDefault(); setTooltipLang('en'); }}
+                                                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${tooltipLang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
+                                                        >
+                                                            EN
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.preventDefault(); setTooltipLang('hi'); }}
+                                                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${tooltipLang === 'hi' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
+                                                        >
+                                                            HI
+                                                        </button>
                                                     </div>
-                                                    {criteriaLang === 'hi' ? (
-                                                        <div className="space-y-2">
-                                                            <div><strong className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">📍 ATM / ITM / OTM:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">लाइव मार्केट भाव (Spot Price) से दूरी के हिसाब से स्ट्राइक चुनें (जैसे ITM 100, OTM 200)।</span></div>
-                                                            <div className="border-t border-gray-100 dark:border-slate-700/50 pt-1.5"><strong className="text-purple-600 dark:text-purple-400 flex items-center gap-1">⚡ Delta (0 to 1):</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">ऑप्शन की स्पीड। <b>0.4 Delta</b> का मतलब है अगर BankNifty 1 Pt बढ़ेगा, तो प्रीमियम 0.40 Pt बढ़ेगा। (SMC ट्रेडर्स की पसंद)</span></div>
-                                                            <div className="border-t border-gray-100 dark:border-slate-700/50 pt-1.5"><strong className="text-green-600 dark:text-green-400 flex items-center gap-1">💰 Premium (CP):</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">Closest Premium. वो स्ट्राइक चुनें जिसका प्रीमियम आपके डाले गए भाव (जैसे ₹150) के सबसे करीब हो।</span></div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <div><strong className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">📍 ATM / ITM / OTM:</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">Select strike based on distance from Spot Price (e.g., ITM 100, OTM 200).</span></div>
-                                                            <div className="border-t border-gray-100 dark:border-slate-700/50 pt-1.5"><strong className="text-purple-600 dark:text-purple-400 flex items-center gap-1">⚡ Delta (0 to 1):</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">Option speed. <b>0.4 Delta</b> means 1 Pt move in Index = 0.40 Pt premium move. (Smart Money choice)</span></div>
-                                                            <div className="border-t border-gray-100 dark:border-slate-700/50 pt-1.5"><strong className="text-green-600 dark:text-green-400 flex items-center gap-1">💰 Premium (CP):</strong> <span className="text-gray-600 dark:text-gray-300 block mt-0.5 leading-relaxed">Closest Premium. Selects the strike with premium closest to your target (e.g., ₹150).</span></div>
-                                                        </div>
-                                                    )}
-                                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-slate-700 rotate-45"></div>
                                                 </div>
+
+                                                {/* 🔥 THE MAGIC: Sirf Selected Option ka Data Dikhao 🔥 */}
+                                                {/* Yahan 'leg.strikeCriteria' wo variable hai jo dropdown ki current value hold karta hai */}
+                                                {(() => {
+                                                    const currentOption = leg.strikeCriteria || 'ATM pt'; // Dropdown ki current value
+                                                    const info = criteriaInfoData[currentOption] || criteriaInfoData['ATM pt']; // Dictionary se data nikalo
+                                                    
+                                                    return (
+                                                        <div>
+                                                            <strong className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                                                {info[tooltipLang].title}
+                                                            </strong> 
+                                                            <span className="text-gray-600 dark:text-gray-300 block mt-1 leading-relaxed">
+                                                                {info[tooltipLang].desc}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })()}
+                                                
+                                                {/* Tooltip Arrow */}
+                                                <div className="absolute -bottom-1.5 right-5 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-3 h-3 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-gray-700 rotate-45"></div>
                                             </div>
                                         </div>
+
                                         <select 
                                             className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" 
                                             value={leg.strikeCriteria || "ATM pt"} 
