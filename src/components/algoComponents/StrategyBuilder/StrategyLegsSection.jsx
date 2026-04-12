@@ -2159,6 +2159,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   // 🔥 SMART TOOLTIP STATES (Language & Mobile Tap Logic)
   const [tooltipLang, setTooltipLang] = useState('hi');
   const [criteriaLang, setCriteriaLang] = useState('hi'); // Strike Criteria Lang State
+
   const [activeTooltip, setActiveTooltip] = useState(null); // Mobile click ke liye state
 
   
@@ -2305,6 +2306,25 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   const gridColsClass = (showLongCondition && showShortCondition) ? 'grid-cols-2' : 'grid-cols-1';
 
   const [showStrikeTooltip, setShowStrikeTooltip] = useState(false);
+
+  // 1. Tooltip ke div ko pehchanne ke liye ek Ref
+const strikeTooltipRef = useRef(null);
+
+// 2. Bahar click detect karne ka logic
+useEffect(() => {
+    const handleClickOutside = (event) => {
+        // Agar tooltip khula hai, aur click tooltipRef ke ANDAR nahi hua hai...
+        if (strikeTooltipRef.current && !strikeTooltipRef.current.contains(event.target)) {
+            setShowStrikeTooltip(false); // ...to tooltip band kar do!
+        }
+    };
+
+    // Screen par mousedown (click/touch) event sunna shuru karo
+    document.addEventListener("mousedown", handleClickOutside);
+    
+    // Cleanup function (memory leak se bachne ke liye)
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
 
   return (
     <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-200 dark:border-slate-700 relative h-full min-h-[600px] flex flex-col shadow-sm dark:shadow-none transition-colors duration-300">
@@ -2465,14 +2485,15 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     
                                     {/* 🔥 THE FIX: Strike Criteria Tooltip */}
                                     <div>
-                                        {/* 🌟 STRIKE CRITERIA WITH CLICK-TO-OPEN (Mobile & Desktop Fixed) 🌟 */}
-                                        <div className="flex items-center gap-1.5 mb-1 relative w-max">
+                                       {/* 🌟 STRIKE CRITERIA WITH CLICK-TO-OPEN & CLICK-OUTSIDE FIXED 🌟 */}
+                                        {/* Yahan humne ref={strikeToo  ltipRef} laga diya hai */}
+                                        <div ref={strikeTooltipRef} className="flex items-center gap-1.5 mb-1 relative w-max">
                                             
                                             <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold capitalize tracking-wider">
                                                 Strike Criteria
                                             </label>
                                             
-                                            {/* Info Icon: क्लिक करने पर स्टेट बदलेगा */}
+                                            {/* Info Icon Button */}
                                             <button
                                                 type="button"
                                                 onClick={(e) => { 
