@@ -947,135 +947,324 @@
 // export default ReportTab;
 
 
-const Deployment = require('../models/Deployment');
-const Strategy = require('../models/Strategy');
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Target, Zap, Clock, TrendingUp, TrendingDown, RefreshCcw, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-// @desc    Get Summary & Trade Data for Reports Tab
-// @route   GET /api/deployments/reports/summary
-const getReportSummary = async (req, res) => {
+const ReportTab = () => {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('Live'); 
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Kis strategy ka accordion khula hai usko track karne ke liye
+  const [expandedStrategy, setExpandedStrategy] = useState(null);
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+  const fetchReports = async () => {
+    setLoading(true);
     try {
-        const { startDate, endDate, mode } = req.query;
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'; 
+      const response = await axios.get(`${apiUrl}/api/deployments/reports/summary`, {
+        params: { startDate, endDate, mode: viewMode } 
+      });
 
-        // 1. Sirf wahi trades jo khatam ho chuke hain (COMPLETED)
-        let query = { status: 'COMPLETED' }; 
-
-        // 2. Date Filter (updatedAt ka use karenge kyunki trade exit us din hua hai)
-        if (startDate && endDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999);
-            query.updatedAt = { $gte: start, $lte: end }; 
-        }
-
-        // 3. Mode Filter (Live vs Forward)
-        if (mode === 'Live') {
-            query.executionType = 'LIVE';
-        } else if (mode === 'Forward') {
-            query.executionType = { $in: ['FORWARD_TEST', 'PAPER'] };
-        }
-
-        // 4. Data fetch karo aur Strategy ka naam bhi sath lao
-        const deployments = await Deployment.find(query).populate('strategyId').lean();
-
-        let totalPnl = 0;
-        let wins = 0;
-        let losses = 0;
-        let maxLoss = 0;
-        const strategyMap = {};
-        const dailyMap = {};
-
-        deployments.forEach(dep => {
-            const pnl = dep.realizedPnl || dep.pnl || 0;
-            totalPnl += pnl;
-
-            if (pnl >= 0) wins++;
-            else {
-                losses++;
-                if (pnl < maxLoss) maxLoss = pnl; // Update max drawdown
-            }
-
-            // 🔥 Time formatting (Mongoose timestamps: createdAt = Entry, updatedAt = Exit)
-            const entryDateObj = new Date(dep.createdAt);
-            const exitDateObj = new Date(dep.updatedAt);
-            
-            const dateStr = exitDateObj.toISOString().split('T')[0]; // Date for Daily Chart
-            const entryTimeStr = entryDateObj.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' });
-            const exitTimeStr = exitDateObj.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' });
-
-            // Strategy Name nikalna
-            const stratName = dep.strategyId ? dep.strategyId.name : "Deleted Strategy";
-            const stratId = dep.strategyId ? dep.strategyId._id.toString() : "unknown";
-
-            // Agar map me strategy nahi hai to uska object banao
-            if (!strategyMap[stratId]) {
-                strategyMap[stratId] = {
-                    name: stratName,
-                    segment: "NSE_FNO",
-                    trades: 0,
-                    wins: 0,
-                    losses: 0,
-                    pnl: 0,
-                    tradesList: [] // 🔥 YAHI HAI WO ARRAY JO FRONTEND KO CHAHIYE
-                };
-            }
-
-            // Strategy ke total metrics update karo
-            strategyMap[stratId].trades += 1;
-            strategyMap[stratId].pnl += pnl;
-            if (pnl >= 0) strategyMap[stratId].wins += 1;
-            else strategyMap[stratId].losses += 1;
-
-            // 🔥 INDIVIDUAL TRADE DATA PUSH KARO
-            strategyMap[stratId].tradesList.push({
-                tradedSymbol: dep.tradedSymbol || "Unknown",
-                tradeAction: dep.tradeAction || "BUY",
-                tradedQty: dep.tradedQty || 0,
-                entryPrice: dep.entryPrice || 0,
-                exitPrice: dep.exitPrice || 0,
-                realizedPnl: pnl,
-                exitRemarks: dep.exitRemarks || "Square-off",
-                date: dateStr,
-                entryTime: entryTimeStr,
-                exitTime: exitTimeStr
-            });
-
-            // Daily P&L Chart ke liye data update karo
-            if (!dailyMap[dateStr]) {
-                dailyMap[dateStr] = { date: dateStr, pnl: 0 };
-            }
-            dailyMap[dateStr].pnl += pnl;
-        });
-
-        // 5. Frontend ke format me convert karo
-        const strategyData = Object.values(strategyMap);
-        
-        // Date sort aur color coding Daily chart ke liye
-        const dailyData = Object.values(dailyMap).map(d => ({
-            ...d,
-            fill: d.pnl >= 0 ? '#10b981' : '#ef4444' 
-        })).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        const totalTrades = wins + losses;
-        const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(2) : 0;
-
-        const finalReport = {
-            totalPnl,
-            winRate,
-            totalTrades,
-            maxLoss,
-            strategyData,
-            dailyData
-        };
-
-        res.status(200).json({ success: true, data: finalReport });
-
+      if (response.data.success) {
+        setReportData(response.data.data);
+      }
     } catch (error) {
-        console.error("Reports API Error:", error);
-        res.status(500).json({ success: false, message: "Internal Server Error" });
+      console.error("❌ Reports fetch failed:", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchReports();
+    setExpandedStrategy(null); 
+  }, [startDate, endDate, viewMode]);
+
+  const toggleAccordion = (index) => {
+    setExpandedStrategy(expandedStrategy === index ? null : index);
+  };
+
+  const formatDateTime = (dateStr, timeStr) => {
+    if (!timeStr || timeStr === "--:--:--") return "-";
+    let formattedDate = "";
+    if (dateStr) {
+      const d = new Date(dateStr);
+      const day = d.getDate();
+      const month = d.toLocaleString('en-US', { month: 'short' });
+      formattedDate = `${day} ${month}, `;
+    }
+    const shortTime = timeStr.length > 5 ? timeStr.substring(0, 5) : timeStr;
+    return `(${formattedDate}${shortTime})`;
+  };
+
+  const getExitTypeColor = (exitType) => {
+    const type = (exitType || "").toUpperCase();
+    if (type.includes("TARGET") || type.includes("MAX PROFIT")) return "text-emerald-600 dark:text-emerald-400";
+    if (type.includes("STOPLOSS") || type.includes("MAX LOSS")) return "text-rose-600 dark:text-rose-400";
+    if (type.includes("TRAILING SL") || type.includes("MOVE SL TO COST")) return "text-blue-600 dark:text-blue-400";
+    return "text-gray-500 dark:text-gray-400";
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* TOP FILTER BAR */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 dark:border-slate-800">
+        <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-1.5 shadow-inner">
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none" />
+                <span className="text-gray-400">→</span>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none" />
+            </div>
+            <button onClick={fetchReports} className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 hover:text-blue-600 transition-colors">
+                <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
+            </button>
+        </div>
+
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-950 p-1 rounded-full border border-gray-200 dark:border-slate-800">
+          {[
+            { label: 'Live', value: 'Live' },
+            { label: 'Forward', value: 'Forward' }
+          ].map(mode => (
+            <button 
+              key={mode.value} 
+              onClick={() => setViewMode(mode.value)} 
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === mode.value ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-md' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'}`}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+          <div className="flex justify-center items-center h-64 text-gray-400 text-sm">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+              Calculating Metrics...
+          </div>
+      ) : reportData ? (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg px-5 py-6 flex items-center gap-4 transition-all">
+                <div className={`p-3 rounded-lg ${reportData.totalPnl >= 0 ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400'}`}>
+                  {reportData.totalPnl >= 0 ? <TrendingUp size={24}/> : <TrendingDown size={24}/>}
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total P&L</p>
+                  <p className={`text-xl font-extrabold mt-0.5 ${reportData.totalPnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>₹ {reportData.totalPnl.toFixed(2)}</p>
+                </div>
+              </div>
+              <MiniCard title="Win Rate" value={`${reportData.winRate}%`} icon={Target} color="text-blue-600" />
+              <MiniCard title="Total Trades" value={reportData.totalTrades} icon={Zap} color="text-yellow-600" />
+              <MiniCard title="Max Drawdown" value={`₹ ${Math.abs(reportData.maxLoss).toFixed(2)}`} icon={Clock} color="text-purple-600" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5">
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6">Strategy Breakdown (Trades)</p>
+                {reportData.strategyData && reportData.strategyData.length > 0 ? (
+                  <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-6">
+                    <div className="w-full md:w-1/2 space-y-4">
+                        {reportData.strategyData.map((entry, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-3">
+                              <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                              <span className="font-bold text-gray-700 dark:text-gray-300 truncate max-w-[150px]" title={entry.name}>{entry.name}</span>
+                            </div>
+                            <span className="font-extrabold text-gray-900 dark:text-white">{entry.trades}</span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="w-full md:w-1/2 h-48 flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                          <Pie data={reportData.strategyData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={5} dataKey="trades" nameKey="name">
+                              {reportData.strategyData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value, name) => [`${value} Trades`, name]} />
+                          </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-lg text-gray-400 text-sm">
+                    No trades found.
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5">
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6">Day-wise P&L</p>
+                {reportData.dailyData && reportData.dailyData.length > 0 ? (
+                  <div className="w-full h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={reportData.dailyData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-slate-700" />
+                        <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} width={55} />
+                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value) => [`₹ ${value.toFixed(2)}`, 'Net P&L']} />
+                        <Bar dataKey="pnl" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                            {reportData.dailyData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-lg text-gray-400 text-sm">
+                    No daily data found.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="border border-gray-100 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+                        <thead className="text-xs uppercase bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-slate-800">
+                            <tr>
+                                <th scope="col" className="px-5 py-4 w-10"></th> 
+                                <th scope="col" className="px-5 py-4">Strategy Name</th>
+                                <th scope="col" className="px-5 py-4 text-center">Trades</th>
+                                <th scope="col" className="px-5 py-4 text-center">Wins</th>
+                                <th scope="col" className="px-5 py-4 text-center">Losses</th>
+                                <th scope="col" className="px-5 py-4 text-right">Net P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                          {reportData.strategyData && reportData.strategyData.length > 0 ? (
+                            reportData.strategyData.map((stat, idx) => (
+                              <React.Fragment key={idx}>
+                                <tr 
+                                  onClick={() => toggleAccordion(idx)}
+                                  className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${expandedStrategy === idx ? 'bg-gray-50 dark:bg-slate-800/30' : ''}`}
+                                >
+                                  <td className="px-5 py-4 text-gray-400">
+                                    {expandedStrategy === idx ? <ChevronUp size={18} className="text-blue-600" /> : <ChevronDown size={18} />}
+                                  </td>
+                                  <td className="px-5 py-4 font-bold text-gray-900 dark:text-white">
+                                    {stat.name} <span className="font-medium text-[10px] text-gray-400 uppercase ml-1 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded">{stat.segment}</span>
+                                  </td>
+                                  <td className="px-5 py-4 text-center font-medium">{stat.trades}</td>
+                                  <td className="px-5 py-4 text-center text-green-600 dark:text-green-400 font-bold">{stat.wins}</td>
+                                  <td className="px-5 py-4 text-center text-red-500 font-bold">{stat.losses}</td>
+                                  <td className={`px-5 py-4 text-right font-extrabold ${stat.pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {stat.pnl >= 0 ? "+" : "-"}₹{Math.abs(stat.pnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </td>
+                                </tr>
+
+                                {expandedStrategy === idx && stat.tradesList && stat.tradesList.length > 0 && (
+                                  <tr>
+                                    <td colSpan="6" className="p-0 border-none bg-gray-50/50 dark:bg-slate-950/50">
+                                      <div className="px-8 py-4 animate-in slide-in-from-top-2 duration-200">
+                                        <table className="w-full text-left border-collapse">
+                                          <thead>
+                                            <tr className="text-[10px] text-gray-500 dark:text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700">
+                                              <th className="pb-2 font-bold pl-2">Symbol</th>
+                                              <th className="pb-2 font-bold">Action</th>
+                                              <th className="pb-2 font-bold">Qty</th>
+                                              <th className="pb-2 font-bold">Entry</th>
+                                              <th className="pb-2 font-bold">Exit</th>
+                                              <th className="pb-2 font-bold text-right">P&L</th>
+                                              <th className="pb-2 font-bold text-right pr-2">Exit Type</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {stat.tradesList.map((trade, tIdx) => {
+                                              const sym = trade.tradedSymbol || trade.symbol || stat.name;
+                                              const txn = trade.tradeAction || trade.transaction || "BUY";
+                                              const qty = trade.tradedQty || trade.quantity || "-";
+                                              const entP = trade.entryPrice ? trade.entryPrice.toFixed(2) : "-";
+                                              const extP = trade.exitPrice ? trade.exitPrice.toFixed(2) : "-";
+                                              const pnl = trade.realizedPnl || trade.pnl || 0;
+                                              const eType = trade.exitRemarks || trade.exitType || "SQUAREOFF";
+                                              const dateStr = trade.date || trade.createdAt; 
+                                              
+                                              return (
+                                                <tr key={tIdx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
+                                                  <td className="py-2.5 pl-2">
+                                                    <p className="text-sm font-bold text-gray-900 dark:text-white">{sym}</p>
+                                                  </td>
+                                                  <td className="py-2.5">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+                                                        ${txn.toUpperCase() === "BUY"
+                                                          ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
+                                                          : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
+                                                        }`}
+                                                    >
+                                                      {txn.toUpperCase()}
+                                                    </span>
+                                                  </td>
+                                                  <td className="py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300">{qty}</td>
+                                                  <td className="py-2.5">
+                                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                      ₹{entP} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-1 sm:mt-0">{formatDateTime(dateStr, trade.entryTime)}</span>
+                                                    </p>
+                                                  </td>
+                                                  <td className="py-2.5">
+                                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                      ₹{extP} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-1 sm:mt-0">{formatDateTime(dateStr, trade.exitTime)}</span>
+                                                    </p>
+                                                  </td>
+                                                  <td className={`py-2.5 text-right font-bold text-sm ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+                                                    {pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  </td>
+                                                  <td className="py-2.5 text-right pr-2">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${getExitTypeColor(eType)}`}>
+                                                      {eType.replace('_', ' ')}
+                                                    </span>
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="6" className="text-center py-10 text-gray-400 text-sm italic">
+                                No completed deployments found for the selected mode.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+          </>
+      ) : (
+          <div className="text-center py-16 text-gray-400 italic text-sm">No report data available.</div>
+      )}
+    </div>
+  );
 };
 
-module.exports = {
-    getReportSummary
-};
+const MiniCard = ({ title, value, icon: Icon, color }) => (
+    <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5 flex items-center gap-3">
+        <div className={`p-2 rounded-md ${color.replace('text-', 'bg-').split(' ')[0]} bg-opacity-10 dark:bg-opacity-20`}>
+            <Icon size={18} className={`${color}`} />
+        </div>
+        <div>
+            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{title}</p>
+            <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
+        </div>
+    </div>
+);
+
+export default ReportTab;
