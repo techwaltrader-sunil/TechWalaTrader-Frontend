@@ -948,127 +948,134 @@
 
 
 const Deployment = require('../models/Deployment');
+const Strategy = require('../models/Strategy');
 
-exports.getReportSummary = async (req, res) => {
+// @desc    Get Summary & Trade Data for Reports Tab
+// @route   GET /api/deployments/reports/summary
+const getReportSummary = async (req, res) => {
     try {
-        const { startDate, endDate, brokerId, mode } = req.query;
+        const { startDate, endDate, mode } = req.query;
 
-        // 1. Filter Setup (COMPLETED trades only)
-        let query = { status: 'COMPLETED' };
+        // 1. Sirf wahi trades jo khatam ho chuke hain (COMPLETED)
+        let query = { status: 'COMPLETED' }; 
 
-        // 🎯 FIX: Live vs Forward (Paper Trading) Filter using executionType
-        // Hamara tradingEngine ab 'executionType' me 'LIVE', 'PAPER', ya 'FORWARD_TEST' save karta hai
-        if (mode === 'Forward') {
-            query.executionType = { $in: ['PAPER', 'FORWARD_TEST'] }; 
-        } else {
-            // Agar mode Live hai ya kuch bhi pass nahi hua, to default LIVE dikhao
-            query.executionType = 'LIVE'; 
-        }
-
+        // 2. Date Filter (updatedAt ka use karenge kyunki trade exit us din hua hai)
         if (startDate && endDate) {
-            query.updatedAt = {
-                $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)),
-                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
-            };
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.updatedAt = { $gte: start, $lte: end }; 
         }
 
-        if (brokerId && brokerId !== 'All') {
-            query.brokers = { $in: [brokerId] };
+        // 3. Mode Filter (Live vs Forward)
+        if (mode === 'Live') {
+            query.executionType = 'LIVE';
+        } else if (mode === 'Forward') {
+            query.executionType = { $in: ['FORWARD_TEST', 'PAPER'] };
         }
 
-        const deployments = await Deployment.find(query).populate('strategyId');
+        // 4. Data fetch karo aur Strategy ka naam bhi sath lao
+        const deployments = await Deployment.find(query).populate('strategyId').lean();
 
-        let totalTrades = deployments.length;
         let totalPnl = 0;
         let wins = 0;
         let losses = 0;
-        let maxProfit = 0;
         let maxLoss = 0;
-        let strategyBreakdown = {};
-        
-        // 🎯 FIX 2: Day-wise P&L Object
-        let dailyBreakdown = {}; 
+        const strategyMap = {};
+        const dailyMap = {};
 
         deployments.forEach(dep => {
-            const pnl = dep.realizedPnl || 0;
+            const pnl = dep.realizedPnl || dep.pnl || 0;
             totalPnl += pnl;
 
-            if (pnl > 0) wins++;
-            else if (pnl < 0) losses++;
-
-            if (pnl > maxProfit) maxProfit = pnl;
-            if (pnl < maxLoss) maxLoss = pnl;
+            if (pnl >= 0) wins++;
+            else {
+                losses++;
+                if (pnl < maxLoss) maxLoss = pnl; // Update max drawdown
+            }
 
             // 🔥 Time formatting (Mongoose timestamps: createdAt = Entry, updatedAt = Exit)
             const entryDateObj = new Date(dep.createdAt);
             const exitDateObj = new Date(dep.updatedAt);
             
-            // Full Date for records (e.g., "2026-04-15")
-            const dateStrFull = exitDateObj.toISOString().split('T')[0]; 
+            const dateStr = exitDateObj.toISOString().split('T')[0]; // Date for Daily Chart
             const entryTimeStr = entryDateObj.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' });
             const exitTimeStr = exitDateObj.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' });
 
-            // Strategy Breakdown Setup
-            const strategyName = dep.strategyId ? dep.strategyId.name : "Unknown Strategy";
-            if (!strategyBreakdown[strategyName]) {
-                strategyBreakdown[strategyName] = { 
-                    pnl: 0, 
-                    trades: 0, 
-                    wins: 0, 
-                    losses: 0, 
-                    segment: dep.tradedExchange || 'N/A',
-                    tradesList: [] // 🔥 YAHI HAI WO MAGIC ARRAY JO FRONTEND KO CHAHIYE THA
+            // Strategy Name nikalna
+            const stratName = dep.strategyId ? dep.strategyId.name : "Deleted Strategy";
+            const stratId = dep.strategyId ? dep.strategyId._id.toString() : "unknown";
+
+            // Agar map me strategy nahi hai to uska object banao
+            if (!strategyMap[stratId]) {
+                strategyMap[stratId] = {
+                    name: stratName,
+                    segment: "NSE_FNO",
+                    trades: 0,
+                    wins: 0,
+                    losses: 0,
+                    pnl: 0,
+                    tradesList: [] // 🔥 YAHI HAI WO ARRAY JO FRONTEND KO CHAHIYE
                 };
             }
 
-            // Metrics Update karo
-            strategyBreakdown[strategyName].pnl += pnl;
-            strategyBreakdown[strategyName].trades += 1;
-            if (pnl > 0) strategyBreakdown[strategyName].wins += 1;
-            else if (pnl < 0) strategyBreakdown[strategyName].losses += 1;
+            // Strategy ke total metrics update karo
+            strategyMap[stratId].trades += 1;
+            strategyMap[stratId].pnl += pnl;
+            if (pnl >= 0) strategyMap[stratId].wins += 1;
+            else strategyMap[stratId].losses += 1;
 
             // 🔥 INDIVIDUAL TRADE DATA PUSH KARO
-            strategyBreakdown[strategyName].tradesList.push({
-                tradedSymbol: dep.tradedSymbol || strategyName,
+            strategyMap[stratId].tradesList.push({
+                tradedSymbol: dep.tradedSymbol || "Unknown",
                 tradeAction: dep.tradeAction || "BUY",
                 tradedQty: dep.tradedQty || 0,
                 entryPrice: dep.entryPrice || 0,
                 exitPrice: dep.exitPrice || 0,
                 realizedPnl: pnl,
-                exitRemarks: dep.exitRemarks || "COMPLETED",
-                date: dateStrFull,
+                exitRemarks: dep.exitRemarks || "Square-off",
+                date: dateStr,
                 entryTime: entryTimeStr,
                 exitTime: exitTimeStr
             });
 
-            // Day-wise P&L Calculation for Bar Chart
-            const dateStr = exitDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }); // Example: "13 Apr"
-            if (!dailyBreakdown[dateStr]) dailyBreakdown[dateStr] = 0;
-            dailyBreakdown[dateStr] += pnl;
+            // Daily P&L Chart ke liye data update karo
+            if (!dailyMap[dateStr]) {
+                dailyMap[dateStr] = { date: dateStr, pnl: 0 };
+            }
+            dailyMap[dateStr].pnl += pnl;
         });
 
-        const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(2) : 0;
+        // 5. Frontend ke format me convert karo
+        const strategyData = Object.values(strategyMap);
         
-        // Final Output Map
-        const strategyData = Object.keys(strategyBreakdown).map(name => ({ 
-            name, 
-            ...strategyBreakdown[name] 
-        }));
+        // Date sort aur color coding Daily chart ke liye
+        const dailyData = Object.values(dailyMap).map(d => ({
+            ...d,
+            fill: d.pnl >= 0 ? '#10b981' : '#ef4444' 
+        })).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Daily P&L ko Array me convert karna Bar Chart ke liye
-        const dailyData = Object.keys(dailyBreakdown).map(date => ({
-            date,
-            pnl: dailyBreakdown[date],
-            fill: dailyBreakdown[date] >= 0 ? '#10b981' : '#ef4444' 
-        }));
+        const totalTrades = wins + losses;
+        const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(2) : 0;
 
-        res.status(200).json({
-            success: true,
-            data: { totalTrades, totalPnl, wins, losses, winRate, maxProfit, maxLoss, strategyData, dailyData }
-        });
+        const finalReport = {
+            totalPnl,
+            winRate,
+            totalTrades,
+            maxLoss,
+            strategyData,
+            dailyData
+        };
+
+        res.status(200).json({ success: true, data: finalReport });
 
     } catch (error) {
-        console.error("❌ Report API Error:", error);
-        res.status(500).json({ success: false, message: "Failed to fetch reports" });
+        console.error("Reports API Error:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
     }
+};
+
+module.exports = {
+    getReportSummary
 };
