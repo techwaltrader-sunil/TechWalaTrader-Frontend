@@ -721,227 +721,354 @@
 // export default ReportTab;
 
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Target, Zap, Clock, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+// import React, { useState, useEffect } from 'react';
+// import axios from 'axios';
+// import { Target, Zap, Clock, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
+// import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-const ReportTab = () => {
-  const [reportData, setReportData] = useState(null);
-  const [loading, setLoading] = useState(true);
+// const ReportTab = () => {
+//   const [reportData, setReportData] = useState(null);
+//   const [loading, setLoading] = useState(true);
   
-  // 🔥 THE BUG FIX 1: Default state ko 'Live' set kiya (Title case me, backend se match karne ke liye)
-  const [viewMode, setViewMode] = useState('Live'); 
+//   // 🔥 THE BUG FIX 1: Default state ko 'Live' set kiya (Title case me, backend se match karne ke liye)
+//   const [viewMode, setViewMode] = useState('Live'); 
   
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+//   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+//   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+//   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
-  const fetchReports = async () => {
-    setLoading(true);
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'; 
-      const response = await axios.get(`${apiUrl}/api/deployments/reports/summary`, {
-        // API ko viewMode bheja jaa raha hai ('Live' ya 'Forward')
-        params: { startDate, endDate, mode: viewMode } 
-      });
+//   const fetchReports = async () => {
+//     setLoading(true);
+//     try {
+//       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'; 
+//       const response = await axios.get(`${apiUrl}/api/deployments/reports/summary`, {
+//         // API ko viewMode bheja jaa raha hai ('Live' ya 'Forward')
+//         params: { startDate, endDate, mode: viewMode } 
+//       });
 
-      if (response.data.success) {
-        setReportData(response.data.data);
-      }
-    } catch (error) {
-      console.error("❌ Reports fetch failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+//       if (response.data.success) {
+//         setReportData(response.data.data);
+//       }
+//     } catch (error) {
+//       console.error("❌ Reports fetch failed:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
-  useEffect(() => {
-    fetchReports();
-  }, [startDate, endDate, viewMode]); 
+//   useEffect(() => {
+//     fetchReports();
+//   }, [startDate, endDate, viewMode]); 
 
-  return (
-    <div className="space-y-6">
+//   return (
+//     <div className="space-y-6">
       
-      {/* TOP FILTER BAR */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 dark:border-slate-800">
-        <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-1.5 shadow-inner">
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none" />
-                <span className="text-gray-400">→</span>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none" />
-            </div>
-            <button onClick={fetchReports} className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 hover:text-blue-600 transition-colors">
-                <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
-            </button>
-        </div>
+//       {/* TOP FILTER BAR */}
+//       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 dark:border-slate-800">
+//         <div className="flex items-center gap-3">
+//             <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-1.5 shadow-inner">
+//                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none" />
+//                 <span className="text-gray-400">→</span>
+//                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none" />
+//             </div>
+//             <button onClick={fetchReports} className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 hover:text-blue-600 transition-colors">
+//                 <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
+//             </button>
+//         </div>
 
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-950 p-1 rounded-full border border-gray-200 dark:border-slate-800">
-          {/* 🔥 THE BUG FIX 2: Values ko strictly Backend query ('Live', 'Forward') se match kara diya */}
-          {[
-            { label: 'Live', value: 'Live' },
-            { label: 'Forward', value: 'Forward' }
-          ].map(mode => (
-            <button 
-              key={mode.value} 
-              onClick={() => setViewMode(mode.value)} 
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === mode.value ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-md' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'}`}
-            >
-              {mode.label}
-            </button>
-          ))}
-        </div>
-      </div>
+//         <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-950 p-1 rounded-full border border-gray-200 dark:border-slate-800">
+//           {/* 🔥 THE BUG FIX 2: Values ko strictly Backend query ('Live', 'Forward') se match kara diya */}
+//           {[
+//             { label: 'Live', value: 'Live' },
+//             { label: 'Forward', value: 'Forward' }
+//           ].map(mode => (
+//             <button 
+//               key={mode.value} 
+//               onClick={() => setViewMode(mode.value)} 
+//               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === mode.value ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-md' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'}`}
+//             >
+//               {mode.label}
+//             </button>
+//           ))}
+//         </div>
+//       </div>
 
-      {loading ? (
-          <div className="flex justify-center items-center h-64 text-gray-400 text-sm">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-              Calculating Metrics...
-          </div>
-      ) : reportData ? (
-          <>
-            {/* METRICS GRID */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg px-5 py-6 flex items-center gap-4 transition-all">
-                <div className={`p-3 rounded-lg ${reportData.totalPnl >= 0 ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400'}`}>
-                  {reportData.totalPnl >= 0 ? <TrendingUp size={24}/> : <TrendingDown size={24}/>}
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total P&L</p>
-                  <p className={`text-xl font-extrabold mt-0.5 ${reportData.totalPnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>₹ {reportData.totalPnl.toFixed(2)}</p>
-                </div>
-              </div>
-              <MiniCard title="Win Rate" value={`${reportData.winRate}%`} icon={Target} color="text-blue-600" />
-              <MiniCard title="Total Trades" value={reportData.totalTrades} icon={Zap} color="text-yellow-600" />
-              <MiniCard title="Max Drawdown" value={`₹ ${Math.abs(reportData.maxLoss).toFixed(2)}`} icon={Clock} color="text-purple-600" />
-            </div>
+//       {loading ? (
+//           <div className="flex justify-center items-center h-64 text-gray-400 text-sm">
+//               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+//               Calculating Metrics...
+//           </div>
+//       ) : reportData ? (
+//           <>
+//             {/* METRICS GRID */}
+//             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+//               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg px-5 py-6 flex items-center gap-4 transition-all">
+//                 <div className={`p-3 rounded-lg ${reportData.totalPnl >= 0 ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400'}`}>
+//                   {reportData.totalPnl >= 0 ? <TrendingUp size={24}/> : <TrendingDown size={24}/>}
+//                 </div>
+//                 <div>
+//                   <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total P&L</p>
+//                   <p className={`text-xl font-extrabold mt-0.5 ${reportData.totalPnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>₹ {reportData.totalPnl.toFixed(2)}</p>
+//                 </div>
+//               </div>
+//               <MiniCard title="Win Rate" value={`${reportData.winRate}%`} icon={Target} color="text-blue-600" />
+//               <MiniCard title="Total Trades" value={reportData.totalTrades} icon={Zap} color="text-yellow-600" />
+//               <MiniCard title="Max Drawdown" value={`₹ ${Math.abs(reportData.maxLoss).toFixed(2)}`} icon={Clock} color="text-purple-600" />
+//             </div>
 
-            {/* CHARTS SECTION */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {/* CHARTS SECTION */}
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5">
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6">Strategy Breakdown (Trades)</p>
-                {reportData.strategyData && reportData.strategyData.length > 0 ? (
-                  <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-6">
+//               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5">
+//                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6">Strategy Breakdown (Trades)</p>
+//                 {reportData.strategyData && reportData.strategyData.length > 0 ? (
+//                   <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-6">
                     
-                    {/* Left Side: Strategy List with Counts */}
-                    <div className="w-full md:w-1/2 space-y-4">
-                        {reportData.strategyData.map((entry, index) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-3">
-                              <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                              <span className="font-bold text-gray-700 dark:text-gray-300 truncate max-w-[150px]" title={entry.name}>{entry.name}</span>
-                            </div>
-                            <span className="font-extrabold text-gray-900 dark:text-white">{entry.trades}</span>
-                          </div>
-                        ))}
-                    </div>
+//                     {/* Left Side: Strategy List with Counts */}
+//                     <div className="w-full md:w-1/2 space-y-4">
+//                         {reportData.strategyData.map((entry, index) => (
+//                           <div key={index} className="flex items-center justify-between text-sm">
+//                             <div className="flex items-center gap-3">
+//                               <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+//                               <span className="font-bold text-gray-700 dark:text-gray-300 truncate max-w-[150px]" title={entry.name}>{entry.name}</span>
+//                             </div>
+//                             <span className="font-extrabold text-gray-900 dark:text-white">{entry.trades}</span>
+//                           </div>
+//                         ))}
+//                     </div>
 
-                    {/* Right Side: Donut Chart */}
-                    <div className="w-full md:w-1/2 h-48 flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                          <Pie data={reportData.strategyData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={5} dataKey="trades" nameKey="name">
-                              {reportData.strategyData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                          </Pie>
-                          <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value, name) => [`${value} Trades`, name]} />
-                          </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-lg text-gray-400 text-sm">
-                    No trades found.
-                  </div>
-                )}
-              </div>
+//                     {/* Right Side: Donut Chart */}
+//                     <div className="w-full md:w-1/2 h-48 flex items-center justify-center">
+//                       <ResponsiveContainer width="100%" height="100%">
+//                           <PieChart>
+//                           <Pie data={reportData.strategyData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={5} dataKey="trades" nameKey="name">
+//                               {reportData.strategyData.map((entry, index) => (
+//                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+//                               ))}
+//                           </Pie>
+//                           <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value, name) => [`${value} Trades`, name]} />
+//                           </PieChart>
+//                       </ResponsiveContainer>
+//                     </div>
+//                   </div>
+//                 ) : (
+//                   <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-lg text-gray-400 text-sm">
+//                     No trades found.
+//                   </div>
+//                 )}
+//               </div>
 
-              {/* Day-wise P&L Bar Chart */}
-              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5">
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6">Day-wise P&L</p>
-                {reportData.dailyData && reportData.dailyData.length > 0 ? (
-                  <div className="w-full h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={reportData.dailyData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-slate-700" />
-                        <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} width={55} />
-                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value) => [`₹ ${value.toFixed(2)}`, 'Net P&L']} />
-                        <Bar dataKey="pnl" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                            {reportData.dailyData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-lg text-gray-400 text-sm">
-                    No daily data found.
-                  </div>
-                )}
-              </div>
-            </div>
+//               {/* Day-wise P&L Bar Chart */}
+//               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5">
+//                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6">Day-wise P&L</p>
+//                 {reportData.dailyData && reportData.dailyData.length > 0 ? (
+//                   <div className="w-full h-48">
+//                     <ResponsiveContainer width="100%" height="100%">
+//                       <BarChart data={reportData.dailyData}>
+//                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-slate-700" />
+//                         <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} />
+//                         <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} width={55} />
+//                         <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value) => [`₹ ${value.toFixed(2)}`, 'Net P&L']} />
+//                         <Bar dataKey="pnl" radius={[4, 4, 0, 0]} maxBarSize={40}>
+//                             {reportData.dailyData.map((entry, index) => (
+//                                 <Cell key={`cell-${index}`} fill={entry.fill} />
+//                             ))}
+//                         </Bar>
+//                       </BarChart>
+//                     </ResponsiveContainer>
+//                   </div>
+//                 ) : (
+//                   <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-lg text-gray-400 text-sm">
+//                     No daily data found.
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
 
-            {/* TABLE SECTION */}
-            <div className="border border-gray-100 dark:border-slate-800 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-gray-700 dark:text-gray-300">
-                        <thead className="text-xs uppercase bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-gray-400 font-bold">
-                            <tr>
-                                <th scope="col" className="px-5 py-3.5">Strategy Name</th>
-                                <th scope="col" className="px-5 py-3.5 text-center">Trades</th>
-                                <th scope="col" className="px-5 py-3.5 text-center">Wins</th>
-                                <th scope="col" className="px-5 py-3.5 text-center">Losses</th>
-                                <th scope="col" className="px-5 py-3.5 text-right">Net P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                          {reportData.strategyData && reportData.strategyData.length > 0 ? (
-                            reportData.strategyData.map((stat, idx) => (
-                              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="px-5 py-4 font-bold text-gray-900 dark:text-white">{stat.name} <span className="font-medium text-xs text-gray-400">({stat.segment})</span></td>
-                                <td className="px-5 py-4 text-center font-medium">{stat.trades}</td>
-                                <td className="px-5 py-4 text-center text-green-600 dark:text-green-400 font-bold">{stat.wins}</td>
-                                <td className="px-5 py-4 text-center text-red-500 font-bold">{stat.losses}</td>
-                                <td className={`px-5 py-4 text-right font-extrabold ${stat.pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  ₹ {stat.pnl.toFixed(2)}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center py-10 text-gray-400 text-sm italic">
-                                No completed deployments found for the selected mode.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+//             {/* TABLE SECTION */}
+//             <div className="border border-gray-100 dark:border-slate-800 rounded-lg overflow-hidden">
+//                 <div className="overflow-x-auto">
+//                     <table className="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+//                         <thead className="text-xs uppercase bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-gray-400 font-bold">
+//                             <tr>
+//                                 <th scope="col" className="px-5 py-3.5">Strategy Name</th>
+//                                 <th scope="col" className="px-5 py-3.5 text-center">Trades</th>
+//                                 <th scope="col" className="px-5 py-3.5 text-center">Wins</th>
+//                                 <th scope="col" className="px-5 py-3.5 text-center">Losses</th>
+//                                 <th scope="col" className="px-5 py-3.5 text-right">Net P&L</th>
+//                             </tr>
+//                         </thead>
+//                         <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+//                           {reportData.strategyData && reportData.strategyData.length > 0 ? (
+//                             reportData.strategyData.map((stat, idx) => (
+//                               <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+//                                 <td className="px-5 py-4 font-bold text-gray-900 dark:text-white">{stat.name} <span className="font-medium text-xs text-gray-400">({stat.segment})</span></td>
+//                                 <td className="px-5 py-4 text-center font-medium">{stat.trades}</td>
+//                                 <td className="px-5 py-4 text-center text-green-600 dark:text-green-400 font-bold">{stat.wins}</td>
+//                                 <td className="px-5 py-4 text-center text-red-500 font-bold">{stat.losses}</td>
+//                                 <td className={`px-5 py-4 text-right font-extrabold ${stat.pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+//                                   ₹ {stat.pnl.toFixed(2)}
+//                                 </td>
+//                               </tr>
+//                             ))
+//                           ) : (
+//                             <tr>
+//                               <td colSpan="5" className="text-center py-10 text-gray-400 text-sm italic">
+//                                 No completed deployments found for the selected mode.
+//                               </td>
+//                             </tr>
+//                           )}
+//                         </tbody>
+//                     </table>
+//                 </div>
+//             </div>
 
-          </>
-      ) : (
-          <div className="text-center py-16 text-gray-400 italic text-sm">No report data available.</div>
-      )}
-    </div>
-  );
+//           </>
+//       ) : (
+//           <div className="text-center py-16 text-gray-400 italic text-sm">No report data available.</div>
+//       )}
+//     </div>
+//   );
+// };
+
+// const MiniCard = ({ title, value, icon: Icon, color }) => (
+//     <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5 flex items-center gap-3">
+//         <div className={`p-2 rounded-md ${color.replace('text-', 'bg-').split(' ')[0]} bg-opacity-10 dark:bg-opacity-20`}>
+//             <Icon size={18} className={`${color}`} />
+//         </div>
+//         <div>
+//             <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{title}</p>
+//             <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
+//         </div>
+//     </div>
+// );
+
+// export default ReportTab;
+
+
+const Deployment = require('../models/Deployment');
+
+exports.getReportSummary = async (req, res) => {
+    try {
+        const { startDate, endDate, brokerId, mode } = req.query;
+
+        // 1. Filter Setup (COMPLETED trades only)
+        let query = { status: 'COMPLETED' };
+
+        // 🎯 FIX: Live vs Forward (Paper Trading) Filter using executionType
+        // Hamara tradingEngine ab 'executionType' me 'LIVE', 'PAPER', ya 'FORWARD_TEST' save karta hai
+        if (mode === 'Forward') {
+            query.executionType = { $in: ['PAPER', 'FORWARD_TEST'] }; 
+        } else {
+            // Agar mode Live hai ya kuch bhi pass nahi hua, to default LIVE dikhao
+            query.executionType = 'LIVE'; 
+        }
+
+        if (startDate && endDate) {
+            query.updatedAt = {
+                $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+            };
+        }
+
+        if (brokerId && brokerId !== 'All') {
+            query.brokers = { $in: [brokerId] };
+        }
+
+        const deployments = await Deployment.find(query).populate('strategyId');
+
+        let totalTrades = deployments.length;
+        let totalPnl = 0;
+        let wins = 0;
+        let losses = 0;
+        let maxProfit = 0;
+        let maxLoss = 0;
+        let strategyBreakdown = {};
+        
+        // 🎯 FIX 2: Day-wise P&L Object
+        let dailyBreakdown = {}; 
+
+        deployments.forEach(dep => {
+            const pnl = dep.realizedPnl || 0;
+            totalPnl += pnl;
+
+            if (pnl > 0) wins++;
+            else if (pnl < 0) losses++;
+
+            if (pnl > maxProfit) maxProfit = pnl;
+            if (pnl < maxLoss) maxLoss = pnl;
+
+            // 🔥 Time formatting (Mongoose timestamps: createdAt = Entry, updatedAt = Exit)
+            const entryDateObj = new Date(dep.createdAt);
+            const exitDateObj = new Date(dep.updatedAt);
+            
+            // Full Date for records (e.g., "2026-04-15")
+            const dateStrFull = exitDateObj.toISOString().split('T')[0]; 
+            const entryTimeStr = entryDateObj.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' });
+            const exitTimeStr = exitDateObj.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' });
+
+            // Strategy Breakdown Setup
+            const strategyName = dep.strategyId ? dep.strategyId.name : "Unknown Strategy";
+            if (!strategyBreakdown[strategyName]) {
+                strategyBreakdown[strategyName] = { 
+                    pnl: 0, 
+                    trades: 0, 
+                    wins: 0, 
+                    losses: 0, 
+                    segment: dep.tradedExchange || 'N/A',
+                    tradesList: [] // 🔥 YAHI HAI WO MAGIC ARRAY JO FRONTEND KO CHAHIYE THA
+                };
+            }
+
+            // Metrics Update karo
+            strategyBreakdown[strategyName].pnl += pnl;
+            strategyBreakdown[strategyName].trades += 1;
+            if (pnl > 0) strategyBreakdown[strategyName].wins += 1;
+            else if (pnl < 0) strategyBreakdown[strategyName].losses += 1;
+
+            // 🔥 INDIVIDUAL TRADE DATA PUSH KARO
+            strategyBreakdown[strategyName].tradesList.push({
+                tradedSymbol: dep.tradedSymbol || strategyName,
+                tradeAction: dep.tradeAction || "BUY",
+                tradedQty: dep.tradedQty || 0,
+                entryPrice: dep.entryPrice || 0,
+                exitPrice: dep.exitPrice || 0,
+                realizedPnl: pnl,
+                exitRemarks: dep.exitRemarks || "COMPLETED",
+                date: dateStrFull,
+                entryTime: entryTimeStr,
+                exitTime: exitTimeStr
+            });
+
+            // Day-wise P&L Calculation for Bar Chart
+            const dateStr = exitDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }); // Example: "13 Apr"
+            if (!dailyBreakdown[dateStr]) dailyBreakdown[dateStr] = 0;
+            dailyBreakdown[dateStr] += pnl;
+        });
+
+        const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(2) : 0;
+        
+        // Final Output Map
+        const strategyData = Object.keys(strategyBreakdown).map(name => ({ 
+            name, 
+            ...strategyBreakdown[name] 
+        }));
+
+        // Daily P&L ko Array me convert karna Bar Chart ke liye
+        const dailyData = Object.keys(dailyBreakdown).map(date => ({
+            date,
+            pnl: dailyBreakdown[date],
+            fill: dailyBreakdown[date] >= 0 ? '#10b981' : '#ef4444' 
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: { totalTrades, totalPnl, wins, losses, winRate, maxProfit, maxLoss, strategyData, dailyData }
+        });
+
+    } catch (error) {
+        console.error("❌ Report API Error:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch reports" });
+    }
 };
-
-const MiniCard = ({ title, value, icon: Icon, color }) => (
-    <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg p-5 flex items-center gap-3">
-        <div className={`p-2 rounded-md ${color.replace('text-', 'bg-').split(' ')[0]} bg-opacity-10 dark:bg-opacity-20`}>
-            <Icon size={18} className={`${color}`} />
-        </div>
-        <div>
-            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{title}</p>
-            <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
-        </div>
-    </div>
-);
-
-export default ReportTab;
