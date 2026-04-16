@@ -1000,16 +1000,54 @@ const StrategyCard = ({
               : { text: "Bearish", color: "text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-400" };
       }
 
-      // 3. Two Legs (Straddle / Strangle / Hedged)
-      if (activeLegs.length === 2) {
-          // DB Se Action nikalna
-          const action1 = (activeLegs[0]?.action || strategy.data?.legs?.[0]?.action || "BUY").toUpperCase();
-          const action2 = (activeLegs[1]?.action || strategy.data?.legs?.[1]?.action || "BUY").toUpperCase();
+    //   // 3. Two Legs (Straddle / Strangle / Hedged)
+    //   if (activeLegs.length === 2) {
+    //       // DB Se Action nikalna
+    //       const action1 = (activeLegs[0]?.action || strategy.data?.legs?.[0]?.action || "BUY").toUpperCase();
+    //       const action2 = (activeLegs[1]?.action || strategy.data?.legs?.[1]?.action || "BUY").toUpperCase();
           
-          if (action1 === 'BUY' && action2 === 'BUY') 
-              return { text: "Long Straddle/Strangle", color: "text-purple-600 bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400" };
-          if (action1 === 'SELL' && action2 === 'SELL') 
-              return { text: "Short Straddle/Strangle", color: "text-orange-600 bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400" };
+    //       if (action1 === 'BUY' && action2 === 'BUY') 
+    //           return { text: "Long Straddle/Strangle", color: "text-purple-600 bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400" };
+    //       if (action1 === 'SELL' && action2 === 'SELL') 
+    //           return { text: "Short Straddle/Strangle", color: "text-orange-600 bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400" };
+          
+    //       return { text: "Hedged", color: "text-indigo-600 bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" };
+    //   }
+    
+
+    // 3. Two Legs (Straddle / Strangle / Hedged) - 🔥 SMART DETECTION 🔥
+      if (activeLegs.length === 2) {
+          // Dono legs ka data safely extract karein
+          const leg1 = activeLegs[0] || strategy.data?.legs?.[0] || {};
+          const leg2 = activeLegs[1] || strategy.data?.legs?.[1] || {};
+
+          const action1 = (leg1.action || strategy.data?.legs?.[0]?.action || "BUY").toUpperCase();
+          const action2 = (leg2.action || strategy.data?.legs?.[1]?.action || "BUY").toUpperCase();
+          
+          // Strike Type check karein (ATM, OTM, ITM)
+          const strike1 = (leg1.strikeType || strategy.data?.legs?.[0]?.strikeType || "ATM").toUpperCase();
+          const strike2 = (leg2.strikeType || strategy.data?.legs?.[1]?.strikeType || "ATM").toUpperCase();
+
+          // A. SELLING SCENARIO (Short)
+          if (action1 === 'SELL' && action2 === 'SELL') {
+              // Agar dono ATM hain -> Straddle
+              if (strike1 === 'ATM' && strike2 === 'ATM') {
+                  return { text: "Short Straddle", color: "text-orange-600 bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400" };
+              } 
+              // Agar OTM/ITM ya alag-alag hain -> Strangle
+              else {
+                  return { text: "Short Strangle", color: "text-amber-600 bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400" };
+              }
+          }
+          
+          // B. BUYING SCENARIO (Long)
+          if (action1 === 'BUY' && action2 === 'BUY') {
+              if (strike1 === 'ATM' && strike2 === 'ATM') {
+                  return { text: "Long Straddle", color: "text-purple-600 bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400" };
+              } else {
+                  return { text: "Long Strangle", color: "text-fuchsia-600 bg-fuchsia-100 dark:bg-fuchsia-500/10 dark:text-fuchsia-400" };
+              }
+          }
           
           return { text: "Hedged", color: "text-indigo-600 bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" };
       }
