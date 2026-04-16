@@ -738,7 +738,7 @@ const StrategyCard = ({
           </div>
       </div>
 
-      {/* 2. INFO GRID */}
+      {/* 2. INFO GRID
       <div className="grid grid-cols-2 gap-y-4 gap-x-2 mb-4 border-b border-gray-100 dark:border-slate-700 pb-4 transition-colors">
           <div>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Start Time</p>
@@ -751,6 +751,32 @@ const StrategyCard = ({
           <div>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Segment</p>
             <p className="text-xs text-gray-800 dark:text-gray-200 font-semibold uppercase">{strategy.segment}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Type</p>
+            <p className="text-xs text-gray-800 dark:text-gray-200 font-semibold">{strategy.type}</p>
+          </div>
+      </div> */}
+      
+      {/* 2. INFO GRID */}
+      <div className="grid grid-cols-2 gap-y-4 gap-x-2 mb-4 border-b border-gray-100 dark:border-slate-700 pb-4 transition-colors">
+          <div>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Start Time</p>
+            <p className="text-xs text-gray-800 dark:text-gray-200 font-semibold">{strategy.data?.config?.startTime || strategy.startTime || '--:--'}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Square Off</p>
+            <p className="text-xs text-gray-800 dark:text-gray-200 font-semibold">{strategy.data?.config?.squareOffTime || strategy.squareOffTime || strategy.endTime || '--:--'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Segment</p>
+            <p className="text-xs text-gray-800 dark:text-gray-200 font-semibold uppercase">
+                {strategy.segment} - {
+                    (strategy.segment === 'Equity' || strategy.segment === 'Future') 
+                    ? ((strategy.equityAction || 'BUY').toUpperCase() === 'BUY' ? 'BUYING' : 'SELLING')
+                    : (((strategy.legs?.[0]?.action || strategy.data?.legs?.[0]?.action || 'BUY').toUpperCase() === 'BUY') ? 'BUYING' : 'SELLING')
+                }
+            </p>
           </div>
           <div className="text-right">
             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Type</p>
