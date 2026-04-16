@@ -783,7 +783,7 @@ const StrategyCard = ({
                       // 2. Original Option Type configured by user (Call or Put)
                       const legOptType = leg.optionType || 'Call';
 
-                      // 🔥 SMART LOGIC: Sirf Indicator + Both Side me 2 legs dikhao, warna original dikhao
+                      // 3. Visibility Logic
                       let showCE = false;
                       let showPE = false;
 
@@ -791,7 +791,6 @@ const StrategyCard = ({
                           showCE = true;
                           showPE = true;
                       } else {
-                          // Normal behavior: Jo select kiya hai wahi dikhega
                           if (legOptType === 'Call') showCE = true;
                           if (legOptType === 'Put') showPE = true;
                       }
@@ -802,42 +801,43 @@ const StrategyCard = ({
                       const qtyTxt = leg.qty || leg.quantity || 30;
                       const actionTxt = leg.action || "BUY";
 
+                      // 🔥 SMART SORTING LOGIC: Pata karo top par kya dikhana hai
+                      const longCond = leg.longCondition || "CE"; // Agar nahi mila to default CE
+                      
+                      // Ek array banao jisme jo dikhana hai wo daalo
+                      let renderLegs = [];
+                      if (showCE) renderLegs.push("CE");
+                      if (showPE) renderLegs.push("PE");
+
+                      // Sort karo taaki 'longCondition' wala hamesha 0 index (Sabse Upar) par aaye
+                      renderLegs.sort((a, b) => {
+                          if (a === longCond) return -1; // 'a' ko upar bhejo
+                          if (b === longCond) return 1;  // 'b' ko upar bhejo
+                          return 0;
+                      });
+
                       return (
                           <div key={idx} className="flex flex-col gap-1.5">
-                              {/* 🟢 LONG LEG DISPLAY (CE) */}
-                              {showCE && (
-                                  <div className="bg-gray-50 dark:bg-slate-900 rounded px-3 py-2.5 flex justify-between items-center border border-gray-200 dark:border-slate-700 transition-colors">
+                              {/* 🔄 DYNAMIC RENDERING: Array map karke render karo */}
+                              {renderLegs.map((optType, i) => (
+                                  <div key={i} className={`bg-gray-50 dark:bg-slate-900 rounded px-3 py-2.5 flex justify-between items-center border border-gray-200 dark:border-slate-700 transition-colors ${i > 0 ? 'mt-0.5' : ''}`}>
                                       <div className="flex items-center gap-2">
                                           <span className={`text-[10px] font-bold ${actionTxt === 'SELL' ? 'text-red-500 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>{actionTxt}</span>
                                           <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium tracking-wide flex items-center gap-1.5">
                                               {instrumentName} 
                                               <span className="text-yellow-600 dark:text-yellow-500/90">{strikeTxt}</span> 
-                                              <span className="text-green-600 dark:text-green-500 font-bold">CE</span>
+                                              {/* CE hai to Green, PE hai to Red */}
+                                              <span className={`font-bold ${optType === 'CE' ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>{optType}</span>
                                           </span>
                                       </div>
                                       <span className="text-[10px] text-gray-500 font-medium">Qty: <span className="text-gray-700 dark:text-gray-300 font-bold">{qtyTxt}</span></span>
                                   </div>
-                              )}
-
-                              {/* 🔴 SHORT LEG DISPLAY (PE) */}
-                              {showPE && (
-                                  <div className="bg-gray-50 dark:bg-slate-900 rounded px-3 py-2.5 flex justify-between items-center border border-gray-200 dark:border-slate-700 transition-colors mt-0.5">
-                                      <div className="flex items-center gap-2">
-                                          <span className={`text-[10px] font-bold ${actionTxt === 'SELL' ? 'text-red-500 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>{actionTxt}</span>
-                                          <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium tracking-wide flex items-center gap-1.5">
-                                              {instrumentName} 
-                                              <span className="text-yellow-600 dark:text-yellow-500/90">{strikeTxt}</span> 
-                                              <span className="text-red-500 dark:text-red-400 font-bold">PE</span>
-                                          </span>
-                                      </div>
-                                      <span className="text-[10px] text-gray-500 font-medium">Qty: <span className="text-gray-700 dark:text-gray-300 font-bold">{qtyTxt}</span></span>
-                                  </div>
-                              )}
+                              ))}
                           </div>
                       );
                   })
               ) : <div className="text-center text-gray-400 dark:text-gray-500 text-[11px] py-3 bg-gray-50 dark:bg-slate-900 rounded italic border border-dashed border-gray-200 dark:border-slate-700">No legs configured</div>
-          )}
+        )}
       </div>
 
       {/* 4. FOOTER BUTTONS */}
