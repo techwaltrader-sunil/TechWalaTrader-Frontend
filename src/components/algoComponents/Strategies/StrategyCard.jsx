@@ -758,7 +758,7 @@ const StrategyCard = ({
           </div>
       </div>
 
-      {/* 3. LEGS DISPLAY - 🔥 YAHAN FIX KIYA HAI 🔥 */}
+      {/* 3. LEGS DISPLAY - 🔥 SMART SORTING FIX 🔥 */}
       <div className="space-y-2 mb-5 flex-1 min-h-[80px]">
           {(strategy.segment === 'Equity' || strategy.segment === 'Future') ? (
               strategy.instruments && strategy.instruments.length > 0 ? (
@@ -801,24 +801,23 @@ const StrategyCard = ({
                       const qtyTxt = leg.qty || leg.quantity || 30;
                       const actionTxt = leg.action || "BUY";
 
-                      // 🔥 SMART SORTING LOGIC: Pata karo top par kya dikhana hai
-                      const longCond = leg.longCondition || "CE"; // Agar nahi mila to default CE
+                      // 🔥 SMART SORTING LOGIC (THE FIX)
+                      const longCond = leg.longCondition || "CE"; // User ki primary choice
                       
-                      // Ek array banao jisme jo dikhana hai wo daalo
                       let renderLegs = [];
                       if (showCE) renderLegs.push("CE");
                       if (showPE) renderLegs.push("PE");
 
-                      // Sort karo taaki 'longCondition' wala hamesha 0 index (Sabse Upar) par aaye
+                      // Sort array so that the item matching 'longCond' comes first
                       renderLegs.sort((a, b) => {
-                          if (a === longCond) return -1; // 'a' ko upar bhejo
-                          if (b === longCond) return 1;  // 'b' ko upar bhejo
+                          if (a === longCond && b !== longCond) return -1;
+                          if (b === longCond && a !== longCond) return 1;
                           return 0;
                       });
 
                       return (
                           <div key={idx} className="flex flex-col gap-1.5">
-                              {/* 🔄 DYNAMIC RENDERING: Array map karke render karo */}
+                              {/* 🔄 DYNAMIC RENDERING */}
                               {renderLegs.map((optType, i) => (
                                   <div key={i} className={`bg-gray-50 dark:bg-slate-900 rounded px-3 py-2.5 flex justify-between items-center border border-gray-200 dark:border-slate-700 transition-colors ${i > 0 ? 'mt-0.5' : ''}`}>
                                       <div className="flex items-center gap-2">
@@ -826,7 +825,6 @@ const StrategyCard = ({
                                           <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium tracking-wide flex items-center gap-1.5">
                                               {instrumentName} 
                                               <span className="text-yellow-600 dark:text-yellow-500/90">{strikeTxt}</span> 
-                                              {/* CE hai to Green, PE hai to Red */}
                                               <span className={`font-bold ${optType === 'CE' ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>{optType}</span>
                                           </span>
                                       </div>
