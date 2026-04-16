@@ -980,7 +980,7 @@ const StrategyCard = ({
   if (!strategy) return null;
 
 
-  // 🔥 NEW: Strategy Direction Label Logic
+  // 🔥 NEW: Strategy Direction Label Logic (100% SECURE DATA FETCHING)
   const getStrategyLabel = () => {
       const stratType = strategy.type || strategy.data?.type || 'Time Based';
       const txnType = strategy.data?.config?.transactionType || strategy.config?.transactionType || 'Both Side';
@@ -1002,8 +1002,9 @@ const StrategyCard = ({
 
       // 3. Two Legs (Straddle / Strangle / Hedged)
       if (activeLegs.length === 2) {
-          const action1 = (activeLegs[0]?.action || "BUY").toUpperCase();
-          const action2 = (activeLegs[1]?.action || "BUY").toUpperCase();
+          // DB Se Action nikalna
+          const action1 = (activeLegs[0]?.action || strategy.data?.legs?.[0]?.action || "BUY").toUpperCase();
+          const action2 = (activeLegs[1]?.action || strategy.data?.legs?.[1]?.action || "BUY").toUpperCase();
           
           if (action1 === 'BUY' && action2 === 'BUY') 
               return { text: "Long Straddle/Strangle", color: "text-purple-600 bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400" };
@@ -1015,16 +1016,22 @@ const StrategyCard = ({
 
       // 4. Single Leg Directional (Bullish / Bearish)
       if (activeLegs.length === 1 || txnType !== 'Both Side') {
-          const primaryLeg = activeLegs[0] || {};
-          const action = (primaryLeg.action || "BUY").toUpperCase();
-          const optType = primaryLeg.optionType || 'Call';
+          
+          // 🔥 THE FIX: Database ke exact path se data fetch karna
+          const primaryLeg = activeLegs[0] || strategy.data?.legs?.[0] || {};
+          const action = (primaryLeg.action || strategy.data?.legs?.[0]?.action || "BUY").toUpperCase();
+          const optType = (primaryLeg.optionType || strategy.data?.legs?.[0]?.optionType || 'Call').toUpperCase();
+
+          // Safe Check (Chahe "Put" likha ho ya "PE", dono ko pakdega)
+          const isCall = optType === 'CALL' || optType === 'CE';
+          const isPut = optType === 'PUT' || optType === 'PE';
 
           if (action === 'BUY') {
-              if (optType === 'Call') return { text: "Bullish", color: "text-green-600 bg-green-100 dark:bg-green-500/10 dark:text-green-400" };
-              if (optType === 'Put') return { text: "Bearish", color: "text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-400" };
+              if (isCall) return { text: "Bullish", color: "text-green-600 bg-green-100 dark:bg-green-500/10 dark:text-green-400" };
+              if (isPut) return { text: "Bearish", color: "text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-400" };
           } else if (action === 'SELL') {
-              if (optType === 'Call') return { text: "Bearish", color: "text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-400" };
-              if (optType === 'Put') return { text: "Bullish", color: "text-green-600 bg-green-100 dark:bg-green-500/10 dark:text-green-400" };
+              if (isCall) return { text: "Bearish", color: "text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-400" };
+              if (isPut) return { text: "Bullish", color: "text-green-600 bg-green-100 dark:bg-green-500/10 dark:text-green-400" };
           }
       }
       return null;
