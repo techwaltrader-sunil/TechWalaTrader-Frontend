@@ -758,7 +758,7 @@ const StrategyCard = ({
           </div>
       </div>
 
-      {/* 3. LEGS DISPLAY - 🔥 SMART SORTING FIX 🔥 */}
+     {/* 3. LEGS DISPLAY - 🔥 SMART SORTING 100% FIX 🔥 */}
       <div className="space-y-2 mb-5 flex-1 min-h-[80px]">
           {(strategy.segment === 'Equity' || strategy.segment === 'Future') ? (
               strategy.instruments && strategy.instruments.length > 0 ? (
@@ -773,15 +773,16 @@ const StrategyCard = ({
                   ))
               ) : <div className="text-center text-gray-400 dark:text-gray-500 text-[11px] py-3 bg-gray-50 dark:bg-slate-900 rounded italic border border-dashed border-gray-200 dark:border-slate-700">No instruments</div>
           ) : (
-              strategy.legs && strategy.legs.length > 0 ? (
-                  strategy.legs.map((leg, idx) => {
+              // 🔥 FIX: Check both strategy.legs AND strategy.data.legs to be 100% safe
+              (strategy.legs?.length > 0 ? strategy.legs : strategy.data?.legs) && (strategy.legs?.length > 0 ? strategy.legs : strategy.data?.legs).length > 0 ? (
+                  (strategy.legs?.length > 0 ? strategy.legs : strategy.data?.legs).map((leg, idx) => {
                       
                       // 1. Check Strategy Type & Transaction Type
-                      const stratType = strategy.type || 'Time Based';
+                      const stratType = strategy.type || strategy.data?.type || 'Time Based';
                       const txnType = strategy.data?.config?.transactionType || strategy.config?.transactionType || 'Both Side';
                       
-                      // 2. Original Option Type configured by user (Call or Put)
-                      const legOptType = leg.optionType || 'Call';
+                      // 2. Option Type safely extract karo
+                      const legOptType = leg.optionType || strategy.data?.legs?.[idx]?.optionType || 'Call';
 
                       // 3. Visibility Logic
                       let showCE = false;
@@ -797,27 +798,27 @@ const StrategyCard = ({
 
                       // Safe Fallbacks
                       const instrumentName = strategy.instruments?.[0]?.name || strategy.data?.instruments?.[0]?.name || leg.symbol || "NIFTY BANK";
-                      const strikeTxt = leg.strike || leg.strikeType || "ATM";
-                      const qtyTxt = leg.qty || leg.quantity || 30;
-                      const actionTxt = leg.action || "BUY";
+                      const strikeTxt = leg.strike || leg.strikeType || strategy.data?.legs?.[idx]?.strikeType || "ATM";
+                      const qtyTxt = leg.qty || leg.quantity || strategy.data?.legs?.[idx]?.quantity || 30;
+                      const actionTxt = leg.action || strategy.data?.legs?.[idx]?.action || "BUY";
 
-                      // 🔥 SMART SORTING LOGIC (THE FIX)
-                      const longCond = leg.longCondition || "CE"; // User ki primary choice
+                      // 🔥 SMART SORTING LOGIC (THE FIX: Database path corrected!)
+                      // Ab hum seedha data.legs se longCondition uthayenge jaisa DB me hai
+                      const longCond = strategy.data?.legs?.[idx]?.longCondition || leg.longCondition || "CE";
                       
                       let renderLegs = [];
                       if (showCE) renderLegs.push("CE");
                       if (showPE) renderLegs.push("PE");
 
-                      // Sort array so that the item matching 'longCond' comes first
+                      // Sort array (a === longCond means put 'a' on top)
                       renderLegs.sort((a, b) => {
-                          if (a === longCond && b !== longCond) return -1;
-                          if (b === longCond && a !== longCond) return 1;
+                          if (a === longCond) return -1;
+                          if (b === longCond) return 1;
                           return 0;
                       });
 
                       return (
                           <div key={idx} className="flex flex-col gap-1.5">
-                              {/* 🔄 DYNAMIC RENDERING */}
                               {renderLegs.map((optType, i) => (
                                   <div key={i} className={`bg-gray-50 dark:bg-slate-900 rounded px-3 py-2.5 flex justify-between items-center border border-gray-200 dark:border-slate-700 transition-colors ${i > 0 ? 'mt-0.5' : ''}`}>
                                       <div className="flex items-center gap-2">
