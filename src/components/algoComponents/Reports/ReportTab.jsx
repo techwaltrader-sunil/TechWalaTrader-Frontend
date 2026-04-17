@@ -1269,7 +1269,6 @@
 
 // export default ReportTab;
 
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Target, Zap, Clock, TrendingUp, TrendingDown, RefreshCcw, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
@@ -1282,7 +1281,6 @@ const ReportTab = () => {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   
-  // Kis strategy ka accordion khula hai usko track karne ke liye
   const [expandedStrategy, setExpandedStrategy] = useState(null);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
@@ -1340,8 +1338,6 @@ const ReportTab = () => {
       
       {/* TOP FILTER BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 dark:border-slate-800">
-        
-        {/* 🔥 FIX 1: Mobile Par Refresh Button Chipkega Nahi */}
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full md:w-auto">
             <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-2 sm:px-3 py-1.5 shadow-inner min-w-[220px]">
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-xs sm:text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-0 p-0 border-none w-full" />
@@ -1377,8 +1373,6 @@ const ReportTab = () => {
       ) : reportData ? (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              
-              {/* 🔥 FIX 2: Total P&L Card Overflows Fix (min-w-0 and truncate) */}
               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg px-4 sm:px-5 py-6 flex items-center gap-3 sm:gap-4 transition-all">
                 <div className={`shrink-0 p-3 rounded-lg ${reportData.totalPnl >= 0 ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400'}`}>
                   {reportData.totalPnl >= 0 ? <TrendingUp size={20} className="sm:w-6 sm:h-6"/> : <TrendingDown size={20} className="sm:w-6 sm:h-6"/>}
@@ -1390,7 +1384,6 @@ const ReportTab = () => {
                   </p>
                 </div>
               </div>
-              
               <MiniCard title="Win Rate" value={`${reportData.winRate}%`} icon={Target} color="text-blue-600" />
               <MiniCard title="Total Trades" value={reportData.totalTrades} icon={Zap} color="text-yellow-600" />
               <MiniCard title="Max Drawdown" value={`₹ ${Math.abs(reportData.maxLoss).toFixed(2)}`} icon={Clock} color="text-purple-600" />
@@ -1485,7 +1478,11 @@ const ReportTab = () => {
                                   <td className="px-5 py-4 font-bold text-gray-900 dark:text-white">
                                     <div className="flex items-center gap-2">
                                       <span className="truncate max-w-[120px] sm:max-w-xs block" title={stat.name}>{stat.name}</span>
-                                      <span className="font-medium text-[10px] text-gray-400 uppercase bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded whitespace-nowrap shrink-0">{stat.segment}</span>
+                                      
+                                      {/* 🔥 FIX 1: Removed N/A issue */}
+                                      <span className="font-medium text-[10px] text-gray-500 uppercase bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-slate-700">
+                                        {stat.segment && stat.segment !== "N/A" ? stat.segment : "OPTION"}
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="px-5 py-4 text-center font-medium">{stat.trades}</td>
@@ -1499,8 +1496,6 @@ const ReportTab = () => {
                                 {expandedStrategy === idx && stat.tradesList && stat.tradesList.length > 0 && (
                                   <tr>
                                     <td colSpan="6" className="p-0 border-none bg-gray-50/50 dark:bg-slate-950/50">
-                                      
-                                      {/* 🔥 FIX 3: Inner Table Columns Wrapping Fix */}
                                       <div className="px-3 sm:px-8 py-4 animate-in slide-in-from-top-2 duration-200 overflow-x-auto custom-scrollbar">
                                         <table className="w-full text-left border-collapse min-w-[650px]">
                                           <thead>
@@ -1515,53 +1510,61 @@ const ReportTab = () => {
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            {stat.tradesList.map((trade, tIdx) => {
-                                              const sym = trade.tradedSymbol || trade.symbol || stat.name;
-                                              const txn = trade.tradeAction || trade.transaction || "BUY";
-                                              const qty = trade.tradedQty || trade.quantity || "-";
-                                              const entP = trade.entryPrice ? trade.entryPrice.toFixed(2) : "-";
-                                              const extP = trade.exitPrice ? trade.exitPrice.toFixed(2) : "-";
-                                              const pnl = trade.realizedPnl || trade.pnl || 0;
-                                              const eType = trade.exitRemarks || trade.exitType || "SQUAREOFF";
-                                              const dateStr = trade.date || trade.createdAt; 
-                                              
-                                              return (
-                                                <tr key={tIdx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
-                                                  <td className="py-3 px-3">
-                                                    <p className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">{sym}</p>
-                                                  </td>
-                                                  <td className="py-3 px-3">
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap
-                                                        ${txn.toUpperCase() === "BUY"
-                                                          ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
-                                                          : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
-                                                        }`}
-                                                    >
-                                                      {txn.toUpperCase()}
-                                                    </span>
-                                                  </td>
-                                                  <td className="py-3 px-3 text-sm text-center font-bold text-gray-700 dark:text-gray-300">{qty}</td>
-                                                  <td className="py-3 px-3 whitespace-nowrap">
-                                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                                      ₹{entP} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-0.5 sm:mt-0 ml-0 sm:ml-1">{formatDateTime(dateStr, trade.entryTime)}</span>
-                                                    </p>
-                                                  </td>
-                                                  <td className="py-3 px-3 whitespace-nowrap">
-                                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                                      ₹{extP} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-0.5 sm:mt-0 ml-0 sm:ml-1">{formatDateTime(dateStr, trade.exitTime)}</span>
-                                                    </p>
-                                                  </td>
-                                                  <td className={`py-3 px-3 text-right font-bold text-sm whitespace-nowrap ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
-                                                    {pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                  </td>
-                                                  <td className="py-3 px-3 text-right whitespace-nowrap">
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${getExitTypeColor(eType)}`}>
-                                                      {eType.replace('_', ' ')}
-                                                    </span>
-                                                  </td>
-                                                </tr>
-                                              );
+                                            
+                                            {/* 🔥 FIX 2, 3, 4: Mapping inside executedLegs array properly */}
+                                            {stat.tradesList.flatMap((trade, tIdx) => {
+                                              // Fallback: Agar purana data hai to root object lo, naya hai to executedLegs array
+                                              const legs = trade.executedLegs && trade.executedLegs.length > 0 ? trade.executedLegs : [trade];
+
+                                              return legs.map((leg, lIdx) => {
+                                                const sym = leg.symbol || leg.tradedSymbol || stat.name;
+                                                const txn = leg.action || leg.tradeAction || "BUY";
+                                                const qty = leg.quantity || leg.tradedQty || "-";
+                                                const entP = leg.entryPrice ? leg.entryPrice.toFixed(2) : "-";
+                                                const extP = leg.exitPrice ? leg.exitPrice.toFixed(2) : "-";
+                                                const pnl = leg.livePnl !== undefined ? leg.livePnl : (leg.pnl || trade.pnl || 0);
+                                                const eType = leg.exitReason || leg.exitRemarks || trade.exitRemarks || "SQUAREOFF";
+                                                const dateStr = trade.createdAt || trade.date; 
+
+                                                return (
+                                                  <tr key={`${tIdx}-${lIdx}`} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
+                                                    <td className="py-3 px-3">
+                                                      <p className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">{sym}</p>
+                                                    </td>
+                                                    <td className="py-3 px-3">
+                                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap
+                                                          ${txn.toUpperCase() === "BUY"
+                                                            ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
+                                                            : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
+                                                          }`}
+                                                      >
+                                                        {txn.toUpperCase()}
+                                                      </span>
+                                                    </td>
+                                                    <td className="py-3 px-3 text-sm text-center font-bold text-gray-700 dark:text-gray-300">{qty}</td>
+                                                    <td className="py-3 px-3 whitespace-nowrap">
+                                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                        {entP !== "-" ? `₹${entP}` : "-"} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-0.5 sm:mt-0 ml-0 sm:ml-1">{formatDateTime(dateStr, trade.entryTime)}</span>
+                                                      </p>
+                                                    </td>
+                                                    <td className="py-3 px-3 whitespace-nowrap">
+                                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                        {extP !== "-" ? `₹${extP}` : "-"} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-0.5 sm:mt-0 ml-0 sm:ml-1">{formatDateTime(trade.updatedAt || dateStr, trade.exitTime)}</span>
+                                                      </p>
+                                                    </td>
+                                                    <td className={`py-3 px-3 text-right font-bold text-sm whitespace-nowrap ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+                                                      {pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                                                      <span className={`text-[10px] font-bold uppercase tracking-wider ${getExitTypeColor(eType)}`}>
+                                                        {eType.replace(/_/g, ' ')}
+                                                      </span>
+                                                    </td>
+                                                  </tr>
+                                                );
+                                              });
                                             })}
+                                            
                                           </tbody>
                                         </table>
                                       </div>
@@ -1590,7 +1593,6 @@ const ReportTab = () => {
   );
 };
 
-// 🔥 FIX 2: MiniCard Overflows Fix
 const MiniCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg px-4 sm:px-5 py-6 flex items-center gap-3 sm:gap-4 transition-all">
         <div className={`shrink-0 p-2 sm:p-3 rounded-md ${color.replace('text-', 'bg-').split(' ')[0]} bg-opacity-10 dark:bg-opacity-20`}>
