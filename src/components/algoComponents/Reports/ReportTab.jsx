@@ -1520,9 +1520,26 @@ const ReportTab = () => {
                                                 const sym = leg.symbol || leg.tradedSymbol || stat.name;
                                                 const txn = leg.action || leg.tradeAction || "BUY";
                                                 const qty = leg.quantity || leg.tradedQty || "-";
+                                                // const entP = leg.entryPrice ? leg.entryPrice.toFixed(2) : "-";
+                                                // const extP = leg.exitPrice ? leg.exitPrice.toFixed(2) : "-";
+                                                // const pnl = leg.livePnl !== undefined ? leg.livePnl : (leg.pnl || trade.pnl || 0);
+
                                                 const entP = leg.entryPrice ? leg.entryPrice.toFixed(2) : "-";
-                                                const extP = leg.exitPrice ? leg.exitPrice.toFixed(2) : "-";
                                                 const pnl = leg.livePnl !== undefined ? leg.livePnl : (leg.pnl || trade.pnl || 0);
+
+                                                // 🔥 NEW: REVERSE MATH LOGIC FOR MISSING EXIT PRICE 🔥
+                                                let calculatedExitPrice = leg.exitPrice;
+
+                                                // Agar exitPrice 0 ya blank hai, aur P&L hai, to math se nikal lo!
+                                                if (!calculatedExitPrice && pnl !== 0 && leg.entryPrice && qty !== "-") {
+                                                    calculatedExitPrice = txn.toUpperCase() === "BUY" 
+                                                        ? leg.entryPrice + (pnl / Number(qty))
+                                                        : leg.entryPrice - (pnl / Number(qty));
+                                                }
+
+                                                const extP = calculatedExitPrice ? Math.max(0, calculatedExitPrice).toFixed(2) : "-";
+
+
                                                 const eType = leg.exitReason || leg.exitRemarks || trade.exitRemarks || "SQUAREOFF";
                                                 const dateStr = trade.createdAt || trade.date; 
 
