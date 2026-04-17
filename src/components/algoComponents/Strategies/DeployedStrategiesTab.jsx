@@ -643,8 +643,16 @@ const DeployedStrategiesTab = () => {
         );
     }
 
+    // 🔥 NAYA: Total MTM Calculate karna (Saare legs ka live PnL jod kar)
     const totalMTM = deployments.reduce((acc, dep) => {
-        const pnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : (dep.pnl || 0);
+        // 1. Is deployment ke saare legs ka PnL jodo
+        let legSumPnl = 0;
+        if (dep.executedLegs && dep.executedLegs.length > 0) {
+            legSumPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
+        }
+        
+        // 2. Socket data lo, warna legSumPnl use karo
+        const pnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : legSumPnl;
         return acc + parseFloat(pnl);
     }, 0);
 
@@ -681,13 +689,19 @@ const DeployedStrategiesTab = () => {
             {/* ========================================== */}
             {/* 🃏 STRATEGY CARDS GRID */}
             {/* ========================================== */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {deployments.map((dep) => {
                     const strategyName = dep.strategyId?.name || 'Unknown Strategy';
                     const isLive = dep.executionType === 'LIVE';
                     const isStopping = stoppingId === dep._id;
 
-                    const currentPnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : (dep.pnl || 0);
+                    // 🔥 FIX: Card ka Total P&L nikalne ke liye saare legs ko jodo
+                    let legSumPnl = 0;
+                    if (dep.executedLegs && dep.executedLegs.length > 0) {
+                        legSumPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
+                    }
+                    
+                    const currentPnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : legSumPnl;
 
                     return (
                         <div key={dep._id} className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full">
