@@ -660,6 +660,8 @@ const Backtest = () => {
   // 🔥 NAYA STATE: Toggle button ke liye
   const [withSlippage, setWithSlippage] = useState(true);
 
+  const [showInfo, setShowInfo] = useState(false);
+
 
   // --- LOAD STRATEGIES FROM REAL DATABASE ---
   useEffect(() => {
@@ -916,29 +918,47 @@ const Backtest = () => {
                           <div className="bg-green-500 h-full w-[94%]"></div>
                       </div>
                   </div>
-                  
 
-                  {/* 🔥 THE SLIPPAGE TOGGLE BUTTON 🔥 */}
+
+                 {/* 🔥 THE SLIPPAGE TOGGLE BUTTON 🔥 */}
                   <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm relative">
                       
-                      {/* INFO ICON & TOOLTIP (Group Hover) */}
-                      <div className="flex items-center gap-1 relative group cursor-help">
+                      {/* INFO ICON & TOOLTIP (Smart Hover & Mobile Tap) */}
+                      <div 
+                          className="flex items-center gap-1 relative cursor-pointer"
+                          onMouseEnter={() => setShowInfo(true)}
+                          onMouseLeave={() => setShowInfo(false)}
+                          onClick={() => setShowInfo(!showInfo)}
+                      >
                           <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                               Fill Type:
                           </span>
-                          <Info size={14} className="text-gray-400 hover:text-blue-500 transition-colors" />
+                          <Info size={14} className={`transition-colors ${showInfo ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`} />
                           
-                          {/* 💡 Tooltip Box (Hidden by default, shows on hover) */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-[280px] p-3 bg-gray-800 dark:bg-slate-700 text-white text-xs rounded-lg shadow-xl z-50 pointer-events-none before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-gray-800 dark:before:border-t-slate-700">
-                              <p className="font-bold text-blue-300 mb-1">Exact Trigger + Gaps:</p>
-                              <p className="text-gray-200 mb-3 leading-relaxed">
-                                  Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.
-                              </p>
-                              <p className="font-bold text-orange-300 mb-1">Always Exit at Open:</p>
-                              <p className="text-gray-200 leading-relaxed">
-                                  A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.
-                              </p>
-                          </div>
+                          {/* 💡 Dynamic Theme Tooltip Box */}
+                          {showInfo && (
+                              <div 
+                                  onClick={(e) => { e.stopPropagation(); setShowInfo(false); }}
+                                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-white dark:before:border-t-slate-800 animate-in fade-in zoom-in duration-200"
+                              >
+                                  {/* Conditionally show info based on selected mode */}
+                                  {withSlippage ? (
+                                      <div>
+                                          <p className="font-bold text-blue-600 dark:text-blue-400 mb-1">Exact Trigger + Gaps:</p>
+                                          <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+                                              Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.
+                                          </p>
+                                      </div>
+                                  ) : (
+                                      <div>
+                                          <p className="font-bold text-orange-600 dark:text-orange-400 mb-1">Always Exit at Open:</p>
+                                          <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+                                              A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.
+                                          </p>
+                                      </div>
+                                  )}
+                              </div>
+                          )}
                       </div>
 
                       <button 
