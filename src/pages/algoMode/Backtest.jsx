@@ -632,7 +632,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square
+  ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square, Info
 } from 'lucide-react';
 import axios from 'axios'; 
 import { getStrategies } from '../../data/AlogoTrade/strategyService';
@@ -916,12 +916,31 @@ const Backtest = () => {
                           <div className="bg-green-500 h-full w-[94%]"></div>
                       </div>
                   </div>
+                  
 
                   {/* 🔥 THE SLIPPAGE TOGGLE BUTTON 🔥 */}
-                  <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm">
-                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
-                          Execution Mode:
-                      </span>
+                  <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm relative">
+                      
+                      {/* INFO ICON & TOOLTIP (Group Hover) */}
+                      <div className="flex items-center gap-1 relative group cursor-help">
+                          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                              Fill Type:
+                          </span>
+                          <Info size={14} className="text-gray-400 hover:text-blue-500 transition-colors" />
+                          
+                          {/* 💡 Tooltip Box (Hidden by default, shows on hover) */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-[280px] p-3 bg-gray-800 dark:bg-slate-700 text-white text-xs rounded-lg shadow-xl z-50 pointer-events-none before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-gray-800 dark:before:border-t-slate-700">
+                              <p className="font-bold text-blue-300 mb-1">Exact Trigger + Gaps:</p>
+                              <p className="text-gray-200 mb-3 leading-relaxed">
+                                  Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.
+                              </p>
+                              <p className="font-bold text-orange-300 mb-1">Always Exit at Open:</p>
+                              <p className="text-gray-200 leading-relaxed">
+                                  A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.
+                              </p>
+                          </div>
+                      </div>
+
                       <button 
                           onClick={() => setWithSlippage(!withSlippage)}
                           className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${withSlippage ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}`}
@@ -929,7 +948,7 @@ const Backtest = () => {
                           <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${withSlippage ? 'translate-x-5' : 'translate-x-1'}`} />
                       </button>
                       <span className={`text-xs font-bold ${withSlippage ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'}`}>
-                          {withSlippage ? 'Realistic (Math+Gap)' : 'Strict Open Price'}
+                          {withSlippage ? 'Exact Trigger + Gaps' : 'Always Exit at Open'}
                       </span>
                   </div>
                   
