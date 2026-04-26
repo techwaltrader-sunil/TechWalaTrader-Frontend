@@ -657,6 +657,9 @@ const Backtest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
 
+  // 🔥 NAYA STATE: Toggle button ke liye
+  const [withSlippage, setWithSlippage] = useState(true);
+
 
   // --- LOAD STRATEGIES FROM REAL DATABASE ---
   useEffect(() => {
@@ -727,10 +730,11 @@ const Backtest = () => {
       const API_URL = "https://techwalatrader-algobackend.onrender.com/api"; 
       const targetId = selectedStrategyIds[0];
 
-      let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}`;
+      // 🔥 FIX: API URL me slippage toggle pass karna
+      let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}`;
       if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
-            requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
-        }
+          requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
+      }
       const response = await axios.get(requestUrl);
         
       
@@ -901,8 +905,10 @@ const Backtest = () => {
                   </div>
               )}
 
-              {/* ROW 4: CREDIT BAR & BUTTON */}
-              <div className="mt-2 flex flex-col md:flex-row items-center gap-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-1 pr-1 pl-4 transition-colors">
+              {/* ROW 4: CREDIT BAR, TOGGLE & BUTTON */}
+              <div className="mt-2 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-2 pr-2 pl-4 transition-colors">
+                  
+                  {/* Credit Bar */}
                   <div className="flex-1 w-full flex items-center gap-2 py-2 md:py-0">
                       <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Backtest Credit:</span>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">47/50</span>
@@ -910,7 +916,24 @@ const Backtest = () => {
                           <div className="bg-green-500 h-full w-[94%]"></div>
                       </div>
                   </div>
+
+                  {/* 🔥 THE SLIPPAGE TOGGLE BUTTON 🔥 */}
+                  <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm">
+                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                          Execution Mode:
+                      </span>
+                      <button 
+                          onClick={() => setWithSlippage(!withSlippage)}
+                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${withSlippage ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}`}
+                      >
+                          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${withSlippage ? 'translate-x-5' : 'translate-x-1'}`} />
+                      </button>
+                      <span className={`text-xs font-bold ${withSlippage ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'}`}>
+                          {withSlippage ? 'Realistic (Math+Gap)' : 'Strict Open Price'}
+                      </span>
+                  </div>
                   
+                  {/* Run Button */}
                   <button 
                     onClick={runBacktest}
                     disabled={isLoading || selectedStrategyIds.length === 0}
@@ -966,3 +989,5 @@ const Backtest = () => {
 };
 
 export default Backtest;
+
+
