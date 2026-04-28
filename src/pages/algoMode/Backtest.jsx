@@ -1127,11 +1127,22 @@ const Backtest = () => {
       setProgress(0);
       let currentProgress = 0;
       
-      // Zeno's Paradox: 95% tak jayega, uske baad ruk jayega jab tak API response na de
       progressInterval.current = setInterval(() => {
-          currentProgress += (95 - currentProgress) * 0.08; // Speed factor
-          setProgress(Math.round(currentProgress));
-      }, 500); // Har half-second update
+          // 🚀 The Magic "Never-Stop" Speed Logic
+          if (currentProgress < 40) {
+              currentProgress += Math.random() * 4 + 2; // Fast: 0 se 40%
+          } else if (currentProgress < 70) {
+              currentProgress += Math.random() * 2 + 1; // Medium: 40 se 70%
+          } else if (currentProgress < 85) {
+              currentProgress += Math.random() * 0.8 + 0.2; // Slow: 70 se 85%
+          } else if (currentProgress < 99) {
+              // Ultra-Slow Creeping: 85% se 99% (3-4 minute tak yahi chalega bina ruke!)
+              currentProgress += 0.08; 
+          }
+
+          // Progress hamesha integer me dikhayenge, maximum 99% tak (jab tak backend 100% na de)
+          setProgress(Math.min(99, Math.floor(currentProgress)));
+      }, 1000); // Har 1 second (1000ms) par update hoga
   };
 
   const finishProgress = () => {
@@ -1435,8 +1446,9 @@ const Backtest = () => {
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                         {progress < 30 ? "Fetching Historical Candles..." 
                           : progress < 60 ? "Evaluating Strategy Rules..." 
-                          : progress < 90 ? "Calculating Option Greeks..." 
-                          : "Finalizing PnL & Equity Curve..."}
+                          : progress < 85 ? "Calculating Option Greeks..." 
+                          : progress < 95 ? "Bypassing Rate Limits & Syncing API (Hold tight)..."
+                          : "Finalizing Deep OTM/ITM Math & Equity Curve..."}
                     </span>
                 </div>
             </div>
