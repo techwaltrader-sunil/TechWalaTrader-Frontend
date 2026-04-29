@@ -1063,7 +1063,8 @@ const Backtest = () => {
 
   // 🔥 NEW STATES: Smart Progress Bar ke liye
   const [progress, setProgress] = useState(0);
-  const progressInterval = useRef(null);
+  const [processingDate, setProcessingDate] = useState(""); // 🔥 NAYA STATE Date ke liye
+
 
   // --- LOAD STRATEGIES FROM REAL DATABASE ---
   useEffect(() => {
@@ -1122,41 +1123,16 @@ const Backtest = () => {
     return names.join(", ");
   };
 
-  // 🔥 SMART PROGRESS BAR SIMULATOR 🔥
-  const startSimulatedProgress = () => {
-      setProgress(0);
-      let currentProgress = 0;
-      
-      progressInterval.current = setInterval(() => {
-          // 🚀 The Magic "Never-Stop" Speed Logic
-          if (currentProgress < 40) {
-              currentProgress += Math.random() * 4 + 2; // Fast: 0 se 40%
-          } else if (currentProgress < 70) {
-              currentProgress += Math.random() * 2 + 1; // Medium: 40 se 70%
-          } else if (currentProgress < 85) {
-              currentProgress += Math.random() * 0.8 + 0.2; // Slow: 70 se 85%
-          } else if (currentProgress < 99) {
-              // Ultra-Slow Creeping: 85% se 99% (3-4 minute tak yahi chalega bina ruke!)
-              currentProgress += 0.08; 
-          }
 
-          // Progress hamesha integer me dikhayenge, maximum 99% tak (jab tak backend 100% na de)
-          setProgress(Math.min(99, Math.floor(currentProgress)));
-      }, 1000); // Har 1 second (1000ms) par update hoga
-  };
 
-  const finishProgress = () => {
-      if (progressInterval.current) clearInterval(progressInterval.current);
-      setProgress(100); // Direct 100% jump
-  };
-
-  // --- 🔥 THE REAL API ENGINE 🔥 ---
+  // --- 🔥 THE SSE STREAMING API ENGINE 🔥 ---
   const runBacktest = async () => {
     if (selectedStrategyIds.length === 0) return;
     
     setIsLoading(true);
     setResult(null);
-    startSimulatedProgress(); // 🚀 Progress Bar Chalu!
+    setProgress(0);
+    setProcessingDate("Starting Engine...");
 
     try {
       const API_URL = "https://techwalatrader-algobackend.onrender.com/api"; 
@@ -1167,45 +1143,82 @@ const Backtest = () => {
           requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
       }
       
-      const response = await axios.get(requestUrl);
-        
-      if (response.data.success) {
-          const backendData = response.data.data;
-
-          const formattedResult = {
-              summary: backendData.summary,
-              equityCurve: backendData.equityCurve,
-              daywiseBreakdown: backendData.daywiseBreakdown, 
-              transactions: backendData.daywiseBreakdown.map(day => {
-                  const eqData = backendData.equityCurve.find(e => e.date === day.date);
-                  return {
-                      date: day.date,
-                      pnl: day.dailyPnL,
-                      cumulativePnl: eqData ? eqData.pnl : 0,
-                      tradesTaken: day.tradesTaken
-                  };
-              })
-          };
-
-          finishProgress(); // 🚀 100% complete!
-          
-          // Thoda delay taki user ko 100% likha hua dikhe (Psychological satisfaction)
-          setTimeout(() => {
-              setResult(formattedResult);
-              setIsLoading(false);
-          }, 600); 
+      // 🔥 1. START FETCHING THE STREAM (Axios nahi, Fetch API use karenge)
+      const response = await fetch(requestUrl);
+      
+      if (!response.ok) {
+          throw new Error("Failed to connect to backtest engine.");
       }
+
+      // 🔥 2. DECODE THE STREAM CHUNKS (Live Data Reader)
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          
+          // Aakhri incomplete line ko buffer me chhod do
+          buffer = lines.pop(); 
+
+          for (let line of lines) {
+              if (line.startsWith('data: ')) {
+                  const dataStr = line.replace('data: ', '').trim();
+                  if (!dataStr) continue;
+
+                  try {
+                      const parsedData = JSON.parse(dataStr);
+                      
+                      // 🎯 EVENT: PROGRESS (Day by Day update)
+                      if (parsedData.type === 'PROGRESS') {
+                          setProgress(parsedData.percent);
+                          setProcessingDate(`Processing: ${parsedData.date}`);
+                      } 
+                      // 🎯 EVENT: COMPLETE (100% Done & Show Results)
+                      else if (parsedData.type === 'COMPLETE') {
+                          const backendData = parsedData.data;
+                          const formattedResult = {
+                              summary: backendData.summary,
+                              equityCurve: backendData.equityCurve,
+                              daywiseBreakdown: backendData.daywiseBreakdown, 
+                              transactions: backendData.daywiseBreakdown.map(day => {
+                                  const eqData = backendData.equityCurve.find(e => e.date === day.date);
+                                  return { date: day.date, pnl: day.dailyPnL, cumulativePnl: eqData ? eqData.pnl : 0, tradesTaken: day.tradesTaken };
+                              })
+                          };
+
+                          setProgress(100);
+                          setProcessingDate("Finalizing Results...");
+                          
+                          // UI ko thoda smmoth banane ke liye halka delay
+                          setTimeout(() => {
+                              setResult(formattedResult);
+                              setIsLoading(false);
+                          }, 500);
+                      } 
+                      // 🎯 EVENT: ERROR (Safe Stop)
+                      else if (parsedData.type === 'ERROR') {
+                          alert(`❌ Backtest Halted: ${parsedData.message}`);
+                          setIsLoading(false);
+                          reader.cancel(); // Connection tod do
+                          return;
+                      }
+                  } catch (e) {
+                      console.error("Chunk Parsing Error:", e);
+                  }
+              }
+          }
+      }
+
     } catch (error) {
-      console.error("Backtest Failed:", error);
-      if (progressInterval.current) clearInterval(progressInterval.current);
+      console.error("Stream Failed:", error);
       setIsLoading(false);
       setProgress(0);
-      
-      if (error.response && error.response.data && error.response.data.errorType === "NO_DATA") {
-          alert(`⚠️ ${error.response.data.message}`);
-      } else {
-          alert("❌ Failed to fetch backtest data. Please try again.");
-      }
+      alert("❌ Connection lost with the backtest engine. Please try again.");
     }
   };
 
@@ -1443,12 +1456,9 @@ const Backtest = () => {
 
                 <div className="mt-3 flex justify-center items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                        {progress < 30 ? "Fetching Historical Candles..." 
-                          : progress < 60 ? "Evaluating Strategy Rules..." 
-                          : progress < 85 ? "Calculating Option Greeks..." 
-                          : progress < 95 ? "Bypassing Rate Limits & Syncing API (Hold tight)..."
-                          : "Finalizing Deep OTM/ITM Math & Equity Curve..."}
+                    {/* 🔥 LIVE DATE DIKHEGI YAHAN! */}
+                    <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
+                        {processingDate}
                     </span>
                 </div>
             </div>
