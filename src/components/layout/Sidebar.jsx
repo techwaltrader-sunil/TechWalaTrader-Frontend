@@ -60,7 +60,7 @@ const Sidebar = ({ isAlgoMode, setIsAlgoMode, onLinkClick, isMobileOpen, setIsMo
           {isSidebarExpanded ? (
             <div className="text-center w-full">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">TradeMaster</h1>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">SMC Trading Suite</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Smart Trading Suite</p>
             </div>
           ) : (
             <div className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">TM</div>
