@@ -1626,7 +1626,8 @@ const Backtest = () => {
     setProcessingDate("Starting Engine...");
 
     try {
-      const API_URL = "https://techwalatrader.duckdns.org/api"; 
+    //   const API_URL = "https://techwalatrader.duckdns.org/api"; 
+      const API_URL = `${import.meta.env.VITE_API_URL}/api`; 
       const targetId = selectedStrategyIds[0];
 
       let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}`;
