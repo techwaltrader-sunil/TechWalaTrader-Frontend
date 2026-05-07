@@ -601,7 +601,7 @@ const DeployedStrategiesTab = () => {
 
     // Socket.io Connection
     useEffect(() => {
-        const socket = io(`${import.meta.env.VITE_API_URL || 'https://techwalatrader-algobackend.onrender.com'}`);
+        const socket = io(`${import.meta.env.VITE_API_URL || 'https://techwalatrader.duckdns.org'}`);
 
         socket.on('live-pnl-update', (pnlData) => {
             setLivePnls(pnlData); 

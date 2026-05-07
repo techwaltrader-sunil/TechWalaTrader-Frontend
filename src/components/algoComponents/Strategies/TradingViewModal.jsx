@@ -412,7 +412,7 @@ const TradingViewModal = ({ isOpen, onClose, strategy, onSave, onRemove }) => {
   const placeholderMessage = JSON.stringify({ info: "Please select an alert type above to generate JSON." }, null, 4);
   
   // ✅ Webhook URL ko bhi Live Backend ke hisab se set kar diya hai
-  const webhookUrl = `${import.meta.env.VITE_API_URL || 'https://techwalatrader-algobackend.onrender.com'}/api/webhook/tv`;
+  const webhookUrl = `${import.meta.env.VITE_API_URL || 'https://techwalatrader.duckdns.org'}/api/webhook/tv`;
 
   const guideSteps = [
     { id: 1, title: "Open Alert", desc: "Click 'Create Alert' in TV.", img: step1Img },

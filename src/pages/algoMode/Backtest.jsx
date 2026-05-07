@@ -1626,7 +1626,7 @@ const Backtest = () => {
     setProcessingDate("Starting Engine...");
 
     try {
-      const API_URL = "https://techwalatrader-algobackend.onrender.com/api"; 
+      const API_URL = "https://techwalatrader.duckdns.org/api"; 
       const targetId = selectedStrategyIds[0];
 
       let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}`;

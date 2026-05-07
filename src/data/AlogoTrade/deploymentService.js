@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://techwalatrader-algobackend.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://techwalatrader.duckdns.org';
 
 // Active Deployments lane ke liye
 export const fetchActiveDeployments = async () => {
