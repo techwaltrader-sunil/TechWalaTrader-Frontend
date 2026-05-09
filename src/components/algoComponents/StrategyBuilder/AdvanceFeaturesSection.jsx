@@ -819,10 +819,13 @@ const AdvanceFeaturesSection = ({ advanceSettings, setAdvanceSettings, legs, add
 
       if (['waitAndTrade', 'premiumDifference', 'reEntryExecute', 'trailSL'].includes(key)) {
           setPopupFeature(key);
-          if(key === 'waitAndTrade') setTempConfig({ type: '% ↑', movement: 0 });
-          if(key === 'premiumDifference') setTempConfig({ premium: 0 });
-          if(key === 'reEntryExecute') setTempConfig({ reEntryType: 'ReExecute', actionType: 'On Close', cycles: 0 });
-          if(key === 'trailSL') setTempConfig({ trailType: 'Pt', x: 0, y: 0 });
+          
+          // 🔥 THE FIX: Purani database value ko pre-fill karo, reset mat karo!
+          if(key === 'waitAndTrade') setTempConfig(advanceSettings?.waitAndTradeConfig || { type: '% ↑', movement: 0 });
+          if(key === 'premiumDifference') setTempConfig(advanceSettings?.premiumDifferenceConfig || { premium: 0 });
+          if(key === 'reEntryExecute') setTempConfig(advanceSettings?.reEntryExecuteConfig || { reEntryType: 'ReExecute', actionType: 'On Close', cycles: 0 });
+          if(key === 'trailSL') setTempConfig(advanceSettings?.trailSLConfig || { trailType: 'Pt', x: 0, y: 0 });
+          
       } else {
           setAdvanceSettings(prev => ({ ...prev, [key]: true }));
       }

@@ -220,6 +220,7 @@ const StrategyBuilder = () => {
                         advanceSettings={advanceSettings} 
                         entrySettings={entrySettings} 
                         setEntrySettings={setEntrySettings} // 🔥 THE FIX: Ye Nayi line add karni hai
+                        setAdvanceSettings={setAdvanceSettings} // 🔥 YEH LINE ADD KARNI HAI
                     />
                 
                 )}

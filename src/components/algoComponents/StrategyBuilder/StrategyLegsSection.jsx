@@ -2145,7 +2145,7 @@ import { criteriaInfoData } from '../../../data/criteriaInfoData';
 import { EXPIRY_TYPES, STRIKE_CRITERIA, ATM_POINT_STEPS, ATM_PERCENT_STEPS } from '../../../data/instrumentData';
 import { getDefaultExpiry, getAllowedExpiries } from '../../../data/InstrumentsExpiryList';
 
-const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, entrySettings, setEntrySettings }) => {
+const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, setAdvanceSettings, entrySettings, setEntrySettings }) => {
   const hasInstrument = instruments && instruments.length > 0;
   const selectedInstrumentName = hasInstrument ? instruments[0].name : "NIFTY 50"; 
   const baseLotSize = hasInstrument ? (instruments[0].lot || 1) : 1;
@@ -2737,7 +2737,25 @@ useEffect(() => {
                                     <div className="grid grid-cols-2 gap-4 mt-3 bg-teal-50/50 dark:bg-teal-900/10 p-3 rounded-lg border border-teal-100 dark:border-teal-800/30">
                                         <div>
                                             <label className="text-[11px] text-teal-700 dark:text-teal-500 font-bold block mb-1.5">Premium Difference</label>
-                                            <input type="number" value={leg.premiumDifference !== undefined ? leg.premiumDifference : (advanceSettings.premiumDifferenceConfig?.premium || 0)} onChange={e => updateLeg(leg.id, 'premiumDifference', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" />
+                                            <input 
+                                                type="number" 
+                                                
+                                                // 🔥 THE FIX 1: Value ab kisi Leg ke andar se nahi, direct main setting se aayegi
+                                                value={advanceSettings?.premiumDifferenceConfig?.premium || ''} 
+                                                
+                                                // 🔥 THE FIX 2: Type karte hi direct main advanceSettings update hogi
+                                                onChange={(e) => {
+                                                    setAdvanceSettings(prev => ({
+                                                        ...prev,
+                                                        premiumDifferenceConfig: {
+                                                            ...prev.premiumDifferenceConfig,
+                                                            premium: e.target.value
+                                                        }
+                                                    }));
+                                                }} 
+                                                
+                                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" 
+                                            />
                                         </div>
                                     </div>
                                 )}
