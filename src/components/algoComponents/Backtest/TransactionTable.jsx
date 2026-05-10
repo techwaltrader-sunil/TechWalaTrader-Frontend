@@ -1158,6 +1158,290 @@
 // export default TransactionTable;
 
 
+// import React, { useState, useMemo } from "react";
+// import {
+//   ChevronDown,
+//   ChevronUp,
+//   FileText,
+//   ArrowLeft,
+//   ArrowRight,
+//   ExternalLink,
+// } from "lucide-react";
+
+// const TransactionTable = ({ transactions }) => {
+//   const [expandedDate, setExpandedDate] = useState(null);
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const itemsPerPage = 5;
+
+//   // --- DATA GROUPING LOGIC ---
+//   const groupedData = useMemo(() => {
+//     if (!transactions || transactions.length === 0) return [];
+
+//     const groups = {};
+//     transactions.forEach((item) => {
+//       const originalDate = item.date; 
+      
+//       if (!groups[originalDate]) {
+//         const [year, month, day] = originalDate.split("-");
+//         const displayDate = `${day}/${month}/${year.slice(-2)}`;
+
+//         groups[originalDate] = {
+//           rawDate: originalDate, 
+//           date: displayDate,     
+//           totalPnL: 0,
+//           trades: [],
+//         };
+//       }
+
+//       if (item.tradesList) {
+//           groups[originalDate].totalPnL = item.dailyPnL || item.pnl || 0;
+//           groups[originalDate].trades = item.tradesList;
+//       } else {
+//           groups[originalDate].totalPnL += item.pnl || 0;
+//           groups[originalDate].trades.push(item);
+//       }
+//     });
+
+//     return Object.values(groups).sort((a, b) => {
+//       if (a.rawDate < b.rawDate) return 1;
+//       if (a.rawDate > b.rawDate) return -1;
+//       return 0;
+//     });
+//   }, [transactions]);
+
+//   const totalPages = Math.ceil(groupedData.length / itemsPerPage);
+//   const currentData = groupedData.slice(
+//     (currentPage - 1) * itemsPerPage,
+//     currentPage * itemsPerPage,
+//   );
+
+//   const toggleAccordion = (dateKey) => {
+//     setExpandedDate(expandedDate === dateKey ? null : dateKey);
+//   };
+
+//   // 🔥 SMART FORMATTING FIX: Ab ye function bataega ki kitne decimals dikhane hain
+//   const fmt = (num, decimals = 0) => {
+//     return `₹${Math.abs(num).toLocaleString("en-IN", { 
+//         minimumFractionDigits: decimals, 
+//         maximumFractionDigits: decimals 
+//     })}`;
+//   };
+
+//   return (
+//     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg flex flex-col transition-colors duration-300">
+      
+//       {/* HEADER */}
+//       <div className="p-6 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 transition-colors">
+//         <div>
+//           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+//             Transaction Details
+//           </h2>
+//           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+//             Daily trade breakdown and logs
+//           </p>
+//         </div>
+//         <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md shadow-blue-500/20 active:scale-95">
+//           <FileText size={16} /> Export to PDF
+//         </button>
+//       </div>
+
+//       {/* TABLE CONTENT */}
+//       <div className="flex-1 overflow-x-auto">
+//         <div className="min-w-[800px]">
+//           {currentData.map((group) => (
+//             <div key={group.rawDate} className="border-b border-gray-200 dark:border-slate-800 last:border-0 transition-colors">
+              
+//               {/* PARENT ROW (Summary) */}
+//               <div
+//                 onClick={() => toggleAccordion(group.rawDate)}
+//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50 
+//                             ${expandedDate === group.rawDate ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}`}
+//               >
+//                 <div className="flex items-center gap-4">
+//                   <div className={`p-2 rounded-full transition-colors ${expandedDate === group.rawDate ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400"}`}>
+//                     {expandedDate === group.rawDate ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+//                   </div>
+//                   <div>
+//                     <p className="text-sm font-bold text-gray-900 dark:text-white">{group.date}</p>
+//                     <p className="text-xs text-gray-500 dark:text-gray-500">{group.trades.length} Trades Executed</p>
+//                   </div>
+//                 </div>
+
+//                 <div className="flex items-center gap-6">
+//                   <div className="text-right">
+//                     <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-bold">Net P&L</p>
+//                     <p className={`text-base font-bold ${group.totalPnL >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+//                       {/* 🔥 Outer Table: 0 Decimals (Round Figure) */}
+//                       {group.totalPnL >= 0 ? "+" : "-"}{fmt(group.totalPnL, 0)}
+//                     </p>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {/* EXPANDED CONTENT (Nested Table) */}
+//               {expandedDate === group.rawDate && (
+//                 <div className="bg-gray-50 dark:bg-slate-950/50 border-t border-gray-200 dark:border-slate-800 p-4 animate-in slide-in-from-top-2 duration-300">
+//                   <table className="w-full text-left border-collapse">
+//                     <thead>
+//                       <tr className="text-[10px] text-gray-500 dark:text-gray-500 uppercase border-b border-gray-200 dark:border-slate-800/50">
+//                         <th className="pb-2 font-bold pl-2">Symbol</th>
+//                         <th className="pb-2 font-bold">Transaction</th>
+//                         <th className="pb-2 font-bold">Quantity</th>
+//                         <th className="pb-2 font-bold">Entry</th>
+//                         <th className="pb-2 font-bold">Exit</th>
+//                         <th className="pb-2 font-bold text-right">P&L</th>
+//                         <th className="pb-2 font-bold text-right pr-2">Exit Type</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {group.trades.map((trade, idx) => {
+                        
+//                         const sym = trade.symbol || "BANKNIFTY";
+//                         const txn = trade.transaction ? trade.transaction.toUpperCase() : "BUY";
+//                         const qty = trade.quantity || "30";
+//                         const entP = trade.entryPrice ? trade.entryPrice.toFixed(2) : "-";
+//                         const entT = trade.entryTime || "--:--:--";
+//                         const extP = trade.exitPrice ? trade.exitPrice.toFixed(2) : "-";
+//                         const extT = trade.exitTime || "--:--:--";
+//                         const pnl = trade.pnl || 0;
+//                         const eType = trade.exitType || "SQUAREOFF";
+
+//                         return (
+//                         <tr key={idx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
+                          
+//                           <td className="py-3 pl-2">
+//                             <p className="text-sm font-bold text-gray-900 dark:text-white">
+//                               {sym}
+//                             </p>
+//                             <p className="text-[10px] text-gray-500 dark:text-gray-500">
+//                               Intraday
+//                             </p>
+//                           </td>
+
+//                           <td className="py-3">
+//                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+//                                 ${txn === "BUY"
+//                                   ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
+//                                   : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
+//                                 }`}
+//                             >
+//                               {txn}
+//                             </span>
+//                           </td>
+
+//                           <td className="py-3 text-sm font-bold text-gray-700 dark:text-gray-300">
+//                             {qty}
+//                           </td>
+
+//                           <td className="py-3">
+//                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+//                               ₹{entP}
+//                               <span className="text-[11px] font-normal text-gray-500 ml-1">
+//                                 ({entT})
+//                               </span>
+//                             </p>
+//                           </td>
+
+//                           <td className="py-3">
+//                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+//                               ₹{extP}
+//                               <span className="text-[11px] font-normal text-gray-500 ml-1">
+//                                 ({extT})
+//                               </span>
+//                             </p>
+//                           </td>
+
+//                           {/* 🔥 Inner Table: 1 Decimal Exactly (e.g. 815.4) */}
+//                           <td className={`py-3 text-right font-bold text-sm ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+//                             {pnl >= 0 ? "+" : "-"}
+//                             {fmt(pnl, 1)}
+//                           </td>
+
+//                           <td className="py-3 text-right pr-2">
+//                             <a href="#" className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-end gap-1 transition-colors uppercase">
+//                               {eType.replace('_', ' ')} <ExternalLink size={10} />
+//                             </a>
+//                           </td>
+
+//                         </tr>
+//                       )})}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+
+//           {groupedData.length === 0 && (
+//             <div className="p-8 text-center text-gray-500 dark:text-gray-500">
+//               No transactions found.
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* FOOTER (PAGINATION) */}
+//       <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center transition-colors">
+//         <p className="text-xs text-gray-500 dark:text-gray-400">
+//           Showing{" "}
+//           <span className="font-bold text-gray-900 dark:text-white">
+//             {groupedData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+//           </span>{" "}
+//           -{" "}
+//           <span className="font-bold text-gray-900 dark:text-white">
+//             {Math.min(currentPage * itemsPerPage, groupedData.length)}
+//           </span>{" "}
+//           of{" "}
+//           <span className="font-bold text-gray-900 dark:text-white">
+//             {groupedData.length}
+//           </span>
+//         </p>
+
+//         <div className="flex items-center gap-2">
+//           <button
+//             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+//             disabled={currentPage === 1}
+//             className="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+//           >
+//             <ArrowLeft size={16} />
+//           </button>
+
+//           <div className="flex gap-1">
+//             {Array.from({ length: Math.min(totalPages, 3) }).map((_, i) => (
+//               <button
+//                 key={i}
+//                 onClick={() => setCurrentPage(i + 1)}
+//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors 
+//                             ${
+//                               currentPage === i + 1
+//                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+//                                 : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+//                             }`}
+//               >
+//                 {i + 1}
+//               </button>
+//             ))}
+//           </div>
+
+//           <button
+//             onClick={() =>
+//               setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+//             }
+//             disabled={currentPage === totalPages || totalPages === 0}
+//             className="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+//           >
+//             <ArrowRight size={16} />
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default TransactionTable;
+
+
+
 import React, { useState, useMemo } from "react";
 import {
   ChevronDown,
@@ -1166,6 +1450,9 @@ import {
   ArrowLeft,
   ArrowRight,
   ExternalLink,
+  RotateCw,
+  Clock,
+  Scale
 } from "lucide-react";
 
 const TransactionTable = ({ transactions }) => {
@@ -1219,7 +1506,6 @@ const TransactionTable = ({ transactions }) => {
     setExpandedDate(expandedDate === dateKey ? null : dateKey);
   };
 
-  // 🔥 SMART FORMATTING FIX: Ab ye function bataega ki kitne decimals dikhane hain
   const fmt = (num, decimals = 0) => {
     return `₹${Math.abs(num).toLocaleString("en-IN", { 
         minimumFractionDigits: decimals, 
@@ -1247,7 +1533,7 @@ const TransactionTable = ({ transactions }) => {
 
       {/* TABLE CONTENT */}
       <div className="flex-1 overflow-x-auto">
-        <div className="min-w-[800px]">
+        <div className="min-w-[900px]">
           {currentData.map((group) => (
             <div key={group.rawDate} className="border-b border-gray-200 dark:border-slate-800 last:border-0 transition-colors">
               
@@ -1271,7 +1557,6 @@ const TransactionTable = ({ transactions }) => {
                   <div className="text-right">
                     <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-bold">Net P&L</p>
                     <p className={`text-base font-bold ${group.totalPnL >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
-                      {/* 🔥 Outer Table: 0 Decimals (Round Figure) */}
                       {group.totalPnL >= 0 ? "+" : "-"}{fmt(group.totalPnL, 0)}
                     </p>
                   </div>
@@ -1287,6 +1572,7 @@ const TransactionTable = ({ transactions }) => {
                         <th className="pb-2 font-bold pl-2">Symbol</th>
                         <th className="pb-2 font-bold">Transaction</th>
                         <th className="pb-2 font-bold">Quantity</th>
+                        <th className="pb-2 font-bold">Adv. Feature</th> {/* 🔥 NEW COLUMN */}
                         <th className="pb-2 font-bold">Entry</th>
                         <th className="pb-2 font-bold">Exit</th>
                         <th className="pb-2 font-bold text-right">P&L</th>
@@ -1305,6 +1591,7 @@ const TransactionTable = ({ transactions }) => {
                         const extT = trade.exitTime || "--:--:--";
                         const pnl = trade.pnl || 0;
                         const eType = trade.exitType || "SQUAREOFF";
+                        const featureTag = trade.entryReason || "Normal"; // 🔥 GET THE NEW TAG
 
                         return (
                         <tr key={idx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
@@ -1333,6 +1620,31 @@ const TransactionTable = ({ transactions }) => {
                             {qty}
                           </td>
 
+                          {/* 🔥 NEW BADGE DISPLAY */}
+                          <td className="py-3">
+                            {featureTag === "Normal" && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-400 border border-gray-200 dark:border-slate-700">
+                                    Normal
+                                </span>
+                            )}
+                            {featureTag === "Wait & Trade" && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-1 w-max">
+                                    <Clock size={11}/> Wait & Trade
+                                </span>
+                            )}
+                            {featureTag === "Re-Entry" && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/10 dark:text-fuchsia-400 border border-fuchsia-200 dark:border-fuchsia-500/20 flex items-center gap-1 w-max">
+                                    <RotateCw size={11}/> Re-Entry
+                                </span>
+                            )}
+                            {/* 🔥 NAYA BADGE: Premium Diff ke liye Amber (Yellow) colour */}
+                            {featureTag === "Premium Diff" && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 flex items-center gap-1 w-max">
+                                    <Scale size={11}/> Premium Diff
+                                </span>
+                            )}
+                          </td>
+
                           <td className="py-3">
                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
                               ₹{entP}
@@ -1351,7 +1663,6 @@ const TransactionTable = ({ transactions }) => {
                             </p>
                           </td>
 
-                          {/* 🔥 Inner Table: 1 Decimal Exactly (e.g. 815.4) */}
                           <td className={`py-3 text-right font-bold text-sm ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
                             {pnl >= 0 ? "+" : "-"}
                             {fmt(pnl, 1)}
@@ -1359,7 +1670,7 @@ const TransactionTable = ({ transactions }) => {
 
                           <td className="py-3 text-right pr-2">
                             <a href="#" className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-end gap-1 transition-colors uppercase">
-                              {eType.replace('_', ' ')} <ExternalLink size={10} />
+                              {eType.replace(/_/g, ' ')} <ExternalLink size={10} />
                             </a>
                           </td>
 
