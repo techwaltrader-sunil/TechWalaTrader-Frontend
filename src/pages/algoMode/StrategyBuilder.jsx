@@ -36,7 +36,15 @@ const StrategyBuilder = () => {
   ]);
 
   const [config, setConfig] = useState(backendData?.config || {
-    orderType: "MIS", days: ["MON", "TUE", "WED", "THU", "FRI"], interval: "1 min", transactionType: "Both Side", chartType: "Candle", cncEntryDays: 4, cncExitDays: 0
+    orderType: "MIS", 
+    days: ["MON", "TUE", "WED", "THU", "FRI"], 
+    interval: "1 min", 
+    transactionType: "Both Side", 
+    chartType: "Candle", 
+    cncEntryDays: 4, 
+    cncExitDays: 0,
+    startTime: "09:45",       // 🔥 THE FIX: Ab hamesha default save hoga!
+    squareOffTime: "15:15"    // 🔥 THE FIX: Square Off bhi!
   });
 
   const [advanceSettings, setAdvanceSettings] = useState(backendData?.advanceSettings || {

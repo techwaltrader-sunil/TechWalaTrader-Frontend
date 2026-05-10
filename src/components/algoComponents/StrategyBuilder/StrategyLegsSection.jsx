@@ -2788,18 +2788,47 @@ useEffect(() => {
                                     <div className="grid grid-cols-3 gap-4 mt-3 bg-pink-50/50 dark:bg-pink-900/10 p-3 rounded-lg border border-pink-100 dark:border-pink-800/30">
                                         <div>
                                             <label className="text-[11px] text-pink-700 dark:text-pink-500 font-bold block mb-1.5">Trail SL Type</label>
-                                            <select value={leg.trailSLType || advanceSettings.trailSLConfig?.trailType || 'Pt'} onChange={e => updateLeg(leg.id, 'trailSLType', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors">
+                                            <select 
+                                                value={advanceSettings?.trailSLConfig?.trailType || 'Pt'} 
+                                                onChange={(e) => {
+                                                    setAdvanceSettings(prev => ({
+                                                        ...prev,
+                                                        trailSLConfig: { ...prev.trailSLConfig, trailType: e.target.value }
+                                                    }));
+                                                }} 
+                                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors"
+                                            >
                                                 <option value="%">%</option>
                                                 <option value="Pt">Pt</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="text-[11px] text-pink-700 dark:text-pink-500 font-bold block mb-1.5">Price Movement</label>
-                                            <input type="number" value={leg.trailSLMovement !== undefined ? leg.trailSLMovement : (advanceSettings.trailSLConfig?.x || 0)} onChange={e => updateLeg(leg.id, 'trailSLMovement', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" />
+                                            <label className="text-[11px] text-pink-700 dark:text-pink-500 font-bold block mb-1.5">Price Movement (X)</label>
+                                            <input 
+                                                type="number" 
+                                                value={advanceSettings?.trailSLConfig?.x || ''} 
+                                                onChange={(e) => {
+                                                    setAdvanceSettings(prev => ({
+                                                        ...prev,
+                                                        trailSLConfig: { ...prev.trailSLConfig, x: parseFloat(e.target.value) || 0 }
+                                                    }));
+                                                }} 
+                                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" 
+                                            />
                                         </div>
                                         <div>
-                                            <label className="text-[11px] text-pink-700 dark:text-pink-500 font-bold block mb-1.5">Trailing Value</label>
-                                            <input type="number" value={leg.trailSLValue !== undefined ? leg.trailSLValue : (advanceSettings.trailSLConfig?.y || 0)} onChange={e => updateLeg(leg.id, 'trailSLValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" />
+                                            <label className="text-[11px] text-pink-700 dark:text-pink-500 font-bold block mb-1.5">Trailing Value (Y)</label>
+                                            <input 
+                                                type="number" 
+                                                value={advanceSettings?.trailSLConfig?.y || ''} 
+                                                onChange={(e) => {
+                                                    setAdvanceSettings(prev => ({
+                                                        ...prev,
+                                                        trailSLConfig: { ...prev.trailSLConfig, y: parseFloat(e.target.value) || 0 }
+                                                    }));
+                                                }} 
+                                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" 
+                                            />
                                         </div>
                                     </div>
                                 )}
