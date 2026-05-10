@@ -823,7 +823,7 @@ const AdvanceFeaturesSection = ({ advanceSettings, setAdvanceSettings, legs, add
           // 🔥 THE FIX: Purani database value ko pre-fill karo, reset mat karo!
           if(key === 'waitAndTrade') setTempConfig(advanceSettings?.waitAndTradeConfig || { type: '% ↑', movement: 0 });
           if(key === 'premiumDifference') setTempConfig(advanceSettings?.premiumDifferenceConfig || { premium: 0 });
-          if(key === 'reEntryExecute') setTempConfig(advanceSettings?.reEntryExecuteConfig || { reEntryType: 'ReExecute', actionType: 'On Close', cycles: 0 });
+          if(key === 'reEntryExecute') setTempConfig(advanceSettings?.reEntryExecuteConfig || { reEntryType: 'ReExecute', actionType: 'Immediate', cycles: 1 });
           if(key === 'trailSL') setTempConfig(advanceSettings?.trailSLConfig || { trailType: 'Pt', x: 0, y: 0 });
           
       } else {
@@ -917,13 +917,59 @@ const AdvanceFeaturesSection = ({ advanceSettings, setAdvanceSettings, legs, add
                   )}
 
                   {popupFeature === 'reEntryExecute' && (
-                      <div className="space-y-4">
-                          <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-600 flex gap-2"><Info size={16} className="shrink-0" />Configure re-entry behavior for your strategy.</div>
-                          <div><label className="text-xs text-gray-500 font-bold block mb-1">Re-Entry Type</label><select value={tempConfig.reEntryType} onChange={e => setTempConfig({...tempConfig, reEntryType: e.target.value})} className="w-full border rounded p-2 text-sm outline-none"><option>ReExecute</option><option>ReEntry On Cost</option><option>ReEntry On Close</option></select></div>
-                          <div><label className="text-xs text-gray-500 font-bold block mb-1">Action Type</label><select value={tempConfig.actionType} onChange={e => setTempConfig({...tempConfig, actionType: e.target.value})} className="w-full border rounded p-2 text-sm outline-none"><option>On Close</option><option>Immediate</option></select></div>
-                          <div><label className="text-xs text-gray-500 font-bold block mb-1">Re-Entry/Execute Cycles</label><input type="number" value={tempConfig.cycles} onChange={e => setTempConfig({...tempConfig, cycles: e.target.value})} className="w-full border rounded p-2 text-sm outline-none" /></div>
-                      </div>
-                  )}
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-600 flex gap-2">
+                            <Info size={16} className="shrink-0" />
+                            Configure re-entry behavior for your strategy.
+                        </div>
+                        
+                        {/* 1. Re-Entry Type Dropdown */}
+                        <div>
+                            <label className="text-xs text-gray-500 font-bold block mb-1">Re-Entry Type</label>
+                            <select 
+                                value={tempConfig.reEntryType} 
+                                onChange={e => {
+                                    const selectedType = e.target.value;
+                                    // 🔥 SMART LOGIC: Agar Cost/Close chuna, to Action Type apne aap 'On Close' ho jayega
+                                    const newAction = selectedType !== 'ReExecute' ? 'On Close' : tempConfig.actionType;
+                                    setTempConfig({...tempConfig, reEntryType: selectedType, actionType: newAction});
+                                }} 
+                                className="w-full border rounded p-2 text-sm outline-none focus:border-blue-500 transition-colors"
+                            >
+                                <option value="ReExecute">ReExecute</option>
+                                <option value="ReEntry On Cost">ReEntry On Cost</option>
+                                <option value="ReEntry On Close">ReEntry On Close</option>
+                            </select>
+                        </div>
+
+                        {/* 2. Action Type Dropdown */}
+                        <div>
+                            <label className="text-xs text-gray-500 font-bold block mb-1">Action Type</label>
+                            <select 
+                                value={tempConfig.actionType} 
+                                // 🔥 THE FIX: Yahan disable wali condition laga di
+                                disabled={tempConfig.reEntryType !== 'ReExecute'}
+                                onChange={e => setTempConfig({...tempConfig, actionType: e.target.value})} 
+                                className="w-full border rounded p-2 text-sm outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            >
+                                <option value="On Close">On Close</option>
+                                <option value="Immediate">Immediate</option>
+                            </select>
+                        </div>
+
+                        {/* 3. Cycles Input */}
+                        <div>
+                            <label className="text-xs text-gray-500 font-bold block mb-1">Re-Entry/Execute Cycles</label>
+                            <input 
+                                type="number" 
+                                min="0"
+                                value={tempConfig.cycles} 
+                                onChange={e => setTempConfig({...tempConfig, cycles: Number(e.target.value)})} 
+                                className="w-full border rounded p-2 text-sm outline-none focus:border-blue-500 transition-colors" 
+                            />
+                        </div>
+                    </div>
+                )}
 
                   {popupFeature === 'trailSL' && (
                       <div className="space-y-4">
