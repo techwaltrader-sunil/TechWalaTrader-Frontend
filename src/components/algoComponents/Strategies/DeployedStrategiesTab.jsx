@@ -588,16 +588,30 @@ const DeployedStrategiesTab = () => {
     const [stoppingId, setStoppingId] = useState(null); 
     const [livePnls, setLivePnls] = useState({});
 
-    // API se data mangwana
+    // API se data mangwana (With Polling)
     useEffect(() => {
         const loadDeployments = async () => {
-            setLoading(true);
-            const data = await fetchActiveDeployments();
-            setDeployments(data);
-            setLoading(false);
+            try {
+                const data = await fetchActiveDeployments();
+                setDeployments(data);
+                setLoading(false); // Pehli baar data aane ke baad loader band ho jayega
+            } catch (error) {
+                console.error("Failed to fetch deployments:", error);
+                setLoading(false);
+            }
         };
+
+        // 1. Component load hote hi turant pehli baar fetch karo
         loadDeployments();
-    }, []); 
+
+        // 2. ⏱️ THE POLLING MAGIC: Har 2.5 second me background me naya data layega
+        const intervalId = setInterval(() => {
+            loadDeployments();
+        }, 2500); 
+
+        // 3. 🧹 Cleanup: Jab user is page se jayega, toh loop band ho jayega
+        return () => clearInterval(intervalId);
+    }, []);
 
     // Socket.io Connection
     useEffect(() => {
