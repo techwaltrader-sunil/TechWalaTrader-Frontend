@@ -44,7 +44,8 @@ const StrategyBuilder = () => {
     cncEntryDays: 4, 
     cncExitDays: 0,
     startTime: "09:45",       // 🔥 THE FIX: Ab hamesha default save hoga!
-    squareOffTime: "15:15"    // 🔥 THE FIX: Square Off bhi!
+    squareOffTime: "15:15",    // 🔥 THE FIX: Square Off bhi!
+    nextDaySquareOff: "09:15" // 🔥 THE NEW FIX: BTST Default time
   });
 
   const [advanceSettings, setAdvanceSettings] = useState(backendData?.advanceSettings || {
