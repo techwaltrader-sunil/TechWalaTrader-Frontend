@@ -242,7 +242,7 @@ const IndicatorModal = ({ isOpen, onClose, onSelect, initialData }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 transition-colors">
       {/* ✅ Modal Container */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh] transition-colors duration-300">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[80vh] transition-colors duration-300">
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-slate-700 transition-colors">
@@ -292,9 +292,9 @@ const IndicatorModal = ({ isOpen, onClose, onSelect, initialData }) => {
 
                         {/* ✅ PARAMETERS INPUTS */}
                         {isSelected && indicator.params?.length > 0 && (
-                            <div className="mt-3 ml-7 grid grid-cols-2 gap-3 animate-in slide-in-from-top-1">
+                            <div className="mt-3 ml-7 flex flex-row flex-wrap gap-4 animate-in slide-in-from-top-1">
                                 {indicator.params.map((param) => (
-                                    <div key={param.name} onClick={(e) => e.stopPropagation()}>
+                                    <div key={param.name} onClick={(e) => e.stopPropagation()} className="flex-1 min-w-[120px]">
                                         <label className="text-[10px] text-gray-500 dark:text-gray-400 font-bold block mb-1">{param.name}</label>
                                         {param.type === 'select' ? (
                                             <select 

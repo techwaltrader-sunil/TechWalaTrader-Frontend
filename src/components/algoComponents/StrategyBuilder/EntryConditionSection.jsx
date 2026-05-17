@@ -418,7 +418,8 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings, transacti
   };
 
   const openModal = (section, type, index, field, currentVal) => {
-    setActiveField({ section, type, index, field });
+    // 🔥 THE FIX: currentVal ko bhi state me save karo taki modal ko bhej sakein
+    setActiveField({ section, type, index, field, currentVal }); 
     setIsModalOpen(true);
   };
 
@@ -654,8 +655,13 @@ const EntryConditionSection = ({ entrySettings = {}, setEntrySettings, transacti
 
         </div>
 
-        {/* Modal */}
-        <IndicatorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSelect={handleIndicatorSelect}/>
+       {/* Modal */}
+        <IndicatorModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            onSelect={handleIndicatorSelect}
+            initialData={activeField?.currentVal} // 🔥 THE FIX: Purana data modal ko bhej diya
+        />
     </>
   );
 };
