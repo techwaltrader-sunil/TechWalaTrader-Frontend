@@ -30,12 +30,16 @@ const StrategyBuilder = () => {
   const [instruments, setInstruments] = useState(backendData?.instruments || []);
   const [strategyName, setStrategyName] = useState(incomingData?.name || "");
   const [loading, setLoading] = useState(false); 
+
+  // 🔥 THE FIX: Edit mode me purana (Spot/Future) data load karo
+  const [underlyingType, setUnderlyingType] = useState(backendData?.config?.underlying || "Spot");
   
   const [legs, setLegs] = useState(backendData?.legs && backendData.legs.length > 0 ? backendData.legs : [
     { id: 1, action: "BUY", optionType: "Call", quantity: 65, expiry: "WEEKLY", strikeCriteria: "ATM pt", strikeType: "ATM", slType: "SL%", slValue: 30, tpType: "TP%", tpValue: 0 }
   ]);
 
   const [config, setConfig] = useState(backendData?.config || {
+    underlying: "Spot",
     orderType: "MIS", 
     days: ["MON", "TUE", "WED", "THU", "FRI"], 
     interval: "1 min", 
@@ -77,11 +81,15 @@ const StrategyBuilder = () => {
     if (isEditMode && backendData) {
         setInstruments(backendData.instruments || []);
         setSelectedStrategyType(incomingData.type || "Time Based");
+        
+        // 🔥 THE FIX: InstrumentSection ke reset karne ke baad, yahan se wapas Data restore karo!
+        setUnderlyingType(backendData.config?.underlying || "Spot");
+
         if(backendData.legs && backendData.legs.length > 0) {
             setLegs(backendData.legs);
         }
     }
-  }, []); 
+  }, []);
 
   // --- RESET EFFECTS ---
   useEffect(() => {
@@ -150,8 +158,9 @@ const StrategyBuilder = () => {
       data: {
           type: selectedStrategyType,
           instruments: instruments,
-          legs: legsToSave, // ✅ Yahan updated legs payload me jayega
-          config: config,
+          legs: legsToSave, 
+          // 🔥 THE FIX: Payload bhejte waqt state se fresh 'underlying' add kardo
+          config: { ...config, underlying: underlyingType }, 
           advanceSettings: advanceSettings,
           entrySettings: entrySettings,
           riskManagement: riskSettings 
@@ -198,7 +207,7 @@ const StrategyBuilder = () => {
             <div className="lg:col-span-6 space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                     <StrategyTypeSection selected={selectedStrategyType} onSelect={setSelectedStrategyType} />
-                    <InstrumentSection isComingSoon={selectedStrategyType === "Price Action Based"} strategyType={selectedStrategyType} instruments={instruments} setInstruments={setInstruments} />
+                    <InstrumentSection isComingSoon={selectedStrategyType === "Price Action Based"} strategyType={selectedStrategyType} instruments={instruments} setInstruments={setInstruments} underlyingType={underlyingType} setUnderlyingType={setUnderlyingType} />
                 </div>
                 
                 {!isEquityOrFutureMode && selectedStrategyType === "Time Based" && (
