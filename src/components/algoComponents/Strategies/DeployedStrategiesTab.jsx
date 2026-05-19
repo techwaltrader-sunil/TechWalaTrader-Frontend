@@ -582,6 +582,18 @@ import { PlayCircle, StopCircle, Activity, AlertCircle, Loader2, Wallet, BarChar
 import { fetchActiveDeployments, stopDeployment } from '../../../data/AlogoTrade/deploymentService';
 import io from 'socket.io-client'; 
 
+const calculateLiveLtp = (leg) => {
+    if (!leg || !leg.entryPrice) return 0;
+    const qty = leg.quantity || 1; 
+    const pnl = leg.livePnl || 0;
+    
+    if (leg.action === 'BUY') {
+        return leg.entryPrice + (pnl / qty);
+    } else {
+        return leg.entryPrice - (pnl / qty);
+    }
+};
+
 const DeployedStrategiesTab = () => {
     const [deployments, setDeployments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -757,12 +769,27 @@ const DeployedStrategiesTab = () => {
                                             const isLegProfit = legPnl >= 0;
                                             const isCompleted = leg.status === 'COMPLETED';
 
+                                            const liveLtp = calculateLiveLtp(leg);
+
                                             return (
                                                 <div key={idx} className={`flex justify-between items-center p-2.5 rounded border transition-colors ${isCompleted ? 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 opacity-60' : 'bg-gray-50 dark:bg-slate-900/40 border-gray-100 dark:border-slate-700'}`}>
-                                                    <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 line-clamp-1 pr-2 flex items-center gap-1.5">
-                                                        <span className={`font-bold ${leg.action === 'BUY' ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>{leg.action}</span>
-                                                        {leg.symbol}
-                                                    </span>
+                                                    
+                                                    {/* Left Side: Action, Symbol, Entry & LTP */}
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 pr-2 flex items-center gap-1.5">
+                                                            <span className={`font-bold ${leg.action === 'BUY' ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>{leg.action}</span>
+                                                            {leg.symbol}
+                                                        </span>
+                                                        
+                                                        {/* 🎯 THE NEW ENTRY & LTP BADGE */}
+                                                        <div className="text-[10px] text-gray-500 mt-1">
+                                                            Entry: <span className="text-gray-700 dark:text-gray-300 font-bold">₹{leg.entryPrice?.toFixed(2) || '0.00'}</span> 
+                                                            <span className="mx-1.5">|</span> 
+                                                            LTP: <span className="text-blue-600 dark:text-blue-400 font-bold">₹{liveLtp.toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Right Side: P&L */}
                                                     <div className="flex flex-col items-end">
                                                         <span className={`text-[11px] font-bold whitespace-nowrap ${isLegProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                             ₹ {isLegProfit ? `+${legPnl.toFixed(2)}` : legPnl.toFixed(2)}
