@@ -1517,7 +1517,7 @@ const ReportTab = () => {
                                                 const legs = trade.executedLegs && trade.executedLegs.length > 0 ? trade.executedLegs : [trade];
                                                 
                                                 // 🟢 Background color logic: Har pair (trade) ka background fix rahega
-                                                const rowColor = tIdx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50 dark:bg-slate-950/30";
+                                                const rowColor = tIdx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-100 dark:bg-slate-950/200";
 
                                                 return legs.map((leg, lIdx) => {
                                                     const sym = leg.symbol || leg.tradedSymbol || stat.name;
