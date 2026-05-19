@@ -1512,74 +1512,74 @@ const ReportTab = () => {
                                           <tbody>
                                             
                                             {/* 🔥 FIX 2, 3, 4: Mapping inside executedLegs array properly */}
+                                            {/* 🔥 FIX 2, 3, 4: Mapping inside executedLegs array properly */}
                                             {stat.tradesList.flatMap((trade, tIdx) => {
-                                              // Fallback: Agar purana data hai to root object lo, naya hai to executedLegs array
-                                              const legs = trade.executedLegs && trade.executedLegs.length > 0 ? trade.executedLegs : [trade];
+                                                const legs = trade.executedLegs && trade.executedLegs.length > 0 ? trade.executedLegs : [trade];
+                                                
+                                                // 🟢 Background color logic: Har pair (trade) ka background fix rahega
+                                                const rowColor = tIdx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50 dark:bg-slate-950/30";
 
-                                              return legs.map((leg, lIdx) => {
-                                                const sym = leg.symbol || leg.tradedSymbol || stat.name;
-                                                const txn = leg.action || leg.tradeAction || "BUY";
-                                                const qty = leg.quantity || leg.tradedQty || "-";
-                                                // const entP = leg.entryPrice ? leg.entryPrice.toFixed(2) : "-";
-                                                // const extP = leg.exitPrice ? leg.exitPrice.toFixed(2) : "-";
-                                                // const pnl = leg.livePnl !== undefined ? leg.livePnl : (leg.pnl || trade.pnl || 0);
+                                                return legs.map((leg, lIdx) => {
+                                                    const sym = leg.symbol || leg.tradedSymbol || stat.name;
+                                                    const txn = leg.action || leg.tradeAction || "BUY";
+                                                    const qty = leg.quantity || leg.tradedQty || "-";
+                                                    
+                                                    const entP = leg.entryPrice ? leg.entryPrice.toFixed(2) : "-";
+                                                    const pnl = leg.livePnl !== undefined ? leg.livePnl : (leg.pnl || trade.pnl || 0);
 
-                                                const entP = leg.entryPrice ? leg.entryPrice.toFixed(2) : "-";
-                                                const pnl = leg.livePnl !== undefined ? leg.livePnl : (leg.pnl || trade.pnl || 0);
+                                                    let calculatedExitPrice = leg.exitPrice;
+                                                    if (!calculatedExitPrice && pnl !== 0 && leg.entryPrice && qty !== "-") {
+                                                        calculatedExitPrice = txn.toUpperCase() === "BUY" 
+                                                            ? leg.entryPrice + (pnl / Number(qty))
+                                                            : leg.entryPrice - (pnl / Number(qty));
+                                                    }
 
-                                                // 🔥 NEW: REVERSE MATH LOGIC FOR MISSING EXIT PRICE 🔥
-                                                let calculatedExitPrice = leg.exitPrice;
+                                                    const extP = calculatedExitPrice ? Math.max(0, calculatedExitPrice).toFixed(2) : "-";
+                                                    const eType = leg.exitReason || leg.exitRemarks || trade.exitRemarks || "SQUAREOFF";
+                                                    const dateStr = trade.createdAt || trade.date; 
 
-                                                // Agar exitPrice 0 ya blank hai, aur P&L hai, to math se nikal lo!
-                                                if (!calculatedExitPrice && pnl !== 0 && leg.entryPrice && qty !== "-") {
-                                                    calculatedExitPrice = txn.toUpperCase() === "BUY" 
-                                                        ? leg.entryPrice + (pnl / Number(qty))
-                                                        : leg.entryPrice - (pnl / Number(qty));
-                                                }
+                                                    // 🛡️ Safe time extraction
+                                                    const entryTime = leg.entryTime || trade.entryTime || "";
+                                                    const exitTime = leg.exitTime || trade.exitTime || "";
 
-                                                const extP = calculatedExitPrice ? Math.max(0, calculatedExitPrice).toFixed(2) : "-";
-
-
-                                                const eType = leg.exitReason || leg.exitRemarks || trade.exitRemarks || "SQUAREOFF";
-                                                const dateStr = trade.createdAt || trade.date; 
-
-                                                return (
-                                                  <tr key={`${tIdx}-${lIdx}`} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
-                                                    <td className="py-3 px-3">
-                                                      <p className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">{sym}</p>
-                                                    </td>
-                                                    <td className="py-3 px-3">
-                                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap
-                                                          ${txn.toUpperCase() === "BUY"
-                                                            ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
-                                                            : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
-                                                          }`}
-                                                      >
-                                                        {txn.toUpperCase()}
-                                                      </span>
-                                                    </td>
-                                                    <td className="py-3 px-3 text-sm text-center font-bold text-gray-700 dark:text-gray-300">{qty}</td>
-                                                    <td className="py-3 px-3 whitespace-nowrap">
-                                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                                        {entP !== "-" ? `₹${entP}` : "-"} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-0.5 sm:mt-0 ml-0 sm:ml-1">{formatDateTime(dateStr, trade.entryTime)}</span>
-                                                      </p>
-                                                    </td>
-                                                    <td className="py-3 px-3 whitespace-nowrap">
-                                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                                        {extP !== "-" ? `₹${extP}` : "-"} <span className="text-[10px] font-medium text-gray-500 block sm:inline mt-0.5 sm:mt-0 ml-0 sm:ml-1">{formatDateTime(trade.updatedAt || dateStr, trade.exitTime)}</span>
-                                                      </p>
-                                                    </td>
-                                                    <td className={`py-3 px-3 text-right font-bold text-sm whitespace-nowrap ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
-                                                      {pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                    </td>
-                                                    <td className="py-3 px-3 text-right whitespace-nowrap">
-                                                      <span className={`text-[10px] font-bold uppercase tracking-wider ${getExitTypeColor(eType)}`}>
-                                                        {eType.replace(/_/g, ' ')}
-                                                      </span>
-                                                    </td>
-                                                  </tr>
-                                                );
-                                              });
+                                                    return (
+                                                        <tr key={`${tIdx}-${lIdx}`} className={`${rowColor} border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-colors`}>
+                                                            <td className="py-3 px-3">
+                                                                <p className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">{sym}</p>
+                                                            </td>
+                                                            <td className="py-3 px-3">
+                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap
+                                                                    ${txn.toUpperCase() === "BUY" 
+                                                                        ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
+                                                                        : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
+                                                                    }`}>
+                                                                    {txn.toUpperCase()}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3 px-3 text-sm text-center font-bold text-gray-700 dark:text-gray-300">{qty}</td>
+                                                            <td className="py-3 px-3 whitespace-nowrap">
+                                                                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                                    {entP !== "-" ? `₹${entP}` : "-"} 
+                                                                    <span className="text-[10px] font-medium text-gray-500 ml-1">{formatDateTime(dateStr, entryTime)}</span>
+                                                                </p>
+                                                            </td>
+                                                            <td className="py-3 px-3 whitespace-nowrap">
+                                                                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                                    {extP !== "-" ? `₹${extP}` : "-"} 
+                                                                    <span className="text-[10px] font-medium text-gray-500 ml-1">{formatDateTime(dateStr, exitTime)}</span>
+                                                                </p>
+                                                            </td>
+                                                            <td className={`py-3 px-3 text-right font-bold text-sm whitespace-nowrap ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+                                                                {pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </td>
+                                                            <td className="py-3 px-3 text-right whitespace-nowrap">
+                                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${getExitTypeColor(eType)}`}>
+                                                                    {eType.replace(/_/g, ' ')}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                });
                                             })}
                                             
                                           </tbody>
