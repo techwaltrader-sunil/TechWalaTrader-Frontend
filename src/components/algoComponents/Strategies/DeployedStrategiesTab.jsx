@@ -760,7 +760,7 @@ const DeployedStrategiesTab = () => {
                                     </div>
                                 </div>
 
-                                {/* 🔥 NEW: INDIVIDUAL LEG P&L BREAKDOWN 🔥 */}
+                                {/* // 🔥 NEW: INDIVIDUAL LEG P&L BREAKDOWN 🔥 */}
                                 {dep.executedLegs && dep.executedLegs.length > 0 && (
                                     <div className="mt-4 space-y-2">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Leg Status</p>
@@ -768,8 +768,29 @@ const DeployedStrategiesTab = () => {
                                             const legPnl = leg.livePnl || 0;
                                             const isLegProfit = legPnl >= 0;
                                             const isCompleted = leg.status === 'COMPLETED';
-
+                                            
+                                            // 🟢 Live LTP Calculator
                                             const liveLtp = calculateLiveLtp(leg);
+
+                                           // ⏰ TIME FORMATTER (entryTime nahi hai, toh dep.createdAt use karein)
+                                            const formatTime = (leg, dep) => {
+                                                // Agar leg.entryTime undefined hai, toh dep.createdAt ya fallback '--:--' use karein
+                                                const timeValue = leg?.entryTime || dep?.createdAt;
+                                                if (!timeValue) return '--:--';
+                                                
+                                                return new Date(timeValue).toLocaleTimeString('en-IN', { 
+                                                    hour: '2-digit', 
+                                                    minute: '2-digit', 
+                                                    hour12: false,
+                                                    timeZone: 'Asia/Kolkata' 
+                                                });
+                                            };
+
+                                            // Entry Time (Database se aayega)
+                                            const entryTimeStr = formatTime(leg.entryTime || leg.createdAt);
+                                            
+                                            // LTP Time (Current polling time)
+                                            const ltpTimeStr = formatTime(new Date());
 
                                             return (
                                                 <div key={idx} className={`flex justify-between items-center p-2.5 rounded border transition-colors ${isCompleted ? 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 opacity-60' : 'bg-gray-50 dark:bg-slate-900/40 border-gray-100 dark:border-slate-700'}`}>
@@ -781,11 +802,14 @@ const DeployedStrategiesTab = () => {
                                                             {leg.symbol}
                                                         </span>
                                                         
-                                                        {/* 🎯 THE NEW ENTRY & LTP BADGE */}
+                                                        {/* 🎯 THE NEW ENTRY & LTP BADGE WITH TIME */}
                                                         <div className="text-[10px] text-gray-500 mt-1">
                                                             Entry: <span className="text-gray-700 dark:text-gray-300 font-bold">₹{leg.entryPrice?.toFixed(2) || '0.00'}</span> 
+                                                            <span className="text-[9px] text-gray-400 font-medium ml-1">({formatTime(leg || {}, dep || {})})</span>
                                                             <span className="mx-1.5">|</span> 
                                                             LTP: <span className="text-blue-600 dark:text-blue-400 font-bold">₹{liveLtp.toFixed(2)}</span>
+                                                            {/* LTP Time ke liye aap new Date() use kar sakte hain ya sirf static polling time */}
+                                                            <span className="text-[9px] text-gray-400 font-medium ml-1">({new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })})</span>
                                                         </div>
                                                     </div>
 
