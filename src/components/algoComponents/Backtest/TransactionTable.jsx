@@ -80,7 +80,7 @@
 //               {/* A. PARENT ROW (Summary) */}
 //               <div
 //                 onClick={() => toggleAccordion(group.date)}
-//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50 
+//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
 //                             ${expandedDate === group.date ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}
 //                         `}
 //               >
@@ -155,7 +155,7 @@
 //                           {/* Transaction Type */}
 //                           <td className="py-3">
 //                             <span
-//                               className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+//                               className={`px-2 py-0.5 rounded text-[10px] font-bold border
 //                                                     ${
 //                                                       trade.pnl >= 0
 //                                                         ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
@@ -256,7 +256,7 @@
 //               <button
 //                 key={i}
 //                 onClick={() => setCurrentPage(i + 1)}
-//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors 
+//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors
 //                             ${
 //                               currentPage === i + 1
 //                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
@@ -285,8 +285,6 @@
 
 // export default TransactionTable;
 
-
-
 // import React, { useState, useMemo } from "react";
 // import {
 //   ChevronDown,
@@ -309,7 +307,7 @@
 //     const groups = {};
 //     transactions.forEach((trade) => {
 //       const originalDate = trade.date; // e.g. "YYYY-MM-DD"
-      
+
 //       if (!groups[originalDate]) {
 //         // Indian Format DD/MM/YY banayenge display ke liye
 //         const [year, month, day] = originalDate.split("-");
@@ -375,7 +373,7 @@
 //               {/* A. PARENT ROW (Summary) */}
 //               <div
 //                 onClick={() => toggleAccordion(group.rawDate)}
-//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50 
+//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
 //                             ${expandedDate === group.rawDate ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}
 //                         `}
 //               >
@@ -448,7 +446,7 @@
 
 //                           <td className="py-3">
 //                             <span
-//                               className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+//                               className={`px-2 py-0.5 rounded text-[10px] font-bold border
 //                                                     ${
 //                                                       trade.pnl >= 0
 //                                                         ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
@@ -544,7 +542,7 @@
 //               <button
 //                 key={i}
 //                 onClick={() => setCurrentPage(i + 1)}
-//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors 
+//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors
 //                             ${
 //                               currentPage === i + 1
 //                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
@@ -573,8 +571,6 @@
 
 // export default TransactionTable;
 
-
-
 // import React, { useState, useMemo } from "react";
 // import {
 //   ChevronDown,
@@ -597,15 +593,15 @@
 //     const groups = {};
 //     transactions.forEach((item) => {
 //       const originalDate = item.date; // e.g. "YYYY-MM-DD"
-      
+
 //       if (!groups[originalDate]) {
 //         // Indian Format DD/MM/YY
 //         const [year, month, day] = originalDate.split("-");
 //         const displayDate = `${day}/${month}/${year.slice(-2)}`;
 
 //         groups[originalDate] = {
-//           rawDate: originalDate, 
-//           date: displayDate,     
+//           rawDate: originalDate,
+//           date: displayDate,
 //           totalPnL: 0,
 //           trades: [],
 //         };
@@ -615,7 +611,7 @@
 //       if (item.tradesList) {
 //           groups[originalDate].totalPnL = item.dailyPnL || item.pnl || 0;
 //           groups[originalDate].trades = item.tradesList;
-//       } 
+//       }
 //       // Agar flat trades ka array aa raha hai to ye fallback chalega
 //       else {
 //           groups[originalDate].totalPnL += item.pnl || 0;
@@ -672,7 +668,7 @@
 //               {/* A. PARENT ROW (Summary) */}
 //               <div
 //                 onClick={() => toggleAccordion(group.rawDate)}
-//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50 
+//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
 //                             ${expandedDate === group.rawDate ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}
 //                         `}
 //               >
@@ -746,7 +742,7 @@
 
 //                           <td className="py-3">
 //                             <span
-//                               className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+//                               className={`px-2 py-0.5 rounded text-[10px] font-bold border
 //                                                     ${
 //                                                       trade.transaction === "BUY" || trade.pnl >= 0
 //                                                         ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
@@ -845,7 +841,7 @@
 //               <button
 //                 key={i}
 //                 onClick={() => setCurrentPage(i + 1)}
-//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors 
+//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors
 //                             ${
 //                               currentPage === i + 1
 //                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
@@ -874,7 +870,6 @@
 
 // export default TransactionTable;
 
-
 // import React, { useState, useMemo } from "react";
 // import {
 //   ChevronDown,
@@ -896,15 +891,15 @@
 
 //     const groups = {};
 //     transactions.forEach((item) => {
-//       const originalDate = item.date; 
-      
+//       const originalDate = item.date;
+
 //       if (!groups[originalDate]) {
 //         const [year, month, day] = originalDate.split("-");
 //         const displayDate = `${day}/${month}/${year.slice(-2)}`;
 
 //         groups[originalDate] = {
-//           rawDate: originalDate, 
-//           date: displayDate,     
+//           rawDate: originalDate,
+//           date: displayDate,
 //           totalPnL: 0,
 //           trades: [],
 //         };
@@ -940,7 +935,7 @@
 
 //   return (
 //     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg flex flex-col transition-colors duration-300">
-      
+
 //       {/* HEADER */}
 //       <div className="p-6 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 transition-colors">
 //         <div>
@@ -961,11 +956,11 @@
 //         <div className="min-w-[800px]">
 //           {currentData.map((group) => (
 //             <div key={group.rawDate} className="border-b border-gray-200 dark:border-slate-800 last:border-0 transition-colors">
-              
+
 //               {/* PARENT ROW (Summary) */}
 //               <div
 //                 onClick={() => toggleAccordion(group.rawDate)}
-//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50 
+//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
 //                             ${expandedDate === group.rawDate ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}`}
 //               >
 //                 <div className="flex items-center gap-4">
@@ -1005,7 +1000,7 @@
 //                     </thead>
 //                     <tbody>
 //                       {group.trades.map((trade, idx) => {
-                        
+
 //                         // 🔥 DYNAMIC DATA EXTRACTION FROM BACKEND
 //                         const sym = trade.symbol || "BANKNIFTY";
 //                         const txn = trade.transaction ? trade.transaction.toUpperCase() : "BUY";
@@ -1019,7 +1014,7 @@
 
 //                         return (
 //                         <tr key={idx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
-                          
+
 //                           {/* SYMBOL */}
 //                           <td className="py-3 pl-2">
 //                             <p className="text-sm font-bold text-gray-900 dark:text-white">
@@ -1032,7 +1027,7 @@
 
 //                           {/* TRANSACTION (Fixed Color Logic) */}
 //                           <td className="py-3">
-//                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+//                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border
 //                                 ${txn === "BUY"
 //                                   ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
 //                                   : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
@@ -1128,7 +1123,7 @@
 //               <button
 //                 key={i}
 //                 onClick={() => setCurrentPage(i + 1)}
-//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors 
+//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors
 //                             ${
 //                               currentPage === i + 1
 //                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
@@ -1157,7 +1152,6 @@
 
 // export default TransactionTable;
 
-
 // import React, { useState, useMemo } from "react";
 // import {
 //   ChevronDown,
@@ -1179,15 +1173,15 @@
 
 //     const groups = {};
 //     transactions.forEach((item) => {
-//       const originalDate = item.date; 
-      
+//       const originalDate = item.date;
+
 //       if (!groups[originalDate]) {
 //         const [year, month, day] = originalDate.split("-");
 //         const displayDate = `${day}/${month}/${year.slice(-2)}`;
 
 //         groups[originalDate] = {
-//           rawDate: originalDate, 
-//           date: displayDate,     
+//           rawDate: originalDate,
+//           date: displayDate,
 //           totalPnL: 0,
 //           trades: [],
 //         };
@@ -1221,15 +1215,15 @@
 
 //   // 🔥 SMART FORMATTING FIX: Ab ye function bataega ki kitne decimals dikhane hain
 //   const fmt = (num, decimals = 0) => {
-//     return `₹${Math.abs(num).toLocaleString("en-IN", { 
-//         minimumFractionDigits: decimals, 
-//         maximumFractionDigits: decimals 
+//     return `₹${Math.abs(num).toLocaleString("en-IN", {
+//         minimumFractionDigits: decimals,
+//         maximumFractionDigits: decimals
 //     })}`;
 //   };
 
 //   return (
 //     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg flex flex-col transition-colors duration-300">
-      
+
 //       {/* HEADER */}
 //       <div className="p-6 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 transition-colors">
 //         <div>
@@ -1250,11 +1244,11 @@
 //         <div className="min-w-[800px]">
 //           {currentData.map((group) => (
 //             <div key={group.rawDate} className="border-b border-gray-200 dark:border-slate-800 last:border-0 transition-colors">
-              
+
 //               {/* PARENT ROW (Summary) */}
 //               <div
 //                 onClick={() => toggleAccordion(group.rawDate)}
-//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50 
+//                 className={`flex items-center justify-between p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
 //                             ${expandedDate === group.rawDate ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}`}
 //               >
 //                 <div className="flex items-center gap-4">
@@ -1295,7 +1289,7 @@
 //                     </thead>
 //                     <tbody>
 //                       {group.trades.map((trade, idx) => {
-                        
+
 //                         const sym = trade.symbol || "BANKNIFTY";
 //                         const txn = trade.transaction ? trade.transaction.toUpperCase() : "BUY";
 //                         const qty = trade.quantity || "30";
@@ -1308,7 +1302,7 @@
 
 //                         return (
 //                         <tr key={idx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
-                          
+
 //                           <td className="py-3 pl-2">
 //                             <p className="text-sm font-bold text-gray-900 dark:text-white">
 //                               {sym}
@@ -1319,7 +1313,7 @@
 //                           </td>
 
 //                           <td className="py-3">
-//                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+//                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border
 //                                 ${txn === "BUY"
 //                                   ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
 //                                   : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
@@ -1411,7 +1405,7 @@
 //               <button
 //                 key={i}
 //                 onClick={() => setCurrentPage(i + 1)}
-//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors 
+//                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors
 //                             ${
 //                               currentPage === i + 1
 //                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
@@ -1440,8 +1434,6 @@
 
 // export default TransactionTable;
 
-
-
 import React, { useState, useMemo } from "react";
 import {
   ChevronDown,
@@ -1452,7 +1444,7 @@ import {
   ExternalLink,
   RotateCw,
   Clock,
-  Scale
+  Scale,
 } from "lucide-react";
 
 const TransactionTable = ({ transactions }) => {
@@ -1466,26 +1458,26 @@ const TransactionTable = ({ transactions }) => {
 
     const groups = {};
     transactions.forEach((item) => {
-      const originalDate = item.date; 
-      
+      const originalDate = item.date;
+
       if (!groups[originalDate]) {
         const [year, month, day] = originalDate.split("-");
         const displayDate = `${day}/${month}/${year.slice(-2)}`;
 
         groups[originalDate] = {
-          rawDate: originalDate, 
-          date: displayDate,     
+          rawDate: originalDate,
+          date: displayDate,
           totalPnL: 0,
           trades: [],
         };
       }
 
       if (item.tradesList) {
-          groups[originalDate].totalPnL = item.dailyPnL || item.pnl || 0;
-          groups[originalDate].trades = item.tradesList;
+        groups[originalDate].totalPnL = item.dailyPnL || item.pnl || 0;
+        groups[originalDate].trades = item.tradesList;
       } else {
-          groups[originalDate].totalPnL += item.pnl || 0;
-          groups[originalDate].trades.push(item);
+        groups[originalDate].totalPnL += item.pnl || 0;
+        groups[originalDate].trades.push(item);
       }
     });
 
@@ -1507,15 +1499,14 @@ const TransactionTable = ({ transactions }) => {
   };
 
   const fmt = (num, decimals = 0) => {
-    return `₹${Math.abs(num).toLocaleString("en-IN", { 
-        minimumFractionDigits: decimals, 
-        maximumFractionDigits: decimals 
+    return `₹${Math.abs(num).toLocaleString("en-IN", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     })}`;
   };
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg flex flex-col transition-colors duration-300">
-      
       {/* HEADER */}
       <div className="p-6 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 transition-colors">
         <div>
@@ -1535,8 +1526,10 @@ const TransactionTable = ({ transactions }) => {
       <div className="flex-1 overflow-x-auto">
         <div className="min-w-[900px]">
           {currentData.map((group) => (
-            <div key={group.rawDate} className="border-b border-gray-200 dark:border-slate-800 last:border-0 transition-colors">
-              
+            <div
+              key={group.rawDate}
+              className="border-b border-gray-200 dark:border-slate-800 last:border-0 transition-colors"
+            >
               {/* PARENT ROW (Summary) */}
               <div
                 onClick={() => toggleAccordion(group.rawDate)}
@@ -1544,20 +1537,35 @@ const TransactionTable = ({ transactions }) => {
                             ${expandedDate === group.rawDate ? "bg-gray-50 dark:bg-slate-800/30" : "bg-white dark:bg-slate-900"}`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-full transition-colors ${expandedDate === group.rawDate ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400"}`}>
-                    {expandedDate === group.rawDate ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  <div
+                    className={`p-2 rounded-full transition-colors ${expandedDate === group.rawDate ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400"}`}
+                  >
+                    {expandedDate === group.rawDate ? (
+                      <ChevronUp size={18} />
+                    ) : (
+                      <ChevronDown size={18} />
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">{group.date}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">{group.trades.length} Trades Executed</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      {group.date}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                      {group.trades.length} Trades Executed
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-bold">Net P&L</p>
-                    <p className={`text-base font-bold ${group.totalPnL >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
-                      {group.totalPnL >= 0 ? "+" : "-"}{fmt(group.totalPnL, 0)}
+                    <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-bold">
+                      Net P&L
+                    </p>
+                    <p
+                      className={`text-base font-bold ${group.totalPnL >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
+                    >
+                      {group.totalPnL >= 0 ? "+" : "-"}
+                      {fmt(group.totalPnL, 0)}
                     </p>
                   </div>
                 </div>
@@ -1572,110 +1580,128 @@ const TransactionTable = ({ transactions }) => {
                         <th className="pb-2 font-bold pl-2">Symbol</th>
                         <th className="pb-2 font-bold">Transaction</th>
                         <th className="pb-2 font-bold">Quantity</th>
-                        <th className="pb-2 font-bold">Adv. Feature</th> {/* 🔥 NEW COLUMN */}
+                        <th className="pb-2 font-bold">Adv. Feature</th>{" "}
+                        {/* 🔥 NEW COLUMN */}
                         <th className="pb-2 font-bold">Entry</th>
                         <th className="pb-2 font-bold">Exit</th>
                         <th className="pb-2 font-bold text-right">P&L</th>
-                        <th className="pb-2 font-bold text-right pr-2">Exit Type</th>
+                        <th className="pb-2 font-bold text-right pr-2">
+                          Exit Type
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {group.trades.map((trade, idx) => {
-                        
                         const sym = trade.symbol || "BANKNIFTY";
-                        const txn = trade.transaction ? trade.transaction.toUpperCase() : "BUY";
+                        const txn = trade.transaction
+                          ? trade.transaction.toUpperCase()
+                          : "BUY";
                         const qty = trade.quantity || "30";
-                        const entP = trade.entryPrice ? trade.entryPrice.toFixed(2) : "-";
+                        const entP = trade.entryPrice
+                          ? trade.entryPrice.toFixed(2)
+                          : "-";
                         const entT = trade.entryTime || "--:--:--";
-                        const extP = trade.exitPrice ? trade.exitPrice.toFixed(2) : "-";
+                        const extP = trade.exitPrice
+                          ? trade.exitPrice.toFixed(2)
+                          : "-";
                         const extT = trade.exitTime || "--:--:--";
                         const pnl = trade.pnl || 0;
                         const eType = trade.exitType || "SQUAREOFF";
                         const featureTag = trade.entryReason || "Normal"; // 🔥 GET THE NEW TAG
 
                         return (
-                        <tr key={idx} className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors">
-                          
-                          <td className="py-3 pl-2">
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                              {sym}
-                            </p>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-500">
-                              Intraday
-                            </p>
-                          </td>
+                          <tr
+                            key={idx}
+                            className="border-b border-gray-200 dark:border-slate-800/30 last:border-0 hover:bg-gray-100 dark:hover:bg-slate-900/50 transition-colors"
+                          >
+                            <td className="py-3 pl-2">
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                {sym}
+                              </p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-500">
+                                Intraday 
+                              </p>
+                            </td>
 
-                          <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border 
-                                ${txn === "BUY"
-                                  ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
-                                  : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
+                            <td className="py-3">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border 
+                                ${
+                                  txn === "BUY"
+                                    ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-500/20"
+                                    : "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-500 border-rose-200 dark:border-rose-500/20"
                                 }`}
-                            >
-                              {txn}
-                            </span>
-                          </td>
+                              >
+                                {txn}
+                              </span>
+                            </td>
 
-                          <td className="py-3 text-sm font-bold text-gray-700 dark:text-gray-300">
-                            {qty}
-                          </td>
+                            <td className="py-3 text-sm font-bold text-gray-700 dark:text-gray-300">
+                              {qty}
+                            </td>
 
-                          {/* 🔥 NEW BADGE DISPLAY */}
-                          <td className="py-3">
-                            {featureTag === "Normal" && (
+                            {/* 🔥 NEW BADGE DISPLAY */}
+                            <td className="py-3">
+                              {featureTag === "Normal" && (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-400 border border-gray-200 dark:border-slate-700">
-                                    Normal
+                                  Normal
                                 </span>
-                            )}
-                            {featureTag === "Wait & Trade" && (
+                              )}
+                              {featureTag === "Wait & Trade" && (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-1 w-max">
-                                    <Clock size={11}/> Wait & Trade
+                                  <Clock size={11} /> Wait & Trade
                                 </span>
-                            )}
-                            {featureTag === "Re-Entry" && (
+                              )}
+                              {featureTag === "Re-Entry" && (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/10 dark:text-fuchsia-400 border border-fuchsia-200 dark:border-fuchsia-500/20 flex items-center gap-1 w-max">
-                                    <RotateCw size={11}/> Re-Entry
+                                  <RotateCw size={11} /> Re-Entry
                                 </span>
-                            )}
-                            {/* 🔥 NAYA BADGE: Premium Diff ke liye Amber (Yellow) colour */}
-                            {featureTag === "Premium Diff" && (
+                              )}
+                              {/* 🔥 NAYA BADGE: Premium Diff ke liye Amber (Yellow) colour */}
+                              {featureTag === "Premium Diff" && (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 flex items-center gap-1 w-max">
-                                    <Scale size={11}/> Premium Diff
+                                  <Scale size={11} /> Premium Diff
                                 </span>
-                            )}
-                          </td>
+                              )}
+                            </td>
 
-                          <td className="py-3">
-                            <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              ₹{entP}
-                              <span className="text-[11px] font-normal text-gray-500 ml-1">
-                                ({entT})
-                              </span>
-                            </p>
-                          </td>
+                            <td className="py-3">
+                              <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                ₹{entP}
+                                <span className="text-[11px] font-normal text-gray-500 ml-1">
+                                  ({entT})
+                                </span>
+                              </p>
+                            </td>
 
-                          <td className="py-3">
-                            <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              ₹{extP}
-                              <span className="text-[11px] font-normal text-gray-500 ml-1">
-                                ({extT})
-                              </span>
-                            </p>
-                          </td>
+                            <td className="py-3">
+                              <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                ₹{extP}
+                                <span className="text-[11px] font-normal text-gray-500 ml-1">
+                                  ({extT})
+                                </span>
+                              </p>
+                            </td>
 
-                          <td className={`py-3 text-right font-bold text-sm ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
-                            {pnl >= 0 ? "+" : "-"}
-                            {fmt(pnl, 1)}
-                          </td>
+                            <td
+                              className={`py-3 text-right font-bold text-sm ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
+                            >
+                              {pnl >= 0 ? "+" : "-"}
+                              {fmt(pnl, 1)}
+                            </td>
 
-                          <td className="py-3 text-right pr-2">
-                            <a href="#" className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-end gap-1 transition-colors uppercase">
-                              {eType.replace(/_/g, ' ')} <ExternalLink size={10} />
-                            </a>
-                          </td>
-
-                        </tr>
-                      )})}
+                            <td className="py-3 text-right pr-2">
+                              <a
+                                href="#"
+                                className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-end gap-1 transition-colors uppercase"
+                              >
+                                {eType.replace(/_/g, " ")}{" "}
+                                <ExternalLink size={10} />
+                              </a>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
