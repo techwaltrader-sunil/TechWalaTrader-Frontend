@@ -104,6 +104,21 @@ const PriceActionConditionSection = ({ priceActionSettings, setPriceActionSettin
                         Choose how the engine assumes the trend at the start of backtesting.
                     </p>
                 </div>
+                {/* 🔥 NEW: Counter Structure History Dropdown */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                        Counter Structure History
+                    </label>
+                    <select 
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        value={priceActionSettings.counterStructureDepth || 0}
+                        onChange={(e) => setPriceActionSettings({ ...priceActionSettings, counterStructureDepth: Number(e.target.value) })}
+                    >
+                        <option value={0}>0 (Strict - No History)</option>
+                        <option value={1}>1 (Keep 1 Previous Wave)</option>
+                        <option value={2}>2 (Keep 2 Previous Waves)</option>
+                    </select>
+                </div>
                 </div>
 
                 
