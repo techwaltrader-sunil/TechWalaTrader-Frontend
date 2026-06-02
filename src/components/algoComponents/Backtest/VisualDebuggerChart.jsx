@@ -633,8 +633,7 @@ const VisualDebuggerChart = ({ candleData, smcSignals, executedTrades, theme = "
           // 🟩 POI ZONES (E-OF, E-OB, D-OF, D-OB) RECTANGLES (FILLED)
           // ==========================================
           // 🔥 .includes() को हटाकर सीधा === यूज़ किया है
-          const isPoiZone = sig.type === "E-OF" || sig.type === "E-OB" || sig.type === "D-OF" || sig.type === "D-OB";
-
+          const isPoiZone = sig.type === "E-OF" || sig.type === "E-OB" || sig.type === "D-OF" || sig.type === "D-OB" || sig.type === "IDM-OF";
           if (isPoiZone) {
               const startSec = Math.floor(new Date(sig.startTime).getTime() / 1000) + 19800;
               const endSec = Math.floor(new Date(sig.endTime).getTime() / 1000) + 19800;
@@ -650,16 +649,22 @@ const VisualDebuggerChart = ({ candleData, smcSignals, executedTrades, theme = "
               // 🔥 1. एकदम साफ़ और अलग-अलग चेक (No .includes!)
               const isS2D = typeName === "E-S2D(OF)" || typeName === "E-S2D(OB)" || typeName === "D-S2D(OF)" || typeName === "D-S2D(OB)";
               const isD2S = typeName === "E-D2S(OF)" || typeName === "E-D2S(OB)" || typeName === "D-D2S(OF)" || typeName === "D-D2S(OB)";
+              const isIdmOf = typeName === "IDM OF" || sig.type === "IDM-OF"; // 🔥 NAYA: IDM-OF को पहचानने के लिए
 
-              let boxColor = "rgba(156, 163, 175, 0.2)"; // Default Gray
+              // 🔥 THE OPACITY MAGIC: Agar historical hai, to color ko fade kar do
+              let boxColor = "rgba(156, 163, 175, 0.2)"; 
               let textColor = "#4b5563"; 
 
               if (isS2D) {
-                  boxColor = "rgba(59, 130, 246, 0.2)"; // 🔵 Light Blue (Counter Bullish S2D के लिए)
-                  textColor = "#1e3a8a";
+                  boxColor = sig.isHistorical ? "rgba(59, 130, 246, 0.05)" : "rgba(59, 130, 246, 0.2)"; 
+                  textColor = sig.isHistorical ? "rgba(30, 58, 138, 0.4)" : "#1e3a8a";
               } else if (isD2S) {
-                  boxColor = "rgba(249, 115, 22, 0.2)"; // 🟠 Orange (Counter Bearish D2S के लिए)
-                  textColor = "#9a3412";
+                  boxColor = sig.isHistorical ? "rgba(249, 115, 22, 0.05)" : "rgba(249, 115, 22, 0.2)"; 
+                  textColor = sig.isHistorical ? "rgba(154, 52, 18, 0.4)" : "#9a3412";
+              } else if (isIdmOf) {
+                  // 🔥 NAYA: IDM-OF के लिए ऑरेंज (Orange) कलर
+                  boxColor = sig.isHistorical ? "rgba(249, 115, 22, 0.05)" : "rgba(249, 115, 22, 0.2)"; 
+                  textColor = sig.isHistorical ? "rgba(194, 65, 12, 0.4)" : "#c2410c"; 
               } else {
                   // Main Structure Zones
                   if (sig.trend === "BULLISH") {
@@ -765,6 +770,20 @@ const VisualDebuggerChart = ({ candleData, smcSignals, executedTrades, theme = "
               lineColor = sig.sweptSide === "HIGH" ? "#22c55e" : "#ef4444"; 
           }
 
+          // 🔥 NAYA: McM(X) के लिए ब्लैक (Black) कलर
+          if (safeType === "McM(X)") {
+              lineColor = "#000000"; // Pure Black
+          }
+
+          // 🔥 LINE FADE MAGIC: Agar line history ki hai, to uska color halka (RGBA) kar do
+          if (sig.isHistorical) {
+              if (lineColor === "#22c55e") lineColor = "rgba(34, 197, 94, 0.3)"; // Faded Green
+              else if (lineColor === "#ef4444") lineColor = "rgba(239, 68, 68, 0.3)"; // Faded Red
+              else if (lineColor === "#9ca3af") lineColor = "rgba(156, 163, 175, 0.3)"; // Faded Gray
+              else if (lineColor === "#000000") lineColor = "rgba(0, 0, 0, 0.3)"; // 🔥 NAYA: Faded Black
+              else lineColor = "rgba(113, 113, 122, 0.3)";
+          }
+
           if (startSec && endSec && startSec < endSec) {
              const segmentData = [];
              
@@ -804,7 +823,8 @@ const VisualDebuggerChart = ({ candleData, smcSignals, executedTrades, theme = "
 
              // 🔥 Text Position Logic
              let markerPos = "aboveBar"; 
-             if (safeType === "X" || safeType === "Ref X" || safeType === "X(C)") {
+             // 🔥 NAYA: McM(X) को भी X की तरह प्लेसमेंट मिलेगी
+             if (safeType === "X" || safeType === "Ref X" || safeType === "X(C)" || safeType === "McM(X)") {
                  markerPos = sig.sweptSide === "HIGH" ? "aboveBar" : "belowBar";
              } else if (safeType === "IDM(S2D)") {
                  markerPos = "belowBar"; 
