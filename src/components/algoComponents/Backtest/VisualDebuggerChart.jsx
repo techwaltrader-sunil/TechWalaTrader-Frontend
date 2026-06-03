@@ -750,7 +750,7 @@ const VisualDebuggerChart = ({ candleData, smcSignals, executedTrades, theme = "
           const isBullish = sig.trend === "BULLISH" || sig.trend === "BULLISH_COUNTER";
           const safeType = String(sig.type || "");
 
-          const isMainIDM = safeType === "IDM";
+          const isMainIDM = safeType === "IDM" || safeType === "IDM(T)";
           const isCounterIDM = safeType === "IDM(S2D)" || safeType === "IDM(D2S)";
           const isAnyIDM = isMainIDM || isCounterIDM;
 

@@ -119,6 +119,21 @@ const PriceActionConditionSection = ({ priceActionSettings, setPriceActionSettin
                         <option value={2}>2 (Keep 2 Previous Waves)</option>
                     </select>
                 </div>
+
+                {/* 🔥 NEW: Structure Mode Dropdown (Mechanical vs Technical) */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                        Structure Mode
+                    </label>
+                    <select 
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        value={priceActionSettings.structureMode || "MECHANICAL"}
+                        onChange={(e) => setPriceActionSettings({ ...priceActionSettings, structureMode: e.target.value })}
+                    >
+                        <option value="MECHANICAL">Mechanical (Standard BOS/CHoCH)</option>
+                        <option value="TECHNICAL">Technical (Transfer of IDM / Single Leg)</option>
+                    </select>
+                </div>
                 </div>
 
                 
