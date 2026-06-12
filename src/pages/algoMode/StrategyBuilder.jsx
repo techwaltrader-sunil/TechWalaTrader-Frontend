@@ -353,15 +353,35 @@ const StrategyBuilder = () => {
   // 🔥 THE FIX: Edit mode me purana (Spot/Future) data load karo
   const [underlyingType, setUnderlyingType] = useState(backendData?.config?.underlying || "Spot");
 
-  const [priceActionSettings, setPriceActionSettings] = useState(backendData?.priceActionSettings || {
-    masterTimeframe: "15 min",
-    entryTimeframe: "1 min",
-    setupType: "BOS (Break of Structure)",
-    entryTrigger: "Candle Close",
-    volumeConfirmation: false,
-    startingTrend: "AUTO",
-    counterStructureDepth: 0 // 🔥 NEW: 0, 1, या 2 हिस्ट्री लिमिट के लिए
-});
+//   const [priceActionSettings, setPriceActionSettings] = useState(backendData?.priceActionSettings || {
+//     masterTimeframe: "15 min",
+//     entryTimeframe: "1 min",
+//     setupType: "BOS (Break of Structure)",
+//     entryTrigger: "Candle Close",
+//     volumeConfirmation: false,
+//     startingTrend: "AUTO",
+//     counterStructureDepth: 0 // 🔥 NEW: 0, 1, या 2 हिस्ट्री लिमिट के लिए
+// });
+
+const [priceActionSettings, setPriceActionSettings] = useState({
+    masterTimeframe: backendData?.priceActionSettings?.masterTimeframe || "15 min",
+    entryTimeframe: backendData?.priceActionSettings?.entryTimeframe || "1 min",
+    setupType: backendData?.priceActionSettings?.setupType || "BOS (Break of Structure)",
+    entryTrigger: backendData?.priceActionSettings?.entryTrigger || "Candle Close",
+    volumeConfirmation: backendData?.priceActionSettings?.volumeConfirmation || false,
+    startingTrend: backendData?.priceActionSettings?.startingTrend || "AUTO",
+    counterStructureDepth: backendData?.priceActionSettings?.counterStructureDepth || 0,
+    structureMode: backendData?.priceActionSettings?.structureMode || "DISCOUNTED",
+    strictDecisional: backendData?.priceActionSettings?.strictDecisional || false,
+    strictCounter: backendData?.priceActionSettings?.strictCounter || false,
+    majorOnly: backendData?.priceActionSettings?.majorOnly ?? true,
+    
+    // 🎛️ NAYE 4 CHECKBOX VARIABLES YAHAN ADD KIYE HAIN
+    showD2S_DOB: backendData?.priceActionSettings?.showD2S_DOB ?? true,
+    showD2S_DOF: backendData?.priceActionSettings?.showD2S_DOF ?? true,
+    showD2S_EOB: backendData?.priceActionSettings?.showD2S_EOB ?? true,
+    showD2S_EOF: backendData?.priceActionSettings?.showD2S_EOF ?? true
+  });
   
   const [legs, setLegs] = useState(backendData?.legs && backendData.legs.length > 0 ? backendData.legs : [
     { id: 1, action: "BUY", optionType: "Call", quantity: 65, expiry: "WEEKLY", strikeCriteria: "ATM pt", strikeType: "ATM", slType: "SL%", slValue: 30, tpType: "TP%", tpValue: 0 }
