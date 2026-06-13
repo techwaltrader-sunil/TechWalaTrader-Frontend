@@ -1757,7 +1757,12 @@ const Backtest = () => {
   const [selectedStrategyIds, setSelectedStrategyIds] = useState([]); 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("1M"); 
-  const [customRange, setCustomRange] = useState({ start: '', end: '' });
+  const [customRange, setCustomRange] = useState({ 
+      startDate: '', 
+      startTime: '09:15', 
+      endDate: '', 
+      endTime: '15:30' 
+  });
 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -1852,7 +1857,7 @@ const Backtest = () => {
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
     if (period !== 'Custom') {
-        setCustomRange({ start: '', end: '' });
+        setCustomRange({ startDate: '', startTime: '09:15', endDate: '', endTime: '15:30' });
     }
   };
 
@@ -1902,8 +1907,13 @@ const Backtest = () => {
 
       let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}&showD2S_DOB=${showD2S_DOB}&showD2S_DOF=${showD2S_DOF}&showD2S_EOB=${showD2S_EOB}&showD2S_EOF=${showD2S_EOF}`;
       
-      if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
-          requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
+    //   if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
+    //       requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
+    //   }
+    if (selectedPeriod === 'Custom' && customRange.startDate && customRange.endDate) {
+          const startDateTime = `${customRange.startDate}T${customRange.startTime}`;
+          const endDateTime = `${customRange.endDate}T${customRange.endTime}`;
+          requestUrl += `&start=${startDateTime}&end=${endDateTime}`;
       }
       
       const response = await fetch(requestUrl, {
@@ -2188,30 +2198,61 @@ const Backtest = () => {
 
               {selectedPeriod === 'Custom' && (
                   <div className="flex flex-col sm:flex-row gap-4 bg-gray-50 dark:bg-slate-950 p-4 rounded-lg border border-gray-200 dark:border-slate-800 animate-in slide-in-from-top-2">
-                      <div className="flex-1">
-                          <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
-                          <div className="relative">
-                            <input 
-                                type="date" 
-                                className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
-                                value={customRange.start}
-                                onChange={(e) => setCustomRange({...customRange, start: e.target.value})}
-                            />
-                             <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+                      
+                      {/* START DATE & TIME */}
+                      <div className="flex-1 flex gap-2">
+                          <div className="flex-grow">
+                              <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
+                              <div className="relative">
+                                <input 
+                                    type="date" 
+                                    className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+                                    value={customRange.startDate}
+                                    onChange={(e) => setCustomRange({...customRange, startDate: e.target.value})}
+                                />
+                                <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+                              </div>
+                          </div>
+                          <div className="w-1/3 min-w-[100px]">
+                              <label className="text-xs text-gray-500 mb-1 block">Time</label>
+                              <div className="relative">
+                                <input 
+                                    type="time" 
+                                    className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+                                    value={customRange.startTime}
+                                    onChange={(e) => setCustomRange({...customRange, startTime: e.target.value})}
+                                />
+                              </div>
                           </div>
                       </div>
-                      <div className="flex-1">
-                          <label className="text-xs text-gray-500 mb-1 block">End Date</label>
-                          <div className="relative">
-                            <input 
-                                type="date" 
-                                className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
-                                value={customRange.end}
-                                onChange={(e) => setCustomRange({...customRange, end: e.target.value})}
-                            />
-                            <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+
+                      {/* END DATE & TIME */}
+                      <div className="flex-1 flex gap-2">
+                          <div className="flex-grow">
+                              <label className="text-xs text-gray-500 mb-1 block">End Date</label>
+                              <div className="relative">
+                                <input 
+                                    type="date" 
+                                    className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+                                    value={customRange.endDate}
+                                    onChange={(e) => setCustomRange({...customRange, endDate: e.target.value})}
+                                />
+                                <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+                              </div>
+                          </div>
+                          <div className="w-1/3 min-w-[100px]">
+                              <label className="text-xs text-gray-500 mb-1 block">Time</label>
+                              <div className="relative">
+                                <input 
+                                    type="time" 
+                                    className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+                                    value={customRange.endTime}
+                                    onChange={(e) => setCustomRange({...customRange, endTime: e.target.value})}
+                                />
+                              </div>
                           </div>
                       </div>
+
                   </div>
               )}
 
