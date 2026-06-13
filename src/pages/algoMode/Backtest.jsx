@@ -535,11 +535,1205 @@
 
 
 
+// import React, { useState, useEffect, useRef } from 'react';
+// import { useParams, useNavigate } from 'react-router-dom';
+// import { 
+//   ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square, Info, ServerCrash
+// } from 'lucide-react';
+// import axios from 'axios'; 
+// import { getStrategies } from '../../data/AlogoTrade/strategyService';
+
+// import EquityCurveChart from '../../components/algoComponents/Backtest/EquityCurveChart';
+// import BacktestSummary from '../../components/algoComponents/Backtest/BacktestSummary';
+// import MaxProfitLossChart from '../../components/algoComponents/Backtest/MaxProfitLossChart';
+// import DaywiseBreakdown from '../../components/algoComponents/Backtest/DaywiseBreakdown';
+// import TransactionTable from '../../components/algoComponents/Backtest/TransactionTable';
+
+// // बाकी इम्पोर्ट्स के साथ इसे जोड़ें
+// import VisualDebuggerChart from '../../components/algoComponents/Backtest/VisualDebuggerChart';
+
+// import { useTheme } from '../../context/ThemeContext';
+
+// const Backtest = () => {
+//   const { strategyId } = useParams();
+//   const navigate = useNavigate();
+//   const dropdownRef = useRef(null);
+
+//   const { theme } = useTheme();
+
+//   const [strategies, setStrategies] = useState([]);
+//   const [selectedStrategyIds, setSelectedStrategyIds] = useState([]); 
+//   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+//   const [selectedPeriod, setSelectedPeriod] = useState("1M"); 
+//   const [customRange, setCustomRange] = useState({ start: '', end: '' });
+
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [result, setResult] = useState(null);
+
+//   const [withSlippage, setWithSlippage] = useState(true);
+//   const [showInfo, setShowInfo] = useState(false);
+
+//   // 🔥 NEW STATES: Smart Progress Bar ke liye
+//   const [progress, setProgress] = useState(0);
+//   const [processingDate, setProcessingDate] = useState(""); 
+
+//   // 🔥 NAYA STATE: Progressive Unlocking Track karne ke liye
+//   const [completedPeriods, setCompletedPeriods] = useState([]);
+
+
+//   // --- LOAD STRATEGIES FROM REAL DATABASE ---
+//   useEffect(() => {
+//     const fetchAndSetStrategies = async () => {
+//       try {
+//         const data = await getStrategies();
+//         setStrategies(data);
+        
+//         if (strategyId) {
+//           setSelectedStrategyIds([strategyId]);
+//         } else if (data && data.length > 0) {
+//           setSelectedStrategyIds([data[0]._id || data[0].id]);
+//         }
+//       } catch (error) {
+//         console.error("Failed to load strategies:", error);
+//       }
+//     };
+
+//     fetchAndSetStrategies();
+    
+//     const handleClickOutside = (event) => {
+//       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+//         setIsDropdownOpen(false);
+//       }
+//     };
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
+
+//   }, [strategyId]);
+
+//   const toggleStrategy = (id) => {
+//     if (selectedStrategyIds.includes(id)) {
+//       setSelectedStrategyIds(prev => prev.filter(sid => sid !== id));
+//     } else {
+//       setSelectedStrategyIds(prev => [...prev, id]);
+//     }
+//   };
+
+//   const removeTag = (id, e) => {
+//     e.stopPropagation();
+//     setSelectedStrategyIds(prev => prev.filter(sid => sid !== id));
+//   };
+
+//   const handlePeriodChange = (period) => {
+//     setSelectedPeriod(period);
+//     if (period !== 'Custom') {
+//         setCustomRange({ start: '', end: '' });
+//     }
+//   };
+
+//   const getDropdownLabel = () => {
+//     if (selectedStrategyIds.length === 0) return "Select Strategies";
+//     const names = strategies
+//         .filter(s => selectedStrategyIds.includes(s._id || s.id))
+//         .map(s => s.name);
+//     return names.join(", ");
+//   };
+
+//   // 🔒 GATEKEEPER LOGIC: Progressive Unlocking
+//   const isPeriodLocked = (periodLabel) => {
+//       if (periodLabel === '1M' || periodLabel === 'Custom') return false;
+      
+//       if (periodLabel === '3M') return !completedPeriods.includes('1M');
+//       if (periodLabel === '6M') return !completedPeriods.includes('3M');
+//       if (periodLabel === '1Y') return !completedPeriods.includes('6M');
+//       if (periodLabel === '2Y') return !completedPeriods.includes('1Y');
+      
+//       return false;
+//   };
+
+//   // --- 🔥 THE SSE STREAMING API ENGINE 🔥 ---
+//   const runBacktest = async () => {
+//     if (selectedStrategyIds.length === 0) return;
+    
+//     setIsLoading(true);
+//     setResult(null);
+//     setProgress(0);
+//     setProcessingDate("Starting Engine...");
+
+//     try {
+//     //   const API_URL = "https://techwalatrader.duckdns.org/api"; 
+//       const API_URL = `${import.meta.env.VITE_API_URL}/api`; 
+//       const targetId = selectedStrategyIds[0];
+
+//       // 🔥 THE FIX: चयनित (Selected) स्ट्रेटेजी का डेटा निकालें ताकि चेकबॉक्स का स्टेट मिल सके
+//       const selectedStrategyData = strategies.find(s => (s._id || s.id) === targetId);
+//       const paSettings = selectedStrategyData?.data?.priceActionSettings || selectedStrategyData?.priceActionSettings || {};
+      
+//       // डेटाबेस से चेकबॉक्स की वैल्यू निकालें (डिफ़ॉल्ट रूप से true)
+//       const showD2S_DOB = paSettings.showD2S_DOB !== false;
+//       const showD2S_DOF = paSettings.showD2S_DOF !== false;
+//       const showD2S_EOB = paSettings.showD2S_EOB !== false;
+//       const showD2S_EOF = paSettings.showD2S_EOF !== false;
+
+//       // 🔥 THE FIX: अब इन चारों वेरिएबल्स को URL में जोड़ दो
+//       let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}&showD2S_DOB=${showD2S_DOB}&showD2S_DOF=${showD2S_DOF}&showD2S_EOB=${showD2S_EOB}&showD2S_EOF=${showD2S_EOF}`;
+      
+      
+//       if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
+//           requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
+//       }
+      
+//       // 🔥 1. START FETCHING THE STREAM
+//       const response = await fetch(requestUrl, {
+//             headers: {
+//                 'Accept': 'text/event-stream',
+//                 'Cache-Control': 'no-cache'
+//             }
+//       });
+      
+//       if (!response.ok) {
+//           throw new Error("Failed to connect to backtest engine.");
+//       }
+
+//       // 🔥 2. DECODE THE STREAM CHUNKS
+//       const reader = response.body.getReader();
+//       const decoder = new TextDecoder("utf-8");
+//       let buffer = "";
+
+//       while (true) {
+//           const { done, value } = await reader.read();
+//           if (done) break;
+
+//           buffer += decoder.decode(value, { stream: true });
+//           const lines = buffer.split('\n\n');
+          
+//           buffer = lines.pop(); 
+
+//           for (let line of lines) {
+//               if (line.startsWith('data: ')) {
+//                   const dataStr = line.replace('data: ', '').trim();
+//                   if (!dataStr) continue;
+
+//                   try {
+//                       const parsedData = JSON.parse(dataStr);
+                      
+//                       if (parsedData.type === 'PROGRESS') {
+//                           setProgress(parsedData.percent);
+//                           setProcessingDate(`Processing: ${parsedData.date}`);
+//                       } 
+//                       else if (parsedData.type === 'COMPLETE') {
+//                           const backendData = parsedData.data;
+//                           const formattedResult = {
+//                               summary: backendData.summary,
+//                               equityCurve: backendData.equityCurve,
+//                               daywiseBreakdown: backendData.daywiseBreakdown, 
+//                               transactions: backendData.daywiseBreakdown.map(day => {
+//                                   const eqData = backendData.equityCurve.find(e => e.date === day.date);
+//                                   return { date: day.date, pnl: day.dailyPnL, cumulativePnl: eqData ? eqData.pnl : 0, tradesTaken: day.tradesTaken };
+//                               }),
+//                               // 🔥 THE FIX: इन तीनों को भी स्टेट में सेव करना ज़रूरी है! 🔥
+//                               candleData: backendData.candleData,
+//                               smcSignals: backendData.smcSignals,
+//                               executedTrades: backendData.executedTrades
+//                           };
+
+//                           setProgress(100);
+//                           setProcessingDate("Finalizing Results...");
+                          
+//                           setTimeout(() => {
+//                               setResult(formattedResult);
+//                               setIsLoading(false);
+
+//                               // 🔥 NAYA CODE: Level Unlock kardo!
+//                               setCompletedPeriods(prev => {
+//                                   if (!prev.includes(selectedPeriod)) {
+//                                       return [...prev, selectedPeriod];
+//                                   }
+//                                   return prev;
+//                               });
+
+//                           }, 500);
+//                       } 
+//                       else if (parsedData.type === 'ERROR') {
+//                           alert(`❌ Backtest Halted: ${parsedData.message}`);
+//                           setIsLoading(false);
+//                           reader.cancel(); 
+//                           return;
+//                       }
+//                   } catch (e) {
+//                       console.error("Chunk Parsing Error:", e);
+//                   }
+//               }
+//           }
+//       }
+
+//     } catch (error) {
+//       console.error("Stream Failed:", error);
+//       setIsLoading(false);
+//       setProgress(0);
+//       alert("❌ Connection lost with the backtest engine. Please try again.");
+//     }
+//   };
+
+//   return (
+//     <div className="p-4 md:p-6 text-gray-900 dark:text-white min-h-screen bg-gray-100 dark:bg-slate-950 font-sans transition-colors duration-300">
+      
+//       <div className="flex items-center gap-3 mb-6">
+//         <button 
+//             onClick={() => navigate(-1)} 
+//             className="p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-white"
+//         >
+//             <ArrowLeft size={20} />
+//         </button>
+//         <div>
+//             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Backtesting Suite</h1>
+//             <p className="text-gray-500 dark:text-gray-400 text-xs">Test your strategies on historical data</p>
+//         </div>
+//       </div>
+
+//       <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6 mb-6 shadow-sm dark:shadow-xl transition-colors duration-300">
+          
+//           <div className="flex flex-col gap-6">
+              
+//               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                  
+//                   <div className="w-full lg:w-1/2 relative" ref={dropdownRef}>
+//                       <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 block">Choose Strategies</label>
+                      
+//                       <div 
+//                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+//                         className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-3 text-sm text-gray-700 dark:text-white cursor-pointer flex justify-between items-center hover:border-gray-400 dark:hover:border-slate-600 transition-colors relative"
+//                       >
+//                           <span className="truncate pr-4 text-gray-700 dark:text-gray-300">
+//                               {getDropdownLabel()}
+//                           </span>
+//                           <ChevronDown size={16} className={`text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}/>
+//                       </div>
+
+//                       {isDropdownOpen && (
+//                           <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar p-2">
+//                               {strategies.length === 0 && <p className="text-gray-500 text-xs p-2">No strategies found.</p>}
+//                               {strategies.map(s => {
+//                                   const currentId = s._id || s.id;
+//                                   const isSelected = selectedStrategyIds.includes(currentId);
+//                                   return (
+//                                       <div 
+//                                         key={currentId} 
+//                                         onClick={() => toggleStrategy(currentId)}
+//                                         className={`flex items-center gap-3 p-3 rounded cursor-pointer transition-colors 
+//                                             ${isSelected 
+//                                                 ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400' 
+//                                                 : 'hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'}`}
+//                                       >
+//                                           {isSelected ? <CheckSquare size={16} className="text-blue-600 dark:text-blue-500"/> : <Square size={16} className="text-gray-400 dark:text-gray-600"/>}
+//                                           <span className="text-sm font-medium">{s.name}</span>
+//                                       </div>
+//                                   );
+//                               })}
+//                           </div>
+//                       )}
+//                   </div>
+
+//                   <div className="w-full lg:w-auto">
+//                       <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 block lg:text-right">Time Range</label>
+//                       <div className="flex flex-wrap gap-2">
+                          
+//                           {/* 🔥 NAYA CODE: Map with Progressive Unlocking Visuals */}
+//                           {['1M', '3M', '6M', '1Y', '2Y', 'Custom'].map((p) => {
+//                               const locked = isPeriodLocked(p);
+//                               return (
+//                                   <button 
+//                                       key={p} 
+//                                       disabled={locked}
+//                                       onClick={() => handlePeriodChange(p)}
+//                                       className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5
+//                                       ${selectedPeriod === p 
+//                                           ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
+//                                           : locked
+//                                               ? 'bg-gray-100 dark:bg-slate-800/50 border-gray-200 dark:border-slate-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-70'
+//                                               : 'bg-gray-50 dark:bg-slate-950 border-gray-300 dark:border-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:border-slate-600 hover:text-gray-900 dark:hover:text-white cursor-pointer'
+//                                       }`}
+//                                   >
+//                                       {locked && <span className="opacity-80">🔒</span>}
+//                                       {p === 'Custom' ? 'Custom Range' : p === '1M' ? '1 Month' : p === '1Y' ? '1 Year' : p}
+//                                   </button>
+//                               );
+//                           })}
+                          
+//                       </div>
+//                   </div>
+//               </div>
+
+//               {/* ROW 2: TAGS */}
+//               {selectedStrategyIds.length > 0 && (
+//                   <div className="flex flex-wrap gap-2">
+//                       {strategies.filter(s => selectedStrategyIds.includes(s._id || s.id)).map(s => {
+//                           const currentId = s._id || s.id;
+//                           return (
+//                           <div key={currentId} className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm animate-in fade-in zoom-in duration-200">
+//                               {s.name}
+//                               <button onClick={(e) => removeTag(currentId, e)} className="hover:text-blue-200">
+//                                   <X size={14} />
+//                               </button>
+//                           </div>
+//                       )})}
+//                   </div>
+//               )}
+
+//               {/* ROW 3: CUSTOM DATE INPUTS */}
+//               {selectedPeriod === 'Custom' && (
+//                   <div className="flex flex-col sm:flex-row gap-4 bg-gray-50 dark:bg-slate-950 p-4 rounded-lg border border-gray-200 dark:border-slate-800 animate-in slide-in-from-top-2">
+//                       <div className="flex-1">
+//                           <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
+//                           <div className="relative">
+//                             <input 
+//                                 type="date" 
+//                                 className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+//                                 value={customRange.start}
+//                                 onChange={(e) => setCustomRange({...customRange, start: e.target.value})}
+//                             />
+//                              <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+//                           </div>
+//                       </div>
+//                       <div className="flex-1">
+//                           <label className="text-xs text-gray-500 mb-1 block">End Date</label>
+//                           <div className="relative">
+//                             <input 
+//                                 type="date" 
+//                                 className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+//                                 value={customRange.end}
+//                                 onChange={(e) => setCustomRange({...customRange, end: e.target.value})}
+//                             />
+//                             <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+//                           </div>
+//                       </div>
+//                   </div>
+//               )}
+
+//               {/* ROW 4: CREDIT BAR, TOGGLE & BUTTON */}
+//               <div className="mt-2 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-2 pr-2 pl-4 transition-colors">
+                  
+//                   {/* Credit Bar */}
+//                   <div className="flex-1 w-full flex items-center gap-2 py-2 md:py-0">
+//                       <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Backtest Credit:</span>
+//                       <span className="text-sm font-bold text-gray-900 dark:text-white">47/50</span>
+//                       <div className="w-24 h-1.5 bg-gray-300 dark:bg-slate-800 rounded-full ml-2 overflow-hidden">
+//                           <div className="bg-green-500 h-full w-[94%]"></div>
+//                       </div>
+//                   </div>
+
+//                  {/* SLIPPAGE TOGGLE BUTTON */}
+//                   <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm relative">
+//                       <div 
+//                           className="flex items-center gap-1 relative cursor-pointer"
+//                           onMouseEnter={() => setShowInfo(true)}
+//                           onMouseLeave={() => setShowInfo(false)}
+//                           onClick={() => setShowInfo(!showInfo)}
+//                       >
+//                           <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+//                               Fill Type:
+//                           </span>
+//                           <Info size={14} className={`transition-colors ${showInfo ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`} />
+                          
+//                           {showInfo && (
+//                               <div 
+//                                   onClick={(e) => { e.stopPropagation(); setShowInfo(false); }}
+//                                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-white dark:before:border-t-slate-800 animate-in fade-in zoom-in duration-200"
+//                               >
+//                                   {withSlippage ? (
+//                                       <div>
+//                                           <p className="font-bold text-blue-600 dark:text-blue-400 mb-1">Exact Trigger + Gaps:</p>
+//                                           <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+//                                               Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.
+//                                           </p>
+//                                       </div>
+//                                   ) : (
+//                                       <div>
+//                                           <p className="font-bold text-orange-600 dark:text-orange-400 mb-1">Always Exit at Open:</p>
+//                                           <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+//                                               A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.
+//                                           </p>
+//                                       </div>
+//                                   )}
+//                               </div>
+//                           )}
+//                       </div>
+
+//                       <button 
+//                           onClick={() => setWithSlippage(!withSlippage)}
+//                           className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${withSlippage ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}`}
+//                       >
+//                           <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${withSlippage ? 'translate-x-5' : 'translate-x-1'}`} />
+//                       </button>
+//                       <span className={`text-xs font-bold ${withSlippage ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'}`}>
+//                           {withSlippage ? 'Exact Trigger + Gaps' : 'Always Exit at Open'}
+//                       </span>
+//                   </div>
+                  
+//                   {/* Run Button */}
+//                   <button 
+//                     onClick={runBacktest}
+//                     disabled={isLoading || selectedStrategyIds.length === 0}
+//                     className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 px-8 rounded-md font-bold shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+//                   >
+//                       {isLoading ? <ServerCrash className="animate-pulse" size={18}/> : <Play size={18} fill="currentColor" />}
+//                       {isLoading ? "Running..." : "Run Backtest"}
+//                   </button>
+//               </div>
+
+//           </div>
+//       </div>
+
+//       {/* 🔥 SMART LOADER UI 🔥 */}
+//       {isLoading && (
+//         <div className="flex flex-col items-center justify-center h-[400px] border border-blue-200 dark:border-blue-900 rounded-xl bg-blue-50 dark:bg-slate-900 shadow-inner transition-colors animate-in fade-in zoom-in duration-300">
+            
+//             <div className="relative mb-6">
+//                 <div className="absolute inset-0 bg-blue-400 blur-xl opacity-20 animate-pulse"></div>
+//                 <div className="bg-white dark:bg-slate-800 p-5 rounded-full shadow-lg relative border border-blue-100 dark:border-slate-700">
+//                     <Activity size={40} className="text-blue-600 dark:text-blue-400 animate-bounce" />
+//                 </div>
+//             </div>
+
+//             <h3 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Analyzing Market Data...</h3>
+//             <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-md text-center">
+//                 Fetching historical options data from Dhan, calculating indicators, and simulating your strategy leg by leg.
+//             </p>
+
+//             <div className="w-full max-w-lg px-6">
+//                 <div className="flex justify-between items-end mb-2">
+//                     <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Simulation Progress</span>
+//                     <span className="text-lg font-black text-blue-600 dark:text-blue-400">{progress}%</span>
+//                 </div>
+                
+//                 <div className="w-full h-3 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner relative">
+//                     <div 
+//                         className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-out relative"
+//                         style={{ width: `${progress}%` }}
+//                     >
+//                         <div className="absolute top-0 left-0 right-0 bottom-0 bg-white/20 animate-[shimmer_1s_infinite]"></div>
+//                     </div>
+//                 </div>
+
+//                 <div className="mt-3 flex justify-center items-center gap-2">
+//                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+//                     <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
+//                         {processingDate}
+//                     </span>
+//                 </div>
+//             </div>
+
+//         </div>
+//       )}
+
+//       {/* 3. RESULTS AREA */}
+//       {result && !isLoading && (
+//           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              
+//               {/* 📈 THE SMC VISUAL DEBUGGER CHART */}
+//               {result.candleData && result.candleData.length > 0 && (
+//                   <div className="mt-6 w-full max-w-[calc(100vw-2rem)]  overflow-hidden">
+//                       <VisualDebuggerChart 
+//                           candleData={result.candleData} 
+//                           smcSignals={result.smcSignals} 
+//                           executedTrades={result.executedTrades} 
+//                           theme={theme}
+//                       />
+//                       {console.log("CHART DATA RECIEVED:", result.candleData)}
+//                   </div>
+//               )}
+
+//               {/* आपकी पुरानी Summary Tables/Cards */}
+//               <BacktestSummary summary={result.summary} /> 
+              
+//               <div className="mt-6">
+//                   <EquityCurveChart transactions={[...result.transactions].reverse()} />
+//               </div>
+//               <div className="mt-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+//                   <MaxProfitLossChart transactions={result.transactions} summary={result.summary} />
+//               </div>
+//               <div className="mt-6 animate-in fade-in slide-in-from-bottom-10 duration-700">
+//                 <DaywiseBreakdown data={result.daywiseBreakdown || []} />
+//               </div>
+//               <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 pb-10">
+//                   <TransactionTable transactions={result.daywiseBreakdown} />
+//               </div>
+//           </div>
+//       )}
+
+//       {/* 4. EMPTY STATE */}
+//       {!result && !isLoading && (
+//           <div className="flex flex-col items-center justify-center h-[400px] border-2 border-dashed border-gray-300 dark:border-slate-800 rounded-xl bg-gray-100 dark:bg-slate-900/30 dark:opacity-50 transition-colors">
+//               <div className="bg-white dark:bg-slate-800 p-4 rounded-full mb-4 shadow-sm">
+//                   <Activity size={32} className="text-gray-400 dark:text-gray-500" />
+//               </div>
+//               <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">Ready to Simulate</h3>
+//               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Select strategies and date range to begin analysis.</p>
+//           </div>
+//       )}
+
+//     </div>
+//   );
+// };
+
+// export default Backtest;
+
+
+// import React, { useState, useEffect, useRef } from 'react';
+// import { useParams, useNavigate } from 'react-router-dom';
+// import { 
+//   ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square, Info, ServerCrash,
+//   PlayCircle, PauseCircle, FastForward, Rewind, SkipForward, SkipBack, RefreshCw, MonitorPlay
+// } from 'lucide-react'; // 🔥 NAYA: Replay Icons added
+// import axios from 'axios'; 
+// import { getStrategies } from '../../data/AlogoTrade/strategyService';
+
+// import EquityCurveChart from '../../components/algoComponents/Backtest/EquityCurveChart';
+// import BacktestSummary from '../../components/algoComponents/Backtest/BacktestSummary';
+// import MaxProfitLossChart from '../../components/algoComponents/Backtest/MaxProfitLossChart';
+// import DaywiseBreakdown from '../../components/algoComponents/Backtest/DaywiseBreakdown';
+// import TransactionTable from '../../components/algoComponents/Backtest/TransactionTable';
+// import VisualDebuggerChart from '../../components/algoComponents/Backtest/VisualDebuggerChart';
+
+// import { useTheme } from '../../context/ThemeContext';
+
+// const Backtest = () => {
+//   const { strategyId } = useParams();
+//   const navigate = useNavigate();
+//   const dropdownRef = useRef(null);
+
+//   const { theme } = useTheme();
+
+//   const [strategies, setStrategies] = useState([]);
+//   const [selectedStrategyIds, setSelectedStrategyIds] = useState([]); 
+//   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+//   const [selectedPeriod, setSelectedPeriod] = useState("1M"); 
+//   const [customRange, setCustomRange] = useState({ start: '', end: '' });
+
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [result, setResult] = useState(null);
+
+//   const [withSlippage, setWithSlippage] = useState(true);
+//   const [showInfo, setShowInfo] = useState(false);
+
+//   const [progress, setProgress] = useState(0);
+//   const [processingDate, setProcessingDate] = useState(""); 
+//   const [completedPeriods, setCompletedPeriods] = useState([]);
+
+//   // =========================================================================
+//   // 🎬 REPLAY MODE STATES (THE TIME MACHINE)
+//   // =========================================================================
+//   const [isReplayMode, setIsReplayMode] = useState(false);
+//   const [replayIndex, setReplayIndex] = useState(0);
+//   const [isPlaying, setIsPlaying] = useState(false);
+//   const [replaySpeed, setReplaySpeed] = useState(500); // 500ms = 1x speed
+
+//   // Speed Map for UI
+//   const speedOptions = [
+//       { label: "1x", delay: 500 },
+//       { label: "2x", delay: 250 },
+//       { label: "5x", delay: 100 },
+//       { label: "10x", delay: 50 },
+//   ];
+
+//   // 🎬 THE REPLAY ENGINE (useEffect Timer)
+//   useEffect(() => {
+//       let interval;
+//       if (isPlaying && isReplayMode && result?.candleData) {
+//           interval = setInterval(() => {
+//               setReplayIndex((prev) => {
+//                   if (prev + 1 >= result.candleData.length) {
+//                       setIsPlaying(false); // Stop when reached the end
+//                       return prev;
+//                   }
+//                   return prev + 1;
+//               });
+//           }, replaySpeed);
+//       }
+//       return () => clearInterval(interval);
+//   }, [isPlaying, isReplayMode, replaySpeed, result]);
+//   // =========================================================================
+
+
+//   // --- LOAD STRATEGIES FROM REAL DATABASE ---
+//   useEffect(() => {
+//     const fetchAndSetStrategies = async () => {
+//       try {
+//         const data = await getStrategies();
+//         setStrategies(data);
+        
+//         if (strategyId) {
+//           setSelectedStrategyIds([strategyId]);
+//         } else if (data && data.length > 0) {
+//           setSelectedStrategyIds([data[0]._id || data[0].id]);
+//         }
+//       } catch (error) {
+//         console.error("Failed to load strategies:", error);
+//       }
+//     };
+
+//     fetchAndSetStrategies();
+    
+//     const handleClickOutside = (event) => {
+//       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+//         setIsDropdownOpen(false);
+//       }
+//     };
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
+
+//   }, [strategyId]);
+
+//   const toggleStrategy = (id) => {
+//     if (selectedStrategyIds.includes(id)) {
+//       setSelectedStrategyIds(prev => prev.filter(sid => sid !== id));
+//     } else {
+//       setSelectedStrategyIds(prev => [...prev, id]);
+//     }
+//   };
+
+//   const removeTag = (id, e) => {
+//     e.stopPropagation();
+//     setSelectedStrategyIds(prev => prev.filter(sid => sid !== id));
+//   };
+
+//   const handlePeriodChange = (period) => {
+//     setSelectedPeriod(period);
+//     if (period !== 'Custom') {
+//         setCustomRange({ start: '', end: '' });
+//     }
+//   };
+
+//   const getDropdownLabel = () => {
+//     if (selectedStrategyIds.length === 0) return "Select Strategies";
+//     const names = strategies
+//         .filter(s => selectedStrategyIds.includes(s._id || s.id))
+//         .map(s => s.name);
+//     return names.join(", ");
+//   };
+
+//   const isPeriodLocked = (periodLabel) => {
+//       if (periodLabel === '1M' || periodLabel === 'Custom') return false;
+//       if (periodLabel === '3M') return !completedPeriods.includes('1M');
+//       if (periodLabel === '6M') return !completedPeriods.includes('3M');
+//       if (periodLabel === '1Y') return !completedPeriods.includes('6M');
+//       if (periodLabel === '2Y') return !completedPeriods.includes('1Y');
+//       return false;
+//   };
+
+//   // --- 🔥 THE SSE STREAMING API ENGINE 🔥 ---
+//   const runBacktest = async () => {
+//     if (selectedStrategyIds.length === 0) return;
+    
+//     setIsLoading(true);
+//     setResult(null);
+//     setProgress(0);
+//     setProcessingDate("Starting Engine...");
+
+//     // 🎬 Reset Replay states when new backtest runs
+//     setIsReplayMode(false);
+//     setIsPlaying(false);
+//     setReplayIndex(0);
+
+//     try {
+//       const API_URL = `${import.meta.env.VITE_API_URL}/api`; 
+//       const targetId = selectedStrategyIds[0];
+
+//       const selectedStrategyData = strategies.find(s => (s._id || s.id) === targetId);
+//       const paSettings = selectedStrategyData?.data?.priceActionSettings || selectedStrategyData?.priceActionSettings || {};
+      
+//       const showD2S_DOB = paSettings.showD2S_DOB !== false;
+//       const showD2S_DOF = paSettings.showD2S_DOF !== false;
+//       const showD2S_EOB = paSettings.showD2S_EOB !== false;
+//       const showD2S_EOF = paSettings.showD2S_EOF !== false;
+
+//       let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}&showD2S_DOB=${showD2S_DOB}&showD2S_DOF=${showD2S_DOF}&showD2S_EOB=${showD2S_EOB}&showD2S_EOF=${showD2S_EOF}`;
+      
+//       if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
+//           requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
+//       }
+      
+//       const response = await fetch(requestUrl, {
+//             headers: {
+//                 'Accept': 'text/event-stream',
+//                 'Cache-Control': 'no-cache'
+//             }
+//       });
+      
+//       if (!response.ok) {
+//           throw new Error("Failed to connect to backtest engine.");
+//       }
+
+//       const reader = response.body.getReader();
+//       const decoder = new TextDecoder("utf-8");
+//       let buffer = "";
+
+//       while (true) {
+//           const { done, value } = await reader.read();
+//           if (done) break;
+
+//           buffer += decoder.decode(value, { stream: true });
+//           const lines = buffer.split('\n\n');
+//           buffer = lines.pop(); 
+
+//           for (let line of lines) {
+//               if (line.startsWith('data: ')) {
+//                   const dataStr = line.replace('data: ', '').trim();
+//                   if (!dataStr) continue;
+
+//                   try {
+//                       const parsedData = JSON.parse(dataStr);
+                      
+//                       if (parsedData.type === 'PROGRESS') {
+//                           setProgress(parsedData.percent);
+//                           setProcessingDate(`Processing: ${parsedData.date}`);
+//                       } 
+//                       else if (parsedData.type === 'COMPLETE') {
+//                           const backendData = parsedData.data;
+//                           const formattedResult = {
+//                               summary: backendData.summary,
+//                               equityCurve: backendData.equityCurve,
+//                               daywiseBreakdown: backendData.daywiseBreakdown, 
+//                               transactions: backendData.daywiseBreakdown.map(day => {
+//                                   const eqData = backendData.equityCurve.find(e => e.date === day.date);
+//                                   return { date: day.date, pnl: day.dailyPnL, cumulativePnl: eqData ? eqData.pnl : 0, tradesTaken: day.tradesTaken };
+//                               }),
+//                               candleData: backendData.candleData,
+//                               smcSignals: backendData.smcSignals,
+//                               executedTrades: backendData.executedTrades
+//                           };
+
+//                           setProgress(100);
+//                           setProcessingDate("Finalizing Results...");
+                          
+//                           setTimeout(() => {
+//                               setResult(formattedResult);
+//                               setIsLoading(false);
+
+//                               setCompletedPeriods(prev => {
+//                                   if (!prev.includes(selectedPeriod)) {
+//                                       return [...prev, selectedPeriod];
+//                                   }
+//                                   return prev;
+//                               });
+
+//                           }, 500);
+//                       } 
+//                       else if (parsedData.type === 'ERROR') {
+//                           alert(`❌ Backtest Halted: ${parsedData.message}`);
+//                           setIsLoading(false);
+//                           reader.cancel(); 
+//                           return;
+//                       }
+//                   } catch (e) {
+//                       console.error("Chunk Parsing Error:", e);
+//                   }
+//               }
+//           }
+//       }
+
+//     } catch (error) {
+//       console.error("Stream Failed:", error);
+//       setIsLoading(false);
+//       setProgress(0);
+//       alert("❌ Connection lost with the backtest engine. Please try again.");
+//     }
+//   };
+
+
+//   // =========================================================================
+//   // ✂️ DATA SLICER: Replay Mode Data Filter
+//   // =========================================================================
+//   let displayCandles = result?.candleData || [];
+//   let displaySignals = result?.smcSignals || [];
+//   let displayTrades = result?.executedTrades || [];
+
+//   if (isReplayMode && result?.candleData?.length > 0) {
+//       const safeIndex = Math.max(0, replayIndex);
+//       displayCandles = result.candleData.slice(0, safeIndex + 1);
+
+//       const currentCandleTime = new Date(result.candleData[safeIndex].timestamp).getTime();
+
+//       // सिर्फ वही सिग्नल्स और ट्रेड्स दिखाओ जो अभी तक बन चुके हैं
+//       displaySignals = result.smcSignals.filter(sig => new Date(sig.startTime).getTime() <= currentCandleTime);
+//       displayTrades = result.executedTrades.filter(trade => new Date(trade.entryTime).getTime() <= currentCandleTime);
+//   }
+
+//   const toggleReplay = () => {
+//       if (!isReplayMode) {
+//           setIsReplayMode(true);
+//           // स्टार्ट करते वक़्त चार्ट खाली न लगे, इसलिए शुरू की 30 कैंडल ले लेते हैं
+//           setReplayIndex(Math.min(30, result?.candleData?.length || 0)); 
+//           setIsPlaying(false);
+//       } else {
+//           setIsReplayMode(false);
+//           setIsPlaying(false);
+//       }
+//   };
+
+//   const handleSpeedChange = () => {
+//       const currentIndex = speedOptions.findIndex(s => s.delay === replaySpeed);
+//       const nextIndex = (currentIndex + 1) % speedOptions.length;
+//       setReplaySpeed(speedOptions[nextIndex].delay);
+//   };
+//   // =========================================================================
+
+//   return (
+//     <div className="p-4 md:p-6 text-gray-900 dark:text-white min-h-screen bg-gray-100 dark:bg-slate-950 font-sans transition-colors duration-300">
+      
+//       <div className="flex items-center gap-3 mb-6">
+//         <button 
+//             onClick={() => navigate(-1)} 
+//             className="p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-white"
+//         >
+//             <ArrowLeft size={20} />
+//         </button>
+//         <div>
+//             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Backtesting Suite</h1>
+//             <p className="text-gray-500 dark:text-gray-400 text-xs">Test your strategies on historical data</p>
+//         </div>
+//       </div>
+
+//       <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6 mb-6 shadow-sm dark:shadow-xl transition-colors duration-300">
+//           <div className="flex flex-col gap-6">
+              
+//               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+//                   <div className="w-full lg:w-1/2 relative" ref={dropdownRef}>
+//                       <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 block">Choose Strategies</label>
+//                       <div 
+//                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+//                         className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-3 text-sm text-gray-700 dark:text-white cursor-pointer flex justify-between items-center hover:border-gray-400 dark:hover:border-slate-600 transition-colors relative"
+//                       >
+//                           <span className="truncate pr-4 text-gray-700 dark:text-gray-300">
+//                               {getDropdownLabel()}
+//                           </span>
+//                           <ChevronDown size={16} className={`text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}/>
+//                       </div>
+
+//                       {isDropdownOpen && (
+//                           <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar p-2">
+//                               {strategies.length === 0 && <p className="text-gray-500 text-xs p-2">No strategies found.</p>}
+//                               {strategies.map(s => {
+//                                   const currentId = s._id || s.id;
+//                                   const isSelected = selectedStrategyIds.includes(currentId);
+//                                   return (
+//                                       <div 
+//                                         key={currentId} 
+//                                         onClick={() => toggleStrategy(currentId)}
+//                                         className={`flex items-center gap-3 p-3 rounded cursor-pointer transition-colors 
+//                                             ${isSelected 
+//                                                 ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400' 
+//                                                 : 'hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'}`}
+//                                       >
+//                                           {isSelected ? <CheckSquare size={16} className="text-blue-600 dark:text-blue-500"/> : <Square size={16} className="text-gray-400 dark:text-gray-600"/>}
+//                                           <span className="text-sm font-medium">{s.name}</span>
+//                                       </div>
+//                                   );
+//                               })}
+//                           </div>
+//                       )}
+//                   </div>
+
+//                   <div className="w-full lg:w-auto">
+//                       <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 block lg:text-right">Time Range</label>
+//                       <div className="flex flex-wrap gap-2">
+//                           {['1M', '3M', '6M', '1Y', '2Y', 'Custom'].map((p) => {
+//                               const locked = isPeriodLocked(p);
+//                               return (
+//                                   <button 
+//                                       key={p} 
+//                                       disabled={locked}
+//                                       onClick={() => handlePeriodChange(p)}
+//                                       className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5
+//                                       ${selectedPeriod === p 
+//                                           ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
+//                                           : locked
+//                                               ? 'bg-gray-100 dark:bg-slate-800/50 border-gray-200 dark:border-slate-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-70'
+//                                               : 'bg-gray-50 dark:bg-slate-950 border-gray-300 dark:border-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:border-slate-600 hover:text-gray-900 dark:hover:text-white cursor-pointer'
+//                                       }`}
+//                                   >
+//                                       {locked && <span className="opacity-80">🔒</span>}
+//                                       {p === 'Custom' ? 'Custom Range' : p === '1M' ? '1 Month' : p === '1Y' ? '1 Year' : p}
+//                                   </button>
+//                               );
+//                           })}
+//                       </div>
+//                   </div>
+//               </div>
+
+//               {selectedStrategyIds.length > 0 && (
+//                   <div className="flex flex-wrap gap-2">
+//                       {strategies.filter(s => selectedStrategyIds.includes(s._id || s.id)).map(s => {
+//                           const currentId = s._id || s.id;
+//                           return (
+//                           <div key={currentId} className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm animate-in fade-in zoom-in duration-200">
+//                               {s.name}
+//                               <button onClick={(e) => removeTag(currentId, e)} className="hover:text-blue-200">
+//                                   <X size={14} />
+//                               </button>
+//                           </div>
+//                       )})}
+//                   </div>
+//               )}
+
+//               {selectedPeriod === 'Custom' && (
+//                   <div className="flex flex-col sm:flex-row gap-4 bg-gray-50 dark:bg-slate-950 p-4 rounded-lg border border-gray-200 dark:border-slate-800 animate-in slide-in-from-top-2">
+//                       <div className="flex-1">
+//                           <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
+//                           <div className="relative">
+//                             <input 
+//                                 type="date" 
+//                                 className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+//                                 value={customRange.start}
+//                                 onChange={(e) => setCustomRange({...customRange, start: e.target.value})}
+//                             />
+//                              <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+//                           </div>
+//                       </div>
+//                       <div className="flex-1">
+//                           <label className="text-xs text-gray-500 mb-1 block">End Date</label>
+//                           <div className="relative">
+//                             <input 
+//                                 type="date" 
+//                                 className="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-colors"
+//                                 value={customRange.end}
+//                                 onChange={(e) => setCustomRange({...customRange, end: e.target.value})}
+//                             />
+//                             <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16}/>
+//                           </div>
+//                       </div>
+//                   </div>
+//               )}
+
+//               <div className="mt-2 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-2 pr-2 pl-4 transition-colors">
+//                   <div className="flex-1 w-full flex items-center gap-2 py-2 md:py-0">
+//                       <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Backtest Credit:</span>
+//                       <span className="text-sm font-bold text-gray-900 dark:text-white">47/50</span>
+//                       <div className="w-24 h-1.5 bg-gray-300 dark:bg-slate-800 rounded-full ml-2 overflow-hidden">
+//                           <div className="bg-green-500 h-full w-[94%]"></div>
+//                       </div>
+//                   </div>
+
+//                  <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm relative">
+//                       <div 
+//                           className="flex items-center gap-1 relative cursor-pointer"
+//                           onMouseEnter={() => setShowInfo(true)}
+//                           onMouseLeave={() => setShowInfo(false)}
+//                           onClick={() => setShowInfo(!showInfo)}
+//                       >
+//                           <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+//                               Fill Type:
+//                           </span>
+//                           <Info size={14} className={`transition-colors ${showInfo ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`} />
+                          
+//                           {showInfo && (
+//                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-white dark:before:border-t-slate-800 animate-in fade-in zoom-in duration-200">
+//                                   {withSlippage ? (
+//                                       <div>
+//                                           <p className="font-bold text-blue-600 dark:text-blue-400 mb-1">Exact Trigger + Gaps:</p>
+//                                           <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+//                                               Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.
+//                                           </p>
+//                                       </div>
+//                                   ) : (
+//                                       <div>
+//                                           <p className="font-bold text-orange-600 dark:text-orange-400 mb-1">Always Exit at Open:</p>
+//                                           <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+//                                               A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.
+//                                           </p>
+//                                       </div>
+//                                   )}
+//                               </div>
+//                           )}
+//                       </div>
+
+//                       <button 
+//                           onClick={() => setWithSlippage(!withSlippage)}
+//                           className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${withSlippage ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}`}
+//                       >
+//                           <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${withSlippage ? 'translate-x-5' : 'translate-x-1'}`} />
+//                       </button>
+//                       <span className={`text-xs font-bold ${withSlippage ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'}`}>
+//                           {withSlippage ? 'Exact Trigger + Gaps' : 'Always Exit at Open'}
+//                       </span>
+//                   </div>
+                  
+//                   <button 
+//                     onClick={runBacktest}
+//                     disabled={isLoading || selectedStrategyIds.length === 0}
+//                     className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 px-8 rounded-md font-bold shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+//                   >
+//                       {isLoading ? <ServerCrash className="animate-pulse" size={18}/> : <Play size={18} fill="currentColor" />}
+//                       {isLoading ? "Running..." : "Run Backtest"}
+//                   </button>
+//               </div>
+//           </div>
+//       </div>
+
+//       {isLoading && (
+//         <div className="flex flex-col items-center justify-center h-[400px] border border-blue-200 dark:border-blue-900 rounded-xl bg-blue-50 dark:bg-slate-900 shadow-inner transition-colors animate-in fade-in zoom-in duration-300">
+//             <div className="relative mb-6">
+//                 <div className="absolute inset-0 bg-blue-400 blur-xl opacity-20 animate-pulse"></div>
+//                 <div className="bg-white dark:bg-slate-800 p-5 rounded-full shadow-lg relative border border-blue-100 dark:border-slate-700">
+//                     <Activity size={40} className="text-blue-600 dark:text-blue-400 animate-bounce" />
+//                 </div>
+//             </div>
+//             <h3 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Analyzing Market Data...</h3>
+//             <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-md text-center">
+//                 Fetching historical options data from Dhan, calculating indicators, and simulating your strategy leg by leg.
+//             </p>
+//             <div className="w-full max-w-lg px-6">
+//                 <div className="flex justify-between items-end mb-2">
+//                     <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Simulation Progress</span>
+//                     <span className="text-lg font-black text-blue-600 dark:text-blue-400">{progress}%</span>
+//                 </div>
+//                 <div className="w-full h-3 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner relative">
+//                     <div 
+//                         className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-out relative"
+//                         style={{ width: `${progress}%` }}
+//                     >
+//                         <div className="absolute top-0 left-0 right-0 bottom-0 bg-white/20 animate-[shimmer_1s_infinite]"></div>
+//                     </div>
+//                 </div>
+//                 <div className="mt-3 flex justify-center items-center gap-2">
+//                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+//                     <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{processingDate}</span>
+//                 </div>
+//             </div>
+//         </div>
+//       )}
+
+//       {result && !isLoading && (
+//           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              
+//               {/* 📈 THE SMC VISUAL DEBUGGER CHART (SLICED FOR REPLAY) */}
+//               {displayCandles.length > 0 && (
+//                   <div className="mt-6 w-full max-w-[calc(100vw-2rem)] overflow-hidden">
+                      
+//                       {/* 🔥 REPLAY CONTROL BAR 🔥 */}
+//                       <div className="flex flex-wrap items-center justify-between bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-t-xl p-3 shadow-sm">
+                          
+//                           <div className="flex items-center gap-4">
+//                               <button 
+//                                   onClick={toggleReplay}
+//                                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+//                                       isReplayMode ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+//                                   }`}
+//                               >
+//                                   <MonitorPlay size={16} />
+//                                   {isReplayMode ? "Exit Replay" : "Bar Replay"}
+//                               </button>
+
+//                               {isReplayMode && (
+//                                   <div className="flex items-center gap-1 border-l border-gray-200 dark:border-slate-700 pl-4">
+//                                       <button 
+//                                           onClick={() => setReplayIndex(0)} 
+//                                           className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Reset"
+//                                       >
+//                                           <RefreshCw size={18} />
+//                                       </button>
+
+//                                       <button 
+//                                           onClick={() => setReplayIndex(prev => Math.max(0, prev - 1))} 
+//                                           className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Step Back"
+//                                       >
+//                                           <SkipBack size={18} />
+//                                       </button>
+                                      
+//                                       <button 
+//                                           onClick={() => setIsPlaying(!isPlaying)}
+//                                           className="p-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-transform active:scale-95" title={isPlaying ? "Pause" : "Play"}
+//                                       >
+//                                           {isPlaying ? <PauseCircle size={28} /> : <PlayCircle size={28} />}
+//                                       </button>
+
+//                                       <button 
+//                                           onClick={() => setReplayIndex(prev => Math.min(result.candleData.length - 1, prev + 1))} 
+//                                           className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Step Forward"
+//                                       >
+//                                           <SkipForward size={18} />
+//                                       </button>
+                                      
+//                                       <button 
+//                                           onClick={() => setReplayIndex(prev => Math.min(result.candleData.length - 1, prev + 10))} 
+//                                           className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Jump Forward"
+//                                       >
+//                                           <FastForward size={18} />
+//                                       </button>
+//                                   </div>
+//                               )}
+//                           </div>
+
+//                           {isReplayMode && (
+//                               <div className="flex items-center gap-3">
+//                                   <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+//                                       Bar: {replayIndex + 1} / {result.candleData.length}
+//                                   </div>
+//                                   <button 
+//                                       onClick={handleSpeedChange}
+//                                       className="px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold rounded border border-gray-200 dark:border-slate-700 hover:border-blue-400 transition-colors"
+//                                       title="Change Speed"
+//                                   >
+//                                       Speed: {speedOptions.find(s => s.delay === replaySpeed)?.label || "1x"}
+//                                   </button>
+//                               </div>
+//                           )}
+//                       </div>
+
+//                       <div className={isReplayMode ? "border-x border-b border-gray-200 dark:border-slate-800 rounded-b-xl overflow-hidden" : ""}>
+//                           <VisualDebuggerChart 
+//                               candleData={displayCandles} 
+//                               smcSignals={displaySignals} 
+//                               executedTrades={displayTrades} 
+//                               theme={theme}
+//                               isReplayMode={isReplayMode}
+//                           />
+//                       </div>
+//                   </div>
+//               )}
+
+//               <BacktestSummary summary={result.summary} /> 
+              
+//               <div className="mt-6">
+//                   <EquityCurveChart transactions={[...result.transactions].reverse()} />
+//               </div>
+//               <div className="mt-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+//                   <MaxProfitLossChart transactions={result.transactions} summary={result.summary} />
+//               </div>
+//               <div className="mt-6 animate-in fade-in slide-in-from-bottom-10 duration-700">
+//                 <DaywiseBreakdown data={result.daywiseBreakdown || []} />
+//               </div>
+//               <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 pb-10">
+//                   <TransactionTable transactions={result.daywiseBreakdown} />
+//               </div>
+//           </div>
+//       )}
+
+//       {!result && !isLoading && (
+//           <div className="flex flex-col items-center justify-center h-[400px] border-2 border-dashed border-gray-300 dark:border-slate-800 rounded-xl bg-gray-100 dark:bg-slate-900/30 dark:opacity-50 transition-colors">
+//               <div className="bg-white dark:bg-slate-800 p-4 rounded-full mb-4 shadow-sm">
+//                   <Activity size={32} className="text-gray-400 dark:text-gray-500" />
+//               </div>
+//               <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">Ready to Simulate</h3>
+//               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Select strategies and date range to begin analysis.</p>
+//           </div>
+//       )}
+
+//     </div>
+//   );
+// };
+
+// export default Backtest;
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square, Info, ServerCrash
-} from 'lucide-react';
+  ArrowLeft, Play, Activity, ChevronDown, X, Calendar, CheckSquare, Square, Info, ServerCrash,
+  PlayCircle, PauseCircle, FastForward, Rewind, SkipForward, SkipBack, RefreshCw, MonitorPlay,
+  Scissors // 🔥 NAYA: Scissors Icon import किया
+} from 'lucide-react'; 
 import axios from 'axios'; 
 import { getStrategies } from '../../data/AlogoTrade/strategyService';
 
@@ -548,8 +1742,6 @@ import BacktestSummary from '../../components/algoComponents/Backtest/BacktestSu
 import MaxProfitLossChart from '../../components/algoComponents/Backtest/MaxProfitLossChart';
 import DaywiseBreakdown from '../../components/algoComponents/Backtest/DaywiseBreakdown';
 import TransactionTable from '../../components/algoComponents/Backtest/TransactionTable';
-
-// बाकी इम्पोर्ट्स के साथ इसे जोड़ें
 import VisualDebuggerChart from '../../components/algoComponents/Backtest/VisualDebuggerChart';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -573,12 +1765,46 @@ const Backtest = () => {
   const [withSlippage, setWithSlippage] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
 
-  // 🔥 NEW STATES: Smart Progress Bar ke liye
   const [progress, setProgress] = useState(0);
   const [processingDate, setProcessingDate] = useState(""); 
-
-  // 🔥 NAYA STATE: Progressive Unlocking Track karne ke liye
   const [completedPeriods, setCompletedPeriods] = useState([]);
+
+  // =========================================================================
+  // 🎬 REPLAY MODE STATES (THE TIME MACHINE)
+  // =========================================================================
+  const [isReplayMode, setIsReplayMode] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState(500); 
+
+  // 🔥 NAYA STATE: 'कैंची' वाला Mode ट्रैक करने के लिए
+  const [isSelectingStartPoint, setIsSelectingStartPoint] = useState(false);
+
+  // Speed Map for UI
+  const speedOptions = [
+      { label: "1x", delay: 500 },
+      { label: "2x", delay: 250 },
+      { label: "5x", delay: 100 },
+      { label: "10x", delay: 50 },
+  ];
+
+  // 🎬 THE REPLAY ENGINE (useEffect Timer)
+  useEffect(() => {
+      let interval;
+      if (isPlaying && isReplayMode && result?.candleData) {
+          interval = setInterval(() => {
+              setReplayIndex((prev) => {
+                  if (prev + 1 >= result.candleData.length) {
+                      setIsPlaying(false); 
+                      return prev;
+                  }
+                  return prev + 1;
+              });
+          }, replaySpeed);
+      }
+      return () => clearInterval(interval);
+  }, [isPlaying, isReplayMode, replaySpeed, result]);
+  // =========================================================================
 
 
   // --- LOAD STRATEGIES FROM REAL DATABASE ---
@@ -638,15 +1864,12 @@ const Backtest = () => {
     return names.join(", ");
   };
 
-  // 🔒 GATEKEEPER LOGIC: Progressive Unlocking
   const isPeriodLocked = (periodLabel) => {
       if (periodLabel === '1M' || periodLabel === 'Custom') return false;
-      
       if (periodLabel === '3M') return !completedPeriods.includes('1M');
       if (periodLabel === '6M') return !completedPeriods.includes('3M');
       if (periodLabel === '1Y') return !completedPeriods.includes('6M');
       if (periodLabel === '2Y') return !completedPeriods.includes('1Y');
-      
       return false;
   };
 
@@ -659,30 +1882,30 @@ const Backtest = () => {
     setProgress(0);
     setProcessingDate("Starting Engine...");
 
+    // 🎬 Reset Replay states when new backtest runs
+    setIsReplayMode(false);
+    setIsPlaying(false);
+    setReplayIndex(0);
+    setIsSelectingStartPoint(false); // 🔥 Scissors mode also reset
+
     try {
-    //   const API_URL = "https://techwalatrader.duckdns.org/api"; 
       const API_URL = `${import.meta.env.VITE_API_URL}/api`; 
       const targetId = selectedStrategyIds[0];
 
-      // 🔥 THE FIX: चयनित (Selected) स्ट्रेटेजी का डेटा निकालें ताकि चेकबॉक्स का स्टेट मिल सके
       const selectedStrategyData = strategies.find(s => (s._id || s.id) === targetId);
       const paSettings = selectedStrategyData?.data?.priceActionSettings || selectedStrategyData?.priceActionSettings || {};
       
-      // डेटाबेस से चेकबॉक्स की वैल्यू निकालें (डिफ़ॉल्ट रूप से true)
       const showD2S_DOB = paSettings.showD2S_DOB !== false;
       const showD2S_DOF = paSettings.showD2S_DOF !== false;
       const showD2S_EOB = paSettings.showD2S_EOB !== false;
       const showD2S_EOF = paSettings.showD2S_EOF !== false;
 
-      // 🔥 THE FIX: अब इन चारों वेरिएबल्स को URL में जोड़ दो
       let requestUrl = `${API_URL}/backtest/run/${targetId}?period=${selectedPeriod}&slippage=${withSlippage}&showD2S_DOB=${showD2S_DOB}&showD2S_DOF=${showD2S_DOF}&showD2S_EOB=${showD2S_EOB}&showD2S_EOF=${showD2S_EOF}`;
-      
       
       if (selectedPeriod === 'Custom' && customRange.start && customRange.end) {
           requestUrl += `&start=${customRange.start}&end=${customRange.end}`;
       }
       
-      // 🔥 1. START FETCHING THE STREAM
       const response = await fetch(requestUrl, {
             headers: {
                 'Accept': 'text/event-stream',
@@ -694,7 +1917,6 @@ const Backtest = () => {
           throw new Error("Failed to connect to backtest engine.");
       }
 
-      // 🔥 2. DECODE THE STREAM CHUNKS
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let buffer = "";
@@ -705,7 +1927,6 @@ const Backtest = () => {
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n\n');
-          
           buffer = lines.pop(); 
 
           for (let line of lines) {
@@ -730,7 +1951,6 @@ const Backtest = () => {
                                   const eqData = backendData.equityCurve.find(e => e.date === day.date);
                                   return { date: day.date, pnl: day.dailyPnL, cumulativePnl: eqData ? eqData.pnl : 0, tradesTaken: day.tradesTaken };
                               }),
-                              // 🔥 THE FIX: इन तीनों को भी स्टेट में सेव करना ज़रूरी है! 🔥
                               candleData: backendData.candleData,
                               smcSignals: backendData.smcSignals,
                               executedTrades: backendData.executedTrades
@@ -743,7 +1963,6 @@ const Backtest = () => {
                               setResult(formattedResult);
                               setIsLoading(false);
 
-                              // 🔥 NAYA CODE: Level Unlock kardo!
                               setCompletedPeriods(prev => {
                                   if (!prev.includes(selectedPeriod)) {
                                       return [...prev, selectedPeriod];
@@ -774,6 +1993,100 @@ const Backtest = () => {
     }
   };
 
+
+  // =========================================================================
+  // ✂️ DATA SLICER: Replay Mode Data Filter
+  // =========================================================================
+  let displayCandles = result?.candleData || [];
+  let displaySignals = result?.smcSignals || [];
+  let displayTrades = result?.executedTrades || [];
+
+  if (isReplayMode && result?.candleData?.length > 0) {
+      const safeIndex = Math.max(0, replayIndex);
+      displayCandles = result.candleData.slice(0, safeIndex + 1);
+
+      const currentCandleTime = new Date(result.candleData[safeIndex].timestamp).getTime();
+
+      // सिर्फ वही सिग्नल्स और ट्रेड्स दिखाओ जो अभी तक बन चुके हैं
+      displaySignals = result.smcSignals.filter(sig => new Date(sig.startTime).getTime() <= currentCandleTime);
+      displayTrades = result.executedTrades.filter(trade => new Date(trade.entryTime).getTime() <= currentCandleTime);
+  }
+
+  const toggleReplay = () => {
+      if (!isReplayMode) {
+          setIsReplayMode(true);
+          // स्टार्ट करते वक़्त चार्ट खाली न लगे, इसलिए शुरू की 150 कैंडल ले लेते हैं (ताकि अच्छा ज़ूम दिखे)
+          setReplayIndex(Math.min(150, result?.candleData?.length || 0)); 
+          setIsPlaying(false);
+          setIsSelectingStartPoint(false);
+      } else {
+          setIsReplayMode(false);
+          setIsPlaying(false);
+          setIsSelectingStartPoint(false);
+      }
+  };
+
+  const handleSpeedChange = () => {
+      const currentIndex = speedOptions.findIndex(s => s.delay === replaySpeed);
+      const nextIndex = (currentIndex + 1) % speedOptions.length;
+      setReplaySpeed(speedOptions[nextIndex].delay);
+  };
+  // =========================================================================
+
+  // =========================================================================
+  // 🖱️ THE FIX: THE "CLICK TO CUT" HANDLER 🔥
+  // =========================================================================
+  const handleChartClickToCut = (clickedChartTimeSecs) => {
+      if (!result?.candleData || !isSelectingStartPoint) return;
+
+      // 🔥 जादू यहाँ है भाई: चार्ट ने जो सेकंड्स भेजे हैं, हम उसे पूरे डेटा में ढूँढेंगे
+      const data = result.candleData;
+      let targetIndex = -1;
+
+      for (let i = 0; i < data.length; i++) {
+          // Convert timestamp just like chart does to compare accurately
+          const candleFormattedTime = Math.floor(new Date(data[i].timestamp).getTime() / 1000) + 19800;
+          
+          if (candleFormattedTime === clickedChartTimeSecs) {
+              targetIndex = i;
+              break; 
+          }
+      }
+
+      if (targetIndex !== -1) {
+          // 🎉 कैंडल मिल गई! प्लेयर को सीधे वहाँ जम्प करवा दो
+          setReplayIndex(targetIndex);
+          // 🎬 अब Mode को Exit कर दो और Play कर दो (optional, maybe keep it paused)
+          setIsSelectingStartPoint(false);
+          setIsPlaying(false); // keep paused for user analysis
+          setProgress(0); // Progress bar in UI can be reset
+      } else {
+          // It might be a gap or something, finding closest? Not needed for 1min data.
+          console.log("No candle found at:", clickedChartTimeSecs);
+          // Just cancel selecting
+          setIsSelectingStartPoint(false);
+      }
+  };
+
+  //  कैंची वाले बटन का हैंडलर
+  const activateCutMode = () => {
+      if (!isReplayMode) {
+          setIsReplayMode(true);
+          setIsPlaying(false);
+          // 🔥 THE FIX: कैंची दबाते ही पूरा डेटा (last index) रेंडर कर दो
+          setReplayIndex(result?.candleData?.length ? result.candleData.length - 1 : 0); 
+          setTimeout(() => setIsSelectingStartPoint(true), 200); 
+      } else {
+          setIsPlaying(false);
+          // 🔥 THE FIX: अगर रिप्ले मोड में थे और कैंची दबाई, तो भी पूरा डेटा दिखाओ ताकि डेट ढूंढने में आसानी हो!
+          if (!isSelectingStartPoint) {
+              setReplayIndex(result?.candleData?.length ? result.candleData.length - 1 : 0);
+          }
+          setIsSelectingStartPoint(!isSelectingStartPoint);
+      }
+  };
+  // =========================================================================
+
   return (
     <div className="p-4 md:p-6 text-gray-900 dark:text-white min-h-screen bg-gray-100 dark:bg-slate-950 font-sans transition-colors duration-300">
       
@@ -791,14 +2104,12 @@ const Backtest = () => {
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-6 mb-6 shadow-sm dark:shadow-xl transition-colors duration-300">
-          
           <div className="flex flex-col gap-6">
               
+              {/* Strategty & Period Inputs (Unchanged) */}
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                  
                   <div className="w-full lg:w-1/2 relative" ref={dropdownRef}>
                       <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 block">Choose Strategies</label>
-                      
                       <div 
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-3 text-sm text-gray-700 dark:text-white cursor-pointer flex justify-between items-center hover:border-gray-400 dark:hover:border-slate-600 transition-colors relative"
@@ -836,8 +2147,6 @@ const Backtest = () => {
                   <div className="w-full lg:w-auto">
                       <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 block lg:text-right">Time Range</label>
                       <div className="flex flex-wrap gap-2">
-                          
-                          {/* 🔥 NAYA CODE: Map with Progressive Unlocking Visuals */}
                           {['1M', '3M', '6M', '1Y', '2Y', 'Custom'].map((p) => {
                               const locked = isPeriodLocked(p);
                               return (
@@ -858,12 +2167,10 @@ const Backtest = () => {
                                   </button>
                               );
                           })}
-                          
                       </div>
                   </div>
               </div>
 
-              {/* ROW 2: TAGS */}
               {selectedStrategyIds.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                       {strategies.filter(s => selectedStrategyIds.includes(s._id || s.id)).map(s => {
@@ -879,7 +2186,6 @@ const Backtest = () => {
                   </div>
               )}
 
-              {/* ROW 3: CUSTOM DATE INPUTS */}
               {selectedPeriod === 'Custom' && (
                   <div className="flex flex-col sm:flex-row gap-4 bg-gray-50 dark:bg-slate-950 p-4 rounded-lg border border-gray-200 dark:border-slate-800 animate-in slide-in-from-top-2">
                       <div className="flex-1">
@@ -909,10 +2215,8 @@ const Backtest = () => {
                   </div>
               )}
 
-              {/* ROW 4: CREDIT BAR, TOGGLE & BUTTON */}
+              {/* Bottom bar (Credit, Slippage, Run button) */}
               <div className="mt-2 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-2 pr-2 pl-4 transition-colors">
-                  
-                  {/* Credit Bar */}
                   <div className="flex-1 w-full flex items-center gap-2 py-2 md:py-0">
                       <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Backtest Credit:</span>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">47/50</span>
@@ -921,47 +2225,32 @@ const Backtest = () => {
                       </div>
                   </div>
 
-                 {/* SLIPPAGE TOGGLE BUTTON */}
-                  <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm relative">
+                 <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm relative">
                       <div 
                           className="flex items-center gap-1 relative cursor-pointer"
                           onMouseEnter={() => setShowInfo(true)}
                           onMouseLeave={() => setShowInfo(false)}
                           onClick={() => setShowInfo(!showInfo)}
                       >
-                          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
-                              Fill Type:
-                          </span>
+                          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Fill Type:</span>
                           <Info size={14} className={`transition-colors ${showInfo ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`} />
-                          
                           {showInfo && (
-                              <div 
-                                  onClick={(e) => { e.stopPropagation(); setShowInfo(false); }}
-                                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-white dark:before:border-t-slate-800 animate-in fade-in zoom-in duration-200"
-                              >
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-white dark:before:border-t-slate-800 animate-in fade-in zoom-in duration-200">
                                   {withSlippage ? (
                                       <div>
                                           <p className="font-bold text-blue-600 dark:text-blue-400 mb-1">Exact Trigger + Gaps:</p>
-                                          <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
-                                              Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.
-                                          </p>
+                                          <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">Exits exactly at your calculated price during smooth market moves. If the market gaps past your Stoploss/Target, it applies realistic slippage using the candle's Open price.</p>
                                       </div>
                                   ) : (
                                       <div>
                                           <p className="font-bold text-orange-600 dark:text-orange-400 mb-1">Always Exit at Open:</p>
-                                          <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
-                                              A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.
-                                          </p>
+                                          <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">A strict pessimistic mode for worst-case testing. It ignores the exact trigger point and forces the exit at the 1-minute candle's Opening price every time.</p>
                                       </div>
                                   )}
                               </div>
                           )}
                       </div>
-
-                      <button 
-                          onClick={() => setWithSlippage(!withSlippage)}
-                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${withSlippage ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}`}
-                      >
+                      <button onClick={() => setWithSlippage(!withSlippage)} className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${withSlippage ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}`}>
                           <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${withSlippage ? 'translate-x-5' : 'translate-x-1'}`} />
                       </button>
                       <span className={`text-xs font-bold ${withSlippage ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'}`}>
@@ -969,7 +2258,6 @@ const Backtest = () => {
                       </span>
                   </div>
                   
-                  {/* Run Button */}
                   <button 
                     onClick={runBacktest}
                     disabled={isLoading || selectedStrategyIds.length === 0}
@@ -979,72 +2267,154 @@ const Backtest = () => {
                       {isLoading ? "Running..." : "Run Backtest"}
                   </button>
               </div>
-
           </div>
       </div>
 
-      {/* 🔥 SMART LOADER UI 🔥 */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center h-[400px] border border-blue-200 dark:border-blue-900 rounded-xl bg-blue-50 dark:bg-slate-900 shadow-inner transition-colors animate-in fade-in zoom-in duration-300">
-            
             <div className="relative mb-6">
                 <div className="absolute inset-0 bg-blue-400 blur-xl opacity-20 animate-pulse"></div>
                 <div className="bg-white dark:bg-slate-800 p-5 rounded-full shadow-lg relative border border-blue-100 dark:border-slate-700">
                     <Activity size={40} className="text-blue-600 dark:text-blue-400 animate-bounce" />
                 </div>
             </div>
-
             <h3 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Analyzing Market Data...</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-md text-center">
-                Fetching historical options data from Dhan, calculating indicators, and simulating your strategy leg by leg.
-            </p>
-
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-md text-center">Fetching historical options data from Dhan, calculating indicators, and simulating your strategy leg by leg.</p>
             <div className="w-full max-w-lg px-6">
                 <div className="flex justify-between items-end mb-2">
                     <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Simulation Progress</span>
                     <span className="text-lg font-black text-blue-600 dark:text-blue-400">{progress}%</span>
                 </div>
-                
                 <div className="w-full h-3 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner relative">
-                    <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-out relative"
-                        style={{ width: `${progress}%` }}
-                    >
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-out relative" style={{ width: `${progress}%` }}>
                         <div className="absolute top-0 left-0 right-0 bottom-0 bg-white/20 animate-[shimmer_1s_infinite]"></div>
                     </div>
                 </div>
-
                 <div className="mt-3 flex justify-center items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-                    <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                        {processingDate}
-                    </span>
+                    <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{processingDate}</span>
                 </div>
             </div>
-
         </div>
       )}
 
-      {/* 3. RESULTS AREA */}
       {result && !isLoading && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               
-              {/* 📈 THE SMC VISUAL DEBUGGER CHART */}
-              {result.candleData && result.candleData.length > 0 && (
-                  <div className="mt-6 w-full max-w-[calc(100vw-2rem)]  overflow-hidden">
-                      <VisualDebuggerChart 
-                          candleData={result.candleData} 
-                          smcSignals={result.smcSignals} 
-                          executedTrades={result.executedTrades} 
-                          theme={theme}
-                      />
-                      {console.log("CHART DATA RECIEVED:", result.candleData)}
+              {/* 📈 THE SMC VISUAL DEBUGGER CHART (SLICED FOR REPLAY) */}
+              {displayCandles.length > 0 && (
+                  <div className="mt-6 w-full max-w-[calc(100vw-2rem)] overflow-hidden">
+                      
+                      {/* 🔥 REPLAY CONTROL BAR 🔥 */}
+                      <div className="flex flex-wrap items-center justify-between bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-t-xl p-3 shadow-sm">
+                          
+                          <div className="flex items-center gap-4">
+                              <button 
+                                  onClick={toggleReplay}
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                                      isReplayMode ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                                  }`}
+                              >
+                                  <MonitorPlay size={16} />
+                                  {isReplayMode ? "Exit Replay" : "Bar Replay"}
+                              </button>
+
+                              {isReplayMode && (
+                                  <div className="flex items-center gap-1 border-l border-gray-200 dark:border-slate-700 pl-4">
+                                      
+                                      {/* 🔥 NAYA: CLICK TO CUT BUTTON (Scissors) */}
+                                      <button 
+                                          onClick={activateCutMode} 
+                                          className={`p-1.5 rounded transition-colors ${
+                                              isSelectingStartPoint 
+                                              ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' 
+                                              : 'text-gray-500 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-slate-800'
+                                          }`}
+                                          title="Click chart to select start point"
+                                      >
+                                          <Scissors size={18} />
+                                      </button>
+
+                                      <button 
+                                          onClick={() => setReplayIndex(0)} 
+                                          className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Reset to Start"
+                                      >
+                                          <RefreshCw size={18} />
+                                      </button>
+
+                                      <button 
+                                          onClick={() => setReplayIndex(prev => Math.max(0, prev - 1))} 
+                                          className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Step Back"
+                                      >
+                                          <SkipBack size={18} />
+                                      </button>
+                                      
+                                      <button 
+                                          onClick={() => setIsPlaying(!isPlaying)}
+                                          className={`p-1.5 transition-transform active:scale-95 ${
+                                              isSelectingStartPoint ? 'text-gray-300' : 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                                          }`} 
+                                          title={isPlaying ? "Pause" : "Play"}
+                                          disabled={isSelectingStartPoint}
+                                      >
+                                          {isPlaying ? <PauseCircle size={28} /> : <PlayCircle size={28} />}
+                                      </button>
+
+                                      <button 
+                                          onClick={() => setReplayIndex(prev => Math.min(result.candleData.length - 1, prev + 1))} 
+                                          className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Step Forward"
+                                      >
+                                          <SkipForward size={18} />
+                                      </button>
+                                      
+                                      <button 
+                                          onClick={() => setReplayIndex(prev => Math.min(result.candleData.length - 1, prev + 10))} 
+                                          className="p-1.5 text-gray-500 hover:text-blue-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-slate-800" title="Jump Forward"
+                                      >
+                                          <FastForward size={18} />
+                                      </button>
+                                  </div>
+                              )}
+                          </div>
+
+                          {isReplayMode && (
+                              <div className="flex items-center gap-3">
+                                  {isSelectingStartPoint && (
+                                      <div className="text-sm font-black text-blue-600 dark:text-blue-400 animate-pulse bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-300 dark:border-blue-700">
+                                          CLICK ON A CANDLE 🎯
+                                      </div>
+                                  )}
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                      Bar: {replayIndex + 1} / {result.candleData.length}
+                                  </div>
+                                  <button 
+                                      onClick={handleSpeedChange}
+                                      className="px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold rounded border border-gray-200 dark:border-slate-800 hover:border-blue-400 transition-colors"
+                                      title="Change Speed"
+                                  >
+                                      {speedOptions.find(s => s.delay === replaySpeed)?.label || "1x"}
+                                  </button>
+                              </div>
+                          )}
+                      </div>
+
+                      <div className={isReplayMode ? "border-x border-b border-gray-200 dark:border-slate-800 rounded-b-xl overflow-hidden" : ""}>
+                          {/* 🔥 THE FIX: props में Click to Cut Engine का लॉजिक पास किया */}
+                          <VisualDebuggerChart 
+                              candleData={displayCandles} 
+                              smcSignals={displaySignals} 
+                              executedTrades={displayTrades} 
+                              theme={theme}
+                              isReplayMode={isReplayMode}
+                              isSelectingStartPoint={isSelectingStartPoint}
+                              onChartClick={handleChartClickToCut}
+                          />
+                      </div>
                   </div>
               )}
 
-              {/* आपकी पुरानी Summary Tables/Cards */}
+              {/* Summary Components (Unchanged) */}
               <BacktestSummary summary={result.summary} /> 
-              
               <div className="mt-6">
                   <EquityCurveChart transactions={[...result.transactions].reverse()} />
               </div>
@@ -1060,7 +2430,7 @@ const Backtest = () => {
           </div>
       )}
 
-      {/* 4. EMPTY STATE */}
+      {/* Empty State (Unchanged) */}
       {!result && !isLoading && (
           <div className="flex flex-col items-center justify-center h-[400px] border-2 border-dashed border-gray-300 dark:border-slate-800 rounded-xl bg-gray-100 dark:bg-slate-900/30 dark:opacity-50 transition-colors">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-full mb-4 shadow-sm">
@@ -1076,4 +2446,3 @@ const Backtest = () => {
 };
 
 export default Backtest;
-
