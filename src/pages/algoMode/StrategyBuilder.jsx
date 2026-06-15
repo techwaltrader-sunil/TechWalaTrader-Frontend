@@ -334,6 +334,7 @@ import EntryConditionSection from "../../components/algoComponents/StrategyBuild
 import StrategyFooter from "../../components/algoComponents/StrategyBuilder/StrategyFooter";
 
 import PriceActionConditionSection from "../../components/algoComponents/StrategyBuilder/PriceActionConditionSection";
+import ExecutionLogic from "../../components/algoComponents/StrategyBuilder/ExecutionLogic";
 
 const StrategyBuilder = () => {
   const navigate = useNavigate(); 
@@ -386,6 +387,10 @@ const [priceActionSettings, setPriceActionSettings] = useState({
   const [legs, setLegs] = useState(backendData?.legs && backendData.legs.length > 0 ? backendData.legs : [
     { id: 1, action: "BUY", optionType: "Call", quantity: 65, expiry: "WEEKLY", strikeCriteria: "ATM pt", strikeType: "ATM", slType: "SL%", slValue: 30, tpType: "TP%", tpValue: 0 }
   ]);
+
+  const [activeLegId, setActiveLegId] = useState(legs[0]?.id || null);
+  const activeLegIndex = legs.findIndex(leg => leg.id === activeLegId);
+  const activeLegData = legs[activeLegIndex];
 
   const [config, setConfig] = useState(backendData?.config || {
     underlying: "Spot",
@@ -442,8 +447,29 @@ const [priceActionSettings, setPriceActionSettings] = useState({
 
   // --- RESET EFFECTS ---
   useEffect(() => {
+    // जब भी Strategy Type बदलेगा, हम Advance Settings और Legs दोनों को एकदम नया (Fresh) कर देंगे
     if (!isEditMode) {
+        // 1. Advance Settings Reset
         setAdvanceSettings({ moveSLToCost: false, exitAllOnSLTgt: false, prePunchSL: false, waitAndTrade: false, premiumDifference: false, reEntryExecute: false, trailSL: false });
+        
+        // 2. Legs Reset (एकदम फ्रेश डिफॉल्ट लेग बनाएंगे जिसमें पुराना smcSetup नहीं होगा)
+        const freshLegId = Date.now();
+        setLegs([{ 
+            id: freshLegId, 
+            action: "BUY", 
+            optionType: "Call", 
+            quantity: instruments.length > 0 ? (instruments[0].lot || 1) : 1, 
+            expiry: "WEEKLY", 
+            strikeCriteria: "ATM pt", 
+            strikeType: "ATM", 
+            slType: "SL%", 
+            slValue: 30, 
+            tpType: "TP%", 
+            tpValue: 0 
+        }]);
+
+        // 3. Active Leg ID को भी इस नए लेग पर सेट कर देंगे ताकि कोई क्रैश ना हो
+        setActiveLegId(freshLegId);
     }
   }, [selectedStrategyType]);
 
@@ -472,6 +498,8 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     const dataToUse = (legToCopy && legToCopy.action) ? legToCopy : defaultLeg;
     const newLeg = { ...dataToUse, id: Date.now() };
     setLegs([...legs, newLeg]);
+
+    setActiveLegId(newLeg.id);
   };
   const updateLeg = (id, field, value) => { setLegs(prevLegs => prevLegs.map(leg => leg.id === id ? { ...leg, [field]: value } : leg)); };
   const removeLeg = (id) => setLegs(legs.filter((l) => l.id !== id));
@@ -589,6 +617,9 @@ const [priceActionSettings, setPriceActionSettings] = useState({
                         entrySettings={entrySettings} 
                         setEntrySettings={setEntrySettings} 
                         setAdvanceSettings={setAdvanceSettings}
+
+                        activeLegId={activeLegId}
+                        setActiveLegId={setActiveLegId}
                     />
                 
                 )}
@@ -609,6 +640,13 @@ const [priceActionSettings, setPriceActionSettings] = useState({
             <PriceActionConditionSection 
                 priceActionSettings={priceActionSettings}
                 setPriceActionSettings={setPriceActionSettings}
+                
+                // 👇 ExecutionLogic के प्रॉप्स अब हम यहाँ से अंदर भेजेंगे
+                activeLegIndex={activeLegIndex !== -1 ? activeLegIndex : 0} 
+                activeLegData={activeLegData || legs[0]} 
+                onSaveToLeg={(index, smcData) => {
+                    updateLeg(legs[index].id, 'smcSetup', smcData);
+                }} 
             />
         )}
 

@@ -2037,7 +2037,7 @@ const VisualDebuggerChart = ({ candleData, smcSignals, executedTrades, theme = "
 
               const zoneData = [];
               const centerData = []; 
-              const textAnchorPrice = topPrice; 
+              const textAnchorPrice = (topPrice + bottomPrice) / 2; 
               
               let startIndex = -1;
               let endIndex = -1;
