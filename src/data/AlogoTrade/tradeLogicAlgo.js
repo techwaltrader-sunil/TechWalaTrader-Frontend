@@ -10,7 +10,7 @@ export const TRADE_DATA_ALGO = {
 
   // Section 3.1: Setups (Mapped by Trade Type)
   setups: {
-    "Exact Trade": ["IDM-SWEEP", "D-OB", "D-OF", "ENG-LQD SWEEP", "Breaker Block"],
+    "Exact Trade": ["IDM-SWEEP", "D-OB", "D-OF", "E-OB", "Breaker Block"],
     "Protected Trade": ["Demand Zone", "Supply Zone", "Order Flow (Demand)", "Order Flow (Supply)"],
     "Counter Trade": ["IDM-SWEEP (Counter)", "Major LQD Sweep", "Tap on D-OB"],
     "Only Protected Trade": ["Order Flow", "Internal Supply Zone"]
@@ -21,6 +21,7 @@ export const TRADE_DATA_ALGO = {
     "D-OB": ["POI ENTRY", "ENTRY on POI 50%", "SCOB ENTRY"], 
     "IDM-SWEEP": ["DIRECT ENTRY", "POI ENTRY", "SCOB ENTRY", "CHOCH BASE ENTRY"],
     "D-OF": ["POI ENTRY", "ENTRY on POI 50%"],
+    "E-OB": ["DIRECT ENTRY","POI ENTRY", "ENTRY on POI 50%", "SCOB ENTRY"],
     "IDM-SWEEP (Counter)": ["DIRECT ENTRY", "SCOB ENTRY"],
     "Tap on D-OB": ["POI ENTRY", "ENTRY on POI 50%"],
     // ... baki setups ke liye yaha logic add karein

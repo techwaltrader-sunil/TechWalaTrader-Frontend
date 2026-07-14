@@ -1,5 +1,4 @@
 
-
 // import React, { useEffect, useRef, useState } from 'react';
 // import { Plus, Trash2, Minus, Copy, AlertCircle, TrendingUp, XCircle, Shield, Clock, Scale, Repeat, ChevronsUp, CandlestickChart, Edit, Info } from 'lucide-react';
 // import ComingSoonOverlay from './ComingSoonOverlay';
@@ -10,7 +9,7 @@
 // import { EXPIRY_TYPES, STRIKE_CRITERIA, ATM_POINT_STEPS, ATM_PERCENT_STEPS } from '../../../data/instrumentData';
 // import { getDefaultExpiry, getAllowedExpiries } from '../../../data/InstrumentsExpiryList';
 
-// const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, setAdvanceSettings, entrySettings, setEntrySettings }) => {
+// const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isComingSoon, strategyType, instruments, advanceSettings, setAdvanceSettings, entrySettings, setEntrySettings, activeLegId, setActiveLegId}) => {
 //   const hasInstrument = instruments && instruments.length > 0;
 //   const selectedInstrumentName = hasInstrument ? instruments[0].name : "NIFTY 50"; 
 //   const baseLotSize = hasInstrument ? (instruments[0].lot || 1) : 1;
@@ -18,7 +17,8 @@
 //   const defaultExpiry = getDefaultExpiry(selectedInstrumentName);
 //   const allowedExpiriesList = getAllowedExpiries(selectedInstrumentName);
 
-//   const [activeLegId, setActiveLegId] = useState(legs.length > 0 ? legs[0].id : null);
+//   // ⚠️ NOTE FOR NEXT STEP: Is state ko hume parent (StrategyBuilder) me lift karna hoga aage chalkar
+// //   const [activeLegId, setActiveLegId] = useState(legs.length > 0 ? legs[0].id : null);
 //   const prevLegsLength = useRef(legs.length);
   
 //   // 🔥 SMART TOOLTIP STATES (Language & Mobile Tap Logic)
@@ -26,8 +26,6 @@
 //   const [criteriaLang, setCriteriaLang] = useState('hi'); // Strike Criteria Lang State
 
 //   const [activeTooltip, setActiveTooltip] = useState(null); // Mobile click ke liye state
-
-  
 
 //   // 🔥 CLICK OUTSIDE HANDLER (Mobile me screen par kahin click kare to tooltip band ho jaye)
 //   useEffect(() => {
@@ -171,25 +169,17 @@
 //   const gridColsClass = (showLongCondition && showShortCondition) ? 'grid-cols-2' : 'grid-cols-1';
 
 //   const [showStrikeTooltip, setShowStrikeTooltip] = useState(false);
+//   const strikeTooltipRef = useRef(null);
 
-//   // 1. Tooltip ke div ko pehchanne ke liye ek Ref
-// const strikeTooltipRef = useRef(null);
-
-// // 2. Bahar click detect karne ka logic
-// useEffect(() => {
-//     const handleClickOutside = (event) => {
-//         // Agar tooltip khula hai, aur click tooltipRef ke ANDAR nahi hua hai...
-//         if (strikeTooltipRef.current && !strikeTooltipRef.current.contains(event.target)) {
-//             setShowStrikeTooltip(false); // ...to tooltip band kar do!
-//         }
-//     };
-
-//     // Screen par mousedown (click/touch) event sunna shuru karo
-//     document.addEventListener("mousedown", handleClickOutside);
-    
-//     // Cleanup function (memory leak se bachne ke liye)
-//     return () => document.removeEventListener("mousedown", handleClickOutside);
-// }, []);
+//   useEffect(() => {
+//       const handleClickOutside = (event) => {
+//           if (strikeTooltipRef.current && !strikeTooltipRef.current.contains(event.target)) {
+//               setShowStrikeTooltip(false); 
+//           }
+//       };
+//       document.addEventListener("mousedown", handleClickOutside);
+//       return () => document.removeEventListener("mousedown", handleClickOutside);
+//   }, []);
 
 //   return (
 //     <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-200 dark:border-slate-700 relative h-full min-h-[600px] flex flex-col shadow-sm dark:shadow-none transition-colors duration-300">
@@ -205,7 +195,6 @@
 //         </div>
 //       )}
       
-
 //       <div className="flex justify-between items-center mb-5">
 //         <h3 className="font-bold text-lg text-gray-800 dark:text-white">Strategy Legs</h3>
 //         {(!advanceSettings?.moveSLToCost) && (
@@ -348,17 +337,11 @@
 //                                 <div className="grid grid-cols-3 gap-4">
 //                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Expiry</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.expiry || defaultExpiry} onChange={(e) => updateLeg(leg.id, 'expiry', e.target.value)}>{allowedExpiriesList.map(exp => <option key={exp} value={exp}>{exp}</option>)}</select></div>
                                     
-//                                     {/* 🔥 THE FIX: Strike Criteria Tooltip */}
 //                                     <div>
-//                                        {/* 🌟 STRIKE CRITERIA WITH CLICK-TO-OPEN & CLICK-OUTSIDE FIXED 🌟 */}
-//                                         {/* Yahan humne ref={strikeToo  ltipRef} laga diya hai */}
 //                                         <div ref={strikeTooltipRef} className="flex items-center gap-1.5 mb-1 relative w-max">
-                                            
 //                                             <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold capitalize tracking-wider">
 //                                                 Strike Criteria
 //                                             </label>
-                                            
-//                                             {/* Info Icon Button */}
 //                                             <button
 //                                                 type="button"
 //                                                 onClick={(e) => { 
@@ -371,11 +354,8 @@
 //                                                 <Info size={14} />
 //                                             </button>
 
-//                                             {/* 🌟 Smart Tooltip Box 🌟 */}
-//                                             {/* Logic: 'showStrikeTooltip' अगर true है तो 'flex' वरना 'hidden' */}
 //                                             <div className={`absolute bottom-full right-[-20px] sm:left-1/2 sm:-translate-x-1/2 sm:right-auto mb-2 ${showStrikeTooltip ? 'flex' : 'hidden'} flex-col w-[260px] sm:w-[280px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-lg p-3 z-[100] text-[11px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 whitespace-normal break-words`}>
                                                 
-//                                                 {/* Header & Lang Toggle (Same as before) */}
 //                                                 <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
 //                                                     <span className="font-bold text-gray-500 dark:text-gray-400">Strike Info / जानकारी</span>
 //                                                     <div className="flex bg-gray-100 dark:bg-gray-800 rounded p-0.5 border border-gray-200 dark:border-gray-600">
@@ -396,7 +376,6 @@
 //                                                     </div>
 //                                                 </div>
 
-//                                                 {/* Dynamic Content (Same as before) */}
 //                                                 {(() => {
 //                                                     const currentOption = leg.strikeCriteria || 'ATM pt';
 //                                                     const info = criteriaInfoData[currentOption] || criteriaInfoData['ATM pt'];
@@ -413,7 +392,6 @@
 //                                                     );
 //                                                 })()}
                                                 
-//                                                 {/* Tooltip Arrow */}
 //                                                 <div className="absolute -bottom-1.5 right-6 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto w-3 h-3 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-gray-700 rotate-45"></div>
 //                                             </div>
 //                                         </div>
@@ -442,12 +420,10 @@
 //                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.slType || 'SL%'} onChange={(e) => updateLeg(leg.id, 'slType', e.target.value)}><option value="SL%">SL%</option><option value="Points">Points</option></select></div>
 //                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">SL</label><input type="number" value={leg.slValue} onChange={(e) => updateLeg(leg.id, 'slValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-//                                     {/* SL Execution Type */}
 //                                     <div>
 //                                         <div className="flex items-center gap-1.5 mb-1.5">
 //                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Execution</label>
                                             
-//                                             {/* Info Icon Area */}
 //                                             <div className="relative group flex items-center" onClick={(e) => e.stopPropagation()}>
 //                                                 <button 
 //                                                     className="focus:outline-none"
@@ -459,7 +435,6 @@
 //                                                     <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors" />
 //                                                 </button>
                                                 
-//                                                 {/* Smart Tooltip Box */}
 //                                                 <div 
 //                                                     className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 ${activeTooltip === `sl-${leg.id}` ? 'flex' : 'hidden md:group-hover:flex'}`}
 //                                                     onClick={(e) => e.stopPropagation()}
@@ -509,12 +484,10 @@
 //                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP Type</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.tpType || 'TP%'} onChange={(e) => updateLeg(leg.id, 'tpType', e.target.value)}><option value="TP%">TP%</option><option value="Points">Points</option></select></div>
 //                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">TP</label><input type="number" value={leg.tpValue} onChange={(e) => updateLeg(leg.id, 'tpValue', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" /></div>
                                     
-//                                     {/* TP Execution Type */}
 //                                     <div>
 //                                         <div className="flex items-center gap-1.5 mb-1.5">
 //                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold">Execution</label>
                                             
-//                                             {/* Info Icon Area */}
 //                                             <div className="relative group flex items-center" onClick={(e) => e.stopPropagation()}>
 //                                                 <button 
 //                                                     className="focus:outline-none"
@@ -526,7 +499,6 @@
 //                                                     <Info size={14} className="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors" />
 //                                                 </button>
                                                 
-//                                                 {/* Smart Tooltip Box */}
 //                                                 <div 
 //                                                     className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex-col w-[260px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg p-2.5 z-[100] text-[10px] text-gray-700 dark:text-gray-200 pointer-events-auto transition-all animate-in fade-in zoom-in-95 duration-200 ${activeTooltip === `tp-${leg.id}` ? 'flex' : 'hidden md:group-hover:flex'}`}
 //                                                     onClick={(e) => e.stopPropagation()}
@@ -572,6 +544,35 @@
 //                                     </div>
 //                                 </div>   
 
+//                                 {/* 🔥 NEW: SMC SETUP VISUALIZATION CARD 🔥 */}
+//                                 {leg.smcSetup && (
+//                                     <div className="mt-5 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+//                                         <div className="flex items-center justify-center opacity-60 mb-3">
+//                                             <div className="h-px bg-indigo-300 dark:bg-indigo-600 w-full"></div>
+//                                             <span className="text-[10px] text-indigo-600 dark:text-indigo-400 px-3 uppercase font-bold whitespace-nowrap tracking-widest">--- SMC Setup ---</span>
+//                                             <div className="h-px bg-indigo-300 dark:bg-indigo-600 w-full"></div>
+//                                         </div>
+//                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-indigo-50/60 dark:bg-indigo-900/20 p-3.5 rounded-lg border border-indigo-100 dark:border-indigo-800/40 shadow-sm">
+//                                             <div className="flex flex-col gap-1">
+//                                                 <span className="text-gray-500 dark:text-gray-400 text-[9px] uppercase font-bold tracking-wider">Trade Type</span>
+//                                                 <span className="font-semibold text-gray-800 dark:text-gray-200">{leg.smcSetup.tradeType}</span>
+//                                             </div>
+//                                             <div className="flex flex-col gap-1">
+//                                                 <span className="text-gray-500 dark:text-gray-400 text-[9px] uppercase font-bold tracking-wider">Setup</span>
+//                                                 <span className="font-bold text-indigo-600 dark:text-indigo-400">{leg.smcSetup.setup}</span>
+//                                             </div>
+//                                             <div className="flex flex-col gap-1">
+//                                                 <span className="text-gray-500 dark:text-gray-400 text-[9px] uppercase font-bold tracking-wider">Entry Trigger</span>
+//                                                 <span className="font-semibold text-gray-800 dark:text-gray-200">{leg.smcSetup.entryTriggers?.join(', ')}</span>
+//                                             </div>
+//                                             <div className="flex flex-col gap-1">
+//                                                 <span className="text-gray-500 dark:text-gray-400 text-[9px] uppercase font-bold tracking-wider">Exit Logic</span>
+//                                                 <span className="font-semibold text-gray-800 dark:text-gray-200">{leg.smcSetup.exitLogic}</span>
+//                                             </div>
+//                                         </div>
+//                                     </div>
+//                                 )}
+
 //                                 {hasInlineAdvanceFeatures && (
 //                                     <div className="mt-6 mb-2">
 //                                         <div className="flex items-center justify-center opacity-60">
@@ -604,11 +605,7 @@
 //                                             <label className="text-[11px] text-teal-700 dark:text-teal-500 font-bold block mb-1.5">Premium Difference</label>
 //                                             <input 
 //                                                 type="number" 
-                                                
-//                                                 // 🔥 THE FIX 1: Value ab kisi Leg ke andar se nahi, direct main setting se aayegi
 //                                                 value={advanceSettings?.premiumDifferenceConfig?.premium || ''} 
-                                                
-//                                                 // 🔥 THE FIX 2: Type karte hi direct main advanceSettings update hogi
 //                                                 onChange={(e) => {
 //                                                     setAdvanceSettings(prev => ({
 //                                                         ...prev,
@@ -618,7 +615,6 @@
 //                                                         }
 //                                                     }));
 //                                                 }} 
-                                                
 //                                                 className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none focus:border-blue-500 transition-colors" 
 //                                             />
 //                                         </div>
@@ -807,6 +803,7 @@
 
 
 
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Minus, Copy, AlertCircle, TrendingUp, XCircle, Shield, Clock, Scale, Repeat, ChevronsUp, CandlestickChart, Edit, Info } from 'lucide-react';
 import ComingSoonOverlay from './ComingSoonOverlay';
@@ -825,17 +822,12 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   const defaultExpiry = getDefaultExpiry(selectedInstrumentName);
   const allowedExpiriesList = getAllowedExpiries(selectedInstrumentName);
 
-  // ⚠️ NOTE FOR NEXT STEP: Is state ko hume parent (StrategyBuilder) me lift karna hoga aage chalkar
-//   const [activeLegId, setActiveLegId] = useState(legs.length > 0 ? legs[0].id : null);
   const prevLegsLength = useRef(legs.length);
   
-  // 🔥 SMART TOOLTIP STATES (Language & Mobile Tap Logic)
+  // 🔥 SMART TOOLTIP STATES
   const [tooltipLang, setTooltipLang] = useState('hi');
-  const [criteriaLang, setCriteriaLang] = useState('hi'); // Strike Criteria Lang State
+  const [activeTooltip, setActiveTooltip] = useState(null); 
 
-  const [activeTooltip, setActiveTooltip] = useState(null); // Mobile click ke liye state
-
-  // 🔥 CLICK OUTSIDE HANDLER (Mobile me screen par kahin click kare to tooltip band ho jaye)
   useEffect(() => {
       const handleClickOutside = () => setActiveTooltip(null);
       document.addEventListener("click", handleClickOutside);
@@ -847,11 +839,9 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
           setEntrySettings(prev => {
               const currentConfig = prev.signalCandle || { enabled: false, tradeOnTrigger: false, buyWhen: 'High Break', shortWhen: 'Low Break', continuousCandle: false };
               const updates = { [field]: value };
-
               if (field === 'enabled' && value === true) {
                   updates.tradeOnTrigger = true;
               }
-
               return { ...prev, signalCandle: { ...currentConfig, ...updates } };
           });
       }
@@ -905,6 +895,13 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
             if (currentCriteria === 'Delta') newInitialValue = 0.5;
             else if (currentCriteria === 'CP') newInitialValue = ""; 
             else if (currentCriteria.includes('CP')) newInitialValue = 0; 
+            // 🔥 Ratio Spread initialization
+            else if (currentCriteria === 'Ratio Spread (Prem/X)') {
+                updateLeg(leg.id, 'ratioDivisor', 4);
+                updateLeg(leg.id, 'ratioBaseLots', 1);
+                updateLeg(leg.id, 'ratioSellMultiplier', 4);
+                updateLeg(leg.id, 'ratioAutoAdjust', true);
+            }
             updateLeg(leg.id, 'strikeType', newInitialValue);
             prevCriteriaRef.current[leg.id] = currentCriteria;
         }
@@ -912,19 +909,19 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
   }, [legs]); 
 
   const getLegSummary = (leg) => {
-    let typeLabel = "";
-    if (strategyType === 'Indicator Based') {
-        typeLabel = leg.longCondition || 'CE';
-    } else {
-        typeLabel = leg.optionType === 'Call' ? 'CE' : 'PE';
-    }
+    let typeLabel = strategyType === 'Indicator Based' ? (leg.longCondition || 'CE') : (leg.optionType === 'Call' ? 'CE' : 'PE');
     const actionText = `${leg.action} ${typeLabel}`;
     const expiryText = leg.expiry || defaultExpiry;
     
     let strikeText = "";
     const sType = leg.strikeType !== undefined && leg.strikeType !== null ? leg.strikeType : "ATM";
     const sCriteria = leg.strikeCriteria || "ATM pt";
-    if (sType === 'ATM') { strikeText = "Strike ATM"; } 
+    
+    if (sCriteria === 'Ratio Spread (Prem/X)') {
+        strikeText = `Ratio: 1:${leg.ratioSellMultiplier || 4} (Prem/${leg.ratioDivisor || 4})`;
+    } else if (sType === 'ATM') { 
+        strikeText = "Strike ATM"; 
+    } 
     else if (sCriteria === 'ATM pt' && typeof sType === 'string') {
         if (sType.includes('ITM')) strikeText = `Strike ATM -${sType.replace('ITM ', '')} pts`;
         else if (sType.includes('OTM')) strikeText = `Strike ATM +${sType.replace('OTM ', '')} pts`;
@@ -937,13 +934,10 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
         else strikeText = `Strike ${sCriteria} ${sType}`;
     }
     else { strikeText = `Strike ${sCriteria} ${sType === "" ? "?" : sType}`; }
-    const currentSLType = leg.slType || 'SL%'; 
-    const currentTPType = leg.tpType || 'TP%';
-    const slLabel = currentSLType === 'SL%' ? '%' : ' Pts';
-    const tpLabel = currentTPType === 'TP%' ? '%' : ' Pts';
-    const slText = `SL ${leg.slValue}${slLabel}`;
-    const tpText = `TP ${leg.tpValue}${tpLabel}`;
-    return `${actionText}  ●  ${expiryText}  ●  ${selectedInstrumentName}  ●  Qty ${leg.quantity}  ●  ${strikeText}  ●  ${tpText}  ●  ${slText}`;
+    
+    const slText = `SL ${leg.slValue}${leg.slType === 'SL%' ? '%' : ' Pts'}`;
+    const tpText = `TP ${leg.tpValue}${leg.tpType === 'TP%' ? '%' : ' Pts'}`;
+    return `${actionText}  ●  ${expiryText}  ●  Qty ${leg.quantity}  ●  ${strikeText}  ●  ${tpText}  ●  ${slText}`;
   };
 
   const handleIncrement = (legId, currentQty) => updateLeg(legId, 'quantity', (currentQty || 0) + baseLotSize);
@@ -960,6 +954,32 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
     const generateStrikePoints = () => { const step = ATM_POINT_STEPS[selectedInstrumentName] || 50; const maxRange = 2000; let options = []; for (let i = maxRange; i >= step; i -= step) options.push(`ITM ${i}`); options.push("ATM"); for (let i = step; i <= maxRange; i += step) options.push(`OTM ${i}`); return options; };
     const generateStrikePercents = () => { const step = ATM_PERCENT_STEPS[selectedInstrumentName] || 1.0; const maxRange = 20.0; let options = []; for (let i = maxRange; i >= step; i -= step) options.push(`ITM ${i.toFixed(1)}%`); options.push("ATM"); for (let i = step; i <= maxRange; i += step) options.push(`OTM ${i.toFixed(1)}%`); return options; };
     const inputClass = "w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none custom-scrollbar focus:border-blue-500 transition-colors";
+
+    // 🔥 THE FIX: Ratio Spread UI Generation
+    if (criteria === "Ratio Spread (Prem/X)") {
+        return (
+            <div className="flex flex-col gap-2 mt-1 w-full bg-indigo-50/50 dark:bg-indigo-900/10 p-2 rounded border border-indigo-100 dark:border-indigo-800/30">
+                <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                        <label className="text-[9px] text-indigo-600 dark:text-indigo-400 font-bold uppercase block mb-1">Divisor (X)</label>
+                        <input type="number" min="1" value={leg.ratioDivisor || 4} onChange={(e) => updateLeg(leg.id, 'ratioDivisor', e.target.value)} className={inputClass} />
+                    </div>
+                    <div className="flex-1">
+                        <label className="text-[9px] text-indigo-600 dark:text-indigo-400 font-bold uppercase block mb-1">Base Lots</label>
+                        <input type="number" min="1" value={leg.ratioBaseLots || 1} onChange={(e) => updateLeg(leg.id, 'ratioBaseLots', e.target.value)} className={inputClass} />
+                    </div>
+                    <div className="flex-1">
+                        <label className="text-[9px] text-indigo-600 dark:text-indigo-400 font-bold uppercase block mb-1">Sell Multiplier</label>
+                        <input type="number" min="1" value={leg.ratioSellMultiplier || 4} onChange={(e) => updateLeg(leg.id, 'ratioSellMultiplier', e.target.value)} className={inputClass} />
+                    </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer mt-1">
+                    <input type="checkbox" className="accent-indigo-600 w-3 h-3" checked={leg.ratioAutoAdjust !== false} onChange={(e) => updateLeg(leg.id, 'ratioAutoAdjust', e.target.checked)} />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-400 font-medium">Auto-Adjust Sell Lots by Strike Distance</span>
+                </label>
+            </div>
+        );
+    }
 
     if (criteria === "ATM pt" || criteria === "ATM %") { const options = criteria === "ATM pt" ? generateStrikePoints() : generateStrikePercents(); return (<select className={inputClass} value={leg.strikeType || "ATM"} onChange={(e) => updateLeg(leg.id, 'strikeType', e.target.value)}>{options.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>); }
     if (criteria === "Delta") { return (<input type="number" step="0.1" min="0" max="1" placeholder="0.5" value={typeof leg.strikeType === 'number' ? leg.strikeType : ''} onChange={(e) => { let val = e.target.value; if (val === "") { updateLeg(leg.id, 'strikeType', ""); return; } let numVal = parseFloat(val); if (numVal > 1) numVal = 1; if (numVal < 0) numVal = 0; updateLeg(leg.id, 'strikeType', numVal); }} className={inputClass} />); }
@@ -1145,7 +1165,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                 <div className="grid grid-cols-3 gap-4">
                                     <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Expiry</label><select className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" value={leg.expiry || defaultExpiry} onChange={(e) => updateLeg(leg.id, 'expiry', e.target.value)}>{allowedExpiriesList.map(exp => <option key={exp} value={exp}>{exp}</option>)}</select></div>
                                     
-                                    <div>
+                                    <div className="col-span-2">
                                         <div ref={strikeTooltipRef} className="flex items-center gap-1.5 mb-1 relative w-max">
                                             <label className="text-[11px] text-gray-500 dark:text-gray-400 font-bold capitalize tracking-wider">
                                                 Strike Criteria
@@ -1191,10 +1211,10 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                                     return (
                                                         <div className="py-1">
                                                             <strong className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                                                                {info[tooltipLang].title}
+                                                                {info[tooltipLang]?.title || currentOption}
                                                             </strong> 
                                                             <span className="text-gray-600 dark:text-gray-300 block mt-1.5 leading-relaxed">
-                                                                {info[tooltipLang].desc}
+                                                                {info[tooltipLang]?.desc || "Advanced Ratio Spread Logic"}
                                                             </span>
                                                         </div>
                                                     );
@@ -1204,24 +1224,38 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                             </div>
                                         </div>
 
-                                        <select 
-                                            className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" 
-                                            value={leg.strikeCriteria || "ATM pt"} 
-                                            onChange={(e) => { 
-                                                const newCriteria = e.target.value; 
-                                                let newInitialValue = "ATM"; 
-                                                if (newCriteria === 'Delta') newInitialValue = 0.5; 
-                                                if (newCriteria === 'CP') newInitialValue = ""; 
-                                                if (newCriteria.includes('CP')) newInitialValue = 0; 
-                                                updateLeg(leg.id, 'strikeCriteria', newCriteria); 
-                                                updateLeg(leg.id, 'strikeType', newInitialValue); 
-                                            }}
-                                        >
-                                            {STRIKE_CRITERIA.map(cri => <option key={cri}>{cri}</option>)}
-                                        </select>
+                                        <div className="flex gap-3 items-start">
+                                            <select 
+                                                className="w-1/2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-gray-300 outline-none transition-colors" 
+                                                value={leg.strikeCriteria || "ATM pt"} 
+                                                onChange={(e) => { 
+                                                    const newCriteria = e.target.value; 
+                                                    let newInitialValue = "ATM"; 
+                                                    if (newCriteria === 'Delta') newInitialValue = 0.5; 
+                                                    if (newCriteria === 'CP') newInitialValue = ""; 
+                                                    if (newCriteria.includes('CP')) newInitialValue = 0; 
+                                                    
+                                                    updateLeg(leg.id, 'strikeCriteria', newCriteria); 
+                                                    updateLeg(leg.id, 'strikeType', newInitialValue); 
+
+                                                    if (newCriteria === 'Ratio Spread (Prem/X)') {
+                                                        updateLeg(leg.id, 'ratioDivisor', 4);
+                                                        updateLeg(leg.id, 'ratioBaseLots', 1);
+                                                        updateLeg(leg.id, 'ratioSellMultiplier', 4);
+                                                        updateLeg(leg.id, 'ratioAutoAdjust', true);
+                                                    }
+                                                }}
+                                            >
+                                                {STRIKE_CRITERIA.map(cri => <option key={cri} value={cri}>{cri}</option>)}
+                                                {/* 🔥 THE FIX: Added new option */}
+                                                <option value="Ratio Spread (Prem/X)">Ratio Spread (Prem/X)</option>
+                                            </select>
+                                            
+                                            <div className="w-1/2">
+                                                {renderStrikeTypeInput(leg)}
+                                            </div>
+                                        </div>
                                     </div>
-                                    
-                                    <div><label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Strike Type</label>{renderStrikeTypeInput(leg)}</div>
                                 </div>
 
                                  <div className="grid grid-cols-3 gap-4">

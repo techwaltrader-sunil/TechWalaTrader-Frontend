@@ -1181,23 +1181,6 @@ const PriceActionConditionSection = ({
                     </h3>
                     
                     <div className="space-y-4">
-                        {/* 🔥 Initial Market Trend (Shifted Here) */}
-                        {/* <div className="space-y-2">
-                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Initial Market Trend (Cold Start)</label>
-                            <select
-                                value={settings.startingTrend || "AUTO"}
-                                onChange={handleTrendChange}
-                                className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white transition-all"
-                            >
-                                <option value="AUTO">🤖 Auto Identify (Smart Flip)</option>
-                                <option value="BULLISH">📈 Force Bullish (Find HH/HL)</option>
-                                <option value="BEARISH">📉 Force Bearish (Find LL/LH)</option>
-                            </select>
-                            <p className="text-[10px] text-gray-400">Choose how the engine assumes the trend at the start of backtesting.</p>
-                        </div> */}
-
-                       
-
                         <ExecutionLogic 
                             activeLegIndex={activeLegIndex}
                             activeLegData={activeLegData}

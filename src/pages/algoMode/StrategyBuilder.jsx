@@ -657,6 +657,7 @@ const [priceActionSettings, setPriceActionSettings] = useState({
                 setRiskSettings={setRiskSettings} 
                 isComingSoon={false} 
                 strategyType={selectedStrategyType}
+                
             />
         ) : (
             <div className={`grid grid-cols-1 ${selectedStrategyType === "Time Based" ? 'lg:grid-cols-2 gap-6' : 'lg:grid-cols-1 gap-6'}`}>
@@ -665,6 +666,7 @@ const [priceActionSettings, setPriceActionSettings] = useState({
                     setRiskSettings={setRiskSettings} 
                     isComingSoon={false} 
                     strategyType={selectedStrategyType}
+                    legs={legs}
                 />
                 {selectedStrategyType === "Time Based" && (<AdvanceFeaturesSection advanceSettings={advanceSettings} setAdvanceSettings={setAdvanceSettings} legs={legs} addLeg={addLeg} removeLeg={removeLeg}/>)}
             </div>
