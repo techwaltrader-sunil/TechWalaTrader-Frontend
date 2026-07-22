@@ -880,6 +880,20 @@ const RiskManagementSection = ({ riskSettings, setRiskSettings, isComingSoon, st
                   updates.enableFreakTickGuard = false;
               }
 
+              // 🔥 NAYA FIX 3: Gamma Hour Profit Shield Default Injector
+              if (prev.enableTimeShield === undefined) {
+                  updates.enableTimeShield = false;
+              }
+              
+              if (!prev.timeShieldSettings) {
+                  updates.timeShieldSettings = {
+                      startTime: "14:30",
+                      endTime: "15:15",
+                      minProfitPct: 0.5,
+                      dropBufferPct: 0.2
+                  };
+              }
+
               if (Object.keys(updates).length > 0) {
                   return { ...prev, ...updates };
               }
@@ -1128,6 +1142,81 @@ const RiskManagementSection = ({ riskSettings, setRiskSettings, isComingSoon, st
                                 <strong>OFF (Recommended):</strong> Fully trusts the broker's API price, even if it spikes aggressively due to sudden IV crush/expansion.<br/>
                                 <strong>ON:</strong> Blocks extreme API spikes (3x & 40+ pts diff) assuming them as broker data glitches.
                             </p>
+                        </div>
+
+                        {/* 🔥 NEW: GAMMA HOUR PROFIT SHIELD */}
+                        <div className="pt-4 border-t border-gray-100 dark:border-slate-700 mt-4">
+                            <label className="flex items-center gap-2 cursor-pointer group mb-2">
+                                <input 
+                                    type="checkbox" 
+                                    className="accent-emerald-600 w-4 h-4" 
+                                    checked={riskSettings?.enableTimeShield === true} 
+                                    onChange={(e) => handleChange('root', 'enableTimeShield', e.target.checked)} 
+                                />
+                                <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                                    🛡️ Enable Gamma Hour Profit Shield
+                                </span>
+                            </label>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed ml-6 mb-3">
+                                Locks in your Theta decay profit during the volatile Gamma Hour. If the profit drops by the specified buffer percentage within the active time window, the engine triggers an emergency exit.
+                            </p>
+
+                            {/* Setting Box (Visible only when Toggle is ON) */}
+                            {riskSettings?.enableTimeShield && (
+                                <div className="ml-6 grid grid-cols-2 gap-4 bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-md border border-emerald-100 dark:border-emerald-800 animate-in fade-in duration-300">
+                                    
+                                    {/* 1. Shield Start Time */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Shield Start Time</label>
+                                        <input 
+                                            type="time" 
+                                            className="text-sm border border-emerald-200 dark:border-emerald-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                            value={riskSettings?.timeShieldSettings?.startTime || "14:30"}
+                                            onChange={(e) => handleChange('timeShieldSettings', 'startTime', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* 2. Shield End Time */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Shield End Time</label>
+                                        <input 
+                                            type="time" 
+                                            className="text-sm border border-emerald-200 dark:border-emerald-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                            value={riskSettings?.timeShieldSettings?.endTime || "15:15"}
+                                            onChange={(e) => handleChange('timeShieldSettings', 'endTime', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* 3. Min Profit Target */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Min Profit Target (%)</label>
+                                        <div className="relative">
+                                            <input 
+                                                type="number" step="0.1"
+                                                className="w-full text-sm border border-emerald-200 dark:border-emerald-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                value={riskSettings?.timeShieldSettings?.minProfitPct || 0.5}
+                                                onChange={(e) => handleChange('timeShieldSettings', 'minProfitPct', Number(e.target.value))}
+                                            />
+                                            <span className="absolute right-3 top-2 text-gray-400 text-xs font-bold">%</span>
+                                        </div>
+                                    </div>
+
+                                    {/* 4. Drop Buffer */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Max Drop Buffer (%)</label>
+                                        <div className="relative">
+                                            <input 
+                                                type="number" step="0.1"
+                                                className="w-full text-sm border border-emerald-200 dark:border-emerald-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                value={riskSettings?.timeShieldSettings?.dropBufferPct || 0.2}
+                                                onChange={(e) => handleChange('timeShieldSettings', 'dropBufferPct', Number(e.target.value))}
+                                            />
+                                            <span className="absolute right-3 top-2 text-gray-400 text-xs font-bold">%</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            )}
                         </div>
                       
                       {/* 🔥 DYNAMIC GAMMA BLAST VELOCITY GUARD UI */}
