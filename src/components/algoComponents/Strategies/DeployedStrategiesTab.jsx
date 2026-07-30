@@ -577,6 +577,286 @@
 
 
 
+// import React, { useState, useEffect } from 'react';
+// import { PlayCircle, StopCircle, Activity, AlertCircle, Loader2, Wallet, BarChart2 } from 'lucide-react'; 
+// import { fetchActiveDeployments, stopDeployment } from '../../../data/AlogoTrade/deploymentService';
+// import io from 'socket.io-client'; 
+
+// const calculateLiveLtp = (leg) => {
+//     if (!leg || !leg.entryPrice) return 0;
+//     const qty = leg.quantity || 1; 
+//     const pnl = leg.livePnl || 0;
+    
+//     if (leg.action === 'BUY') {
+//         return leg.entryPrice + (pnl / qty);
+//     } else {
+//         return leg.entryPrice - (pnl / qty);
+//     }
+// };
+
+// const DeployedStrategiesTab = () => {
+//     const [deployments, setDeployments] = useState([]);
+//     const [loading, setLoading] = useState(true);
+//     const [stoppingId, setStoppingId] = useState(null); 
+//     const [livePnls, setLivePnls] = useState({});
+
+//     // API se data mangwana (With Polling)
+//     useEffect(() => {
+//         const loadDeployments = async () => {
+//             try {
+//                 const data = await fetchActiveDeployments();
+//                 setDeployments(data);
+//                 setLoading(false); // Pehli baar data aane ke baad loader band ho jayega
+//             } catch (error) {
+//                 console.error("Failed to fetch deployments:", error);
+//                 setLoading(false);
+//             }
+//         };
+
+//         // 1. Component load hote hi turant pehli baar fetch karo
+//         loadDeployments();
+
+//         // 2. ⏱️ THE POLLING MAGIC: Har 2.5 second me background me naya data layega
+//         const intervalId = setInterval(() => {
+//             loadDeployments();
+//         }, 2500); 
+
+//         // 3. 🧹 Cleanup: Jab user is page se jayega, toh loop band ho jayega
+//         return () => clearInterval(intervalId);
+//     }, []);
+
+//     // Socket.io Connection
+//     useEffect(() => {
+//         const socket = io(`${import.meta.env.VITE_API_URL}`);
+
+//         socket.on('live-pnl-update', (pnlData) => {
+//             setLivePnls(pnlData); 
+//         });
+
+//         return () => {
+//             socket.disconnect();
+//         };
+//     }, []);
+
+//     // Algo Stop Logic
+//     const handleStopAlgo = async (deploymentId) => {
+//         if (window.confirm("Are you sure you want to stop this algorithm? All active monitoring will halt.")) {
+//             setStoppingId(deploymentId); 
+//             try {
+//                 await stopDeployment(deploymentId); 
+//                 setDeployments(prev => prev.filter(dep => dep._id !== deploymentId));
+//                 alert("Algo Stopped Successfully!");
+//             } catch (error) {
+//                 console.error("Failed to stop algo:", error);
+//                 alert("Failed to stop algo. Please try again.");
+//             } finally {
+//                 setStoppingId(null); 
+//             }
+//         }
+//     };
+
+//     if (loading) {
+//         return <div className="flex justify-center py-10"><Activity className="animate-spin text-blue-500" size={32} /></div>;
+//     }
+
+//     if (deployments.length === 0) {
+//         return (
+//             <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+//                 <AlertCircle size={48} className="text-gray-400 mb-4" />
+//                 <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200">No Active Strategies</h3>
+//                 <p className="text-sm text-gray-500 mt-2">Deploy a strategy from 'My Strategies' tab to see it running here.</p>
+//             </div>
+//         );
+//     }
+
+//     // 🔥 NAYA: Total MTM Calculate karna (Saare legs ka live PnL jod kar)
+//     const totalMTM = deployments.reduce((acc, dep) => {
+//         // 1. Is deployment ke saare legs ka PnL jodo
+//         let legSumPnl = 0;
+//         if (dep.executedLegs && dep.executedLegs.length > 0) {
+//             legSumPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
+//         }
+        
+//         // 2. Socket data lo, warna legSumPnl use karo
+//         const pnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : legSumPnl;
+//         return acc + parseFloat(pnl);
+//     }, 0);
+
+//     return (
+//         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+//             {/* ========================================== */}
+//             {/* 🌟 TOTAL MTM DASHBOARD 🌟 */}
+//             {/* ========================================== */}
+//             <div className="mb-8 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 transition-colors">
+                
+//                 {/* Left Side: Live MTM */}
+//                 <div className="flex items-center gap-5">
+//                     <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-inner ${totalMTM >= 0 ? 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>
+//                         <Wallet size={28} />
+//                     </div>
+//                     <div>
+//                         <p className="text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Live MTM</p>
+//                         <h1 className={`text-3xl sm:text-4xl md:text-5xl font-extrabold transition-colors duration-300 tracking-tight ${totalMTM >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+//                             ₹ {totalMTM >= 0 ? `+${totalMTM.toFixed(2)}` : totalMTM.toFixed(2)}
+//                         </h1>
+//                     </div>
+//                 </div>
+
+//                 {/* Right Side: Quick Stats */}
+//                 <div className="flex gap-4 w-full md:w-auto">
+//                     <div className="flex-1 md:flex-none bg-gray-50 dark:bg-slate-900/50 px-6 py-4 rounded-xl border border-gray-100 dark:border-slate-700 flex flex-col items-center justify-center transition-colors">
+//                         <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold mb-1 uppercase tracking-wider flex items-center gap-1.5"><Activity size={12}/> Active Algos</p>
+//                         <p className="text-2xl font-black text-gray-800 dark:text-white">{deployments.length}</p>
+//                     </div>
+//                 </div>
+//             </div>
+
+//             {/* ========================================== */}
+//             {/* 🃏 STRATEGY CARDS GRID */}
+//             {/* ========================================== */}
+//            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//                 {deployments.map((dep) => {
+//                     const strategyName = dep.strategyId?.name || 'Unknown Strategy';
+//                     const isLive = dep.executionType === 'LIVE';
+//                     const isStopping = stoppingId === dep._id;
+
+//                     // 🔥 FIX: Card ka Total P&L nikalne ke liye saare legs ko jodo
+//                     let legSumPnl = 0;
+//                     if (dep.executedLegs && dep.executedLegs.length > 0) {
+//                         legSumPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
+//                     }
+                    
+//                     const currentPnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : legSumPnl;
+
+//                     return (
+//                         <div key={dep._id} className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full">
+                            
+//                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
+
+//                             <div className="p-5 border-b border-gray-100 dark:border-slate-700 flex-1">
+//                                 <div className="flex justify-between items-start mb-3">
+//                                     <div>
+//                                         <h3 className="font-bold text-gray-900 dark:text-white text-lg line-clamp-1">{strategyName}</h3>
+//                                         <p className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
+//                                             <PlayCircle size={12} className="text-green-500" />
+//                                             Running since {new Date(dep.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+//                                         </p>
+//                                     </div>
+//                                     <span className={`px-2 py-1 text-[10px] font-bold rounded flex items-center gap-1 ${isLive ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'}`}>
+//                                         <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+//                                         {dep.executionType}
+//                                     </span>
+//                                 </div>
+
+//                                 <div className="grid grid-cols-2 gap-4 mt-4">
+//                                     <div className="bg-gray-50 dark:bg-slate-900/50 p-2 rounded border border-gray-100 dark:border-slate-700">
+//                                         <p className="text-[10px] text-gray-500 mb-1 font-bold">Multiplier</p>
+//                                         <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{dep.multiplier}x</p>
+//                                     </div>
+//                                     <div className="bg-gray-50 dark:bg-slate-900/50 p-2 rounded border border-gray-100 dark:border-slate-700">
+//                                         <p className="text-[10px] text-gray-500 mb-1 font-bold">Target Time</p>
+//                                         <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{dep.squareOffTime}</p>
+//                                     </div>
+//                                 </div>
+
+//                                 {/* // 🔥 NEW: INDIVIDUAL LEG P&L BREAKDOWN 🔥 */}
+//                                 {dep.executedLegs && dep.executedLegs.length > 0 && (
+//                                     <div className="mt-4 space-y-2">
+//                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Leg Status</p>
+//                                         {dep.executedLegs.map((leg, idx) => {
+//                                             const legPnl = leg.livePnl || 0;
+//                                             const isLegProfit = legPnl >= 0;
+//                                             const isCompleted = leg.status === 'COMPLETED';
+                                            
+//                                             // 🟢 Live LTP Calculator
+//                                             const liveLtp = calculateLiveLtp(leg);
+
+//                                            // ⏰ TIME FORMATTER (entryTime nahi hai, toh dep.createdAt use karein)
+//                                             const formatTime = (leg, dep) => {
+//                                                 // Agar leg.entryTime undefined hai, toh dep.createdAt ya fallback '--:--' use karein
+//                                                 const timeValue = leg?.entryTime || dep?.createdAt;
+//                                                 if (!timeValue) return '--:--';
+                                                
+//                                                 return new Date(timeValue).toLocaleTimeString('en-IN', { 
+//                                                     hour: '2-digit', 
+//                                                     minute: '2-digit', 
+//                                                     hour12: false,
+//                                                     timeZone: 'Asia/Kolkata' 
+//                                                 });
+//                                             };
+
+//                                             // Entry Time (Database se aayega)
+//                                             const entryTimeStr = formatTime(leg.entryTime || leg.createdAt);
+                                            
+//                                             // LTP Time (Current polling time)
+//                                             const ltpTimeStr = formatTime(new Date());
+
+//                                             return (
+//                                                 <div key={idx} className={`flex justify-between items-center p-2.5 rounded border transition-colors ${isCompleted ? 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 opacity-60' : 'bg-gray-50 dark:bg-slate-900/40 border-gray-100 dark:border-slate-700'}`}>
+                                                    
+//                                                     {/* Left Side: Action, Symbol, Entry & LTP */}
+//                                                     <div className="flex flex-col">
+//                                                         <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 pr-2 flex items-center gap-1.5">
+//                                                             <span className={`font-bold ${leg.action === 'BUY' ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>{leg.action}</span>
+//                                                             {leg.symbol}
+//                                                         </span>
+                                                        
+//                                                         {/* 🎯 THE NEW ENTRY & LTP BADGE WITH TIME */}
+//                                                         <div className="text-[10px] text-gray-500 mt-1">
+//                                                             Entry: <span className="text-gray-700 dark:text-gray-300 font-bold">₹{leg.entryPrice?.toFixed(2) || '0.00'}</span> 
+//                                                             <span className="text-[9px] text-gray-400 font-medium ml-1">({formatTime(leg || {}, dep || {})})</span>
+//                                                             <span className="mx-1.5">|</span> 
+//                                                             LTP: <span className="text-blue-600 dark:text-blue-400 font-bold">₹{liveLtp.toFixed(2)}</span>
+//                                                             {/* LTP Time ke liye aap new Date() use kar sakte hain ya sirf static polling time */}
+//                                                             <span className="text-[9px] text-gray-400 font-medium ml-1">({new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })})</span>
+//                                                         </div>
+//                                                     </div>
+
+//                                                     {/* Right Side: P&L */}
+//                                                     <div className="flex flex-col items-end">
+//                                                         <span className={`text-[11px] font-bold whitespace-nowrap ${isLegProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+//                                                             ₹ {isLegProfit ? `+${legPnl.toFixed(2)}` : legPnl.toFixed(2)}
+//                                                         </span>
+//                                                         {isCompleted && <span className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Closed</span>}
+//                                                     </div>
+//                                                 </div>
+//                                             );
+//                                         })}
+//                                     </div>
+//                                 )}
+//                             </div>
+
+//                             <div className="p-5 flex items-center justify-between bg-gray-50 dark:bg-slate-800/50 mt-auto">
+//                                 <div>
+//                                     <p className="text-xs font-bold text-gray-500 mb-1">Total Live P&L</p>
+//                                     <p className={`text-xl font-bold flex items-center gap-1 transition-colors duration-300 ${currentPnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+//                                         ₹ {currentPnl >= 0 ? `+${currentPnl.toFixed(2)}` : currentPnl.toFixed(2)}
+//                                     </p>
+//                                 </div>
+                                
+//                                 <button 
+//                                     onClick={() => handleStopAlgo(dep._id)}
+//                                     disabled={isStopping}
+//                                     className="flex items-center gap-1.5 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-red-200 dark:border-red-500/30 transition-all active:scale-95"
+//                                 >
+//                                     {isStopping ? <Loader2 size={16} className="animate-spin" /> : <StopCircle size={16} />} 
+//                                     {isStopping ? 'Stopping...' : 'Stop Algo'}
+//                                 </button>
+//                             </div>
+//                         </div>
+//                     );
+//                 })}
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default DeployedStrategiesTab;
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { PlayCircle, StopCircle, Activity, AlertCircle, Loader2, Wallet, BarChart2 } from 'lucide-react'; 
 import { fetchActiveDeployments, stopDeployment } from '../../../data/AlogoTrade/deploymentService';
@@ -594,6 +874,44 @@ const calculateLiveLtp = (leg) => {
     }
 };
 
+// 🔥 SUPER DYNAMIC HELPER: Extracts exact lot size from Strategy Database (Updated for real MongoDB schema)
+const getLotsInfo = (leg, dep) => {
+    if (!leg.quantity) return { value: 0, type: 'Qty' };
+    
+    let dbLotSize = null;
+
+    // 1. Fetch dynamic lot size from 'Select Instruments' (dep.strategyId.data.instruments)
+    if (dep?.strategyId?.data?.instruments && Array.isArray(dep.strategyId.data.instruments)) {
+        const baseSymbol = String(leg.symbol).split(' ')[0]; // e.g., 'SENSEX'
+        
+        // Find exact matching instrument using 'name' field
+        const matchedInst = dep.strategyId.data.instruments.find(
+            inst => inst.name && (baseSymbol.includes(inst.name) || inst.name.includes(baseSymbol))
+        );
+        
+        // Database mein key ka naam 'lot' hai, 'lotSize' nahi
+        if (matchedInst && matchedInst.lot) {
+            dbLotSize = Number(matchedInst.lot);
+        } else if (dep.strategyId.data.instruments.length > 0 && dep.strategyId.data.instruments[0].lot) {
+            // Fallback to first instrument's lot size if exact match fails
+            dbLotSize = Number(dep.strategyId.data.instruments[0].lot);
+        }
+    }
+
+    // 2. Calculate actual lots dynamically
+    if (dbLotSize && dbLotSize > 0) {
+        const calculatedLots = leg.quantity / dbLotSize;
+        
+        // Agar division ekdum clean (integer) hai, tabhi 'Lots' dikhao
+        if (Number.isInteger(calculatedLots)) {
+            return { value: calculatedLots, type: calculatedLots > 1 ? 'Lots' : 'Lot' };
+        }
+    }
+
+    // 3. 🛡️ Ultimate Fallback: Agar clean division nahi hua ya DB data missing hai, toh seedha Qty dikha do
+    return { value: leg.quantity, type: 'Qty' };
+};
+
 const DeployedStrategiesTab = () => {
     const [deployments, setDeployments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -606,22 +924,19 @@ const DeployedStrategiesTab = () => {
             try {
                 const data = await fetchActiveDeployments();
                 setDeployments(data);
-                setLoading(false); // Pehli baar data aane ke baad loader band ho jayega
+                setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch deployments:", error);
                 setLoading(false);
             }
         };
 
-        // 1. Component load hote hi turant pehli baar fetch karo
         loadDeployments();
 
-        // 2. ⏱️ THE POLLING MAGIC: Har 2.5 second me background me naya data layega
         const intervalId = setInterval(() => {
             loadDeployments();
         }, 2500); 
 
-        // 3. 🧹 Cleanup: Jab user is page se jayega, toh loop band ho jayega
         return () => clearInterval(intervalId);
     }, []);
 
@@ -669,15 +984,12 @@ const DeployedStrategiesTab = () => {
         );
     }
 
-    // 🔥 NAYA: Total MTM Calculate karna (Saare legs ka live PnL jod kar)
     const totalMTM = deployments.reduce((acc, dep) => {
-        // 1. Is deployment ke saare legs ka PnL jodo
         let legSumPnl = 0;
         if (dep.executedLegs && dep.executedLegs.length > 0) {
             legSumPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
         }
         
-        // 2. Socket data lo, warna legSumPnl use karo
         const pnl = livePnls[dep._id] !== undefined ? livePnls[dep._id] : legSumPnl;
         return acc + parseFloat(pnl);
     }, 0);
@@ -690,7 +1002,6 @@ const DeployedStrategiesTab = () => {
             {/* ========================================== */}
             <div className="mb-8 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 transition-colors">
                 
-                {/* Left Side: Live MTM */}
                 <div className="flex items-center gap-5">
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-inner ${totalMTM >= 0 ? 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>
                         <Wallet size={28} />
@@ -703,7 +1014,6 @@ const DeployedStrategiesTab = () => {
                     </div>
                 </div>
 
-                {/* Right Side: Quick Stats */}
                 <div className="flex gap-4 w-full md:w-auto">
                     <div className="flex-1 md:flex-none bg-gray-50 dark:bg-slate-900/50 px-6 py-4 rounded-xl border border-gray-100 dark:border-slate-700 flex flex-col items-center justify-center transition-colors">
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold mb-1 uppercase tracking-wider flex items-center gap-1.5"><Activity size={12}/> Active Algos</p>
@@ -721,7 +1031,6 @@ const DeployedStrategiesTab = () => {
                     const isLive = dep.executionType === 'LIVE';
                     const isStopping = stoppingId === dep._id;
 
-                    // 🔥 FIX: Card ka Total P&L nikalne ke liye saare legs ko jodo
                     let legSumPnl = 0;
                     if (dep.executedLegs && dep.executedLegs.length > 0) {
                         legSumPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
@@ -760,7 +1069,7 @@ const DeployedStrategiesTab = () => {
                                     </div>
                                 </div>
 
-                                {/* // 🔥 NEW: INDIVIDUAL LEG P&L BREAKDOWN 🔥 */}
+                                {/* // 🔥 INDIVIDUAL LEG P&L BREAKDOWN 🔥 */}
                                 {dep.executedLegs && dep.executedLegs.length > 0 && (
                                     <div className="mt-4 space-y-2">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Leg Status</p>
@@ -769,12 +1078,9 @@ const DeployedStrategiesTab = () => {
                                             const isLegProfit = legPnl >= 0;
                                             const isCompleted = leg.status === 'COMPLETED';
                                             
-                                            // 🟢 Live LTP Calculator
                                             const liveLtp = calculateLiveLtp(leg);
 
-                                           // ⏰ TIME FORMATTER (entryTime nahi hai, toh dep.createdAt use karein)
                                             const formatTime = (leg, dep) => {
-                                                // Agar leg.entryTime undefined hai, toh dep.createdAt ya fallback '--:--' use karein
                                                 const timeValue = leg?.entryTime || dep?.createdAt;
                                                 if (!timeValue) return '--:--';
                                                 
@@ -786,34 +1092,34 @@ const DeployedStrategiesTab = () => {
                                                 });
                                             };
 
-                                            // Entry Time (Database se aayega)
-                                            const entryTimeStr = formatTime(leg.entryTime || leg.createdAt);
+                                            const entryTimeStr = formatTime(leg, dep);
                                             
-                                            // LTP Time (Current polling time)
-                                            const ltpTimeStr = formatTime(new Date());
+                                            // 🎯 UI UPDATE: Calling the Dynamic Strategy Lots Function
+                                            const lotInfo = getLotsInfo(leg, dep);
 
                                             return (
                                                 <div key={idx} className={`flex justify-between items-center p-2.5 rounded border transition-colors ${isCompleted ? 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 opacity-60' : 'bg-gray-50 dark:bg-slate-900/40 border-gray-100 dark:border-slate-700'}`}>
                                                     
-                                                    {/* Left Side: Action, Symbol, Entry & LTP */}
                                                     <div className="flex flex-col">
                                                         <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 pr-2 flex items-center gap-1.5">
                                                             <span className={`font-bold ${leg.action === 'BUY' ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>{leg.action}</span>
                                                             {leg.symbol}
+                                                            
+                                                            {/* 🔥 DYNAMIC LOTS/QTY BADGE 🔥 */}
+                                                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 rounded ml-1 tracking-wide shadow-sm">
+                                                                {lotInfo.value} {lotInfo.type}
+                                                            </span>
                                                         </span>
                                                         
-                                                        {/* 🎯 THE NEW ENTRY & LTP BADGE WITH TIME */}
                                                         <div className="text-[10px] text-gray-500 mt-1">
                                                             Entry: <span className="text-gray-700 dark:text-gray-300 font-bold">₹{leg.entryPrice?.toFixed(2) || '0.00'}</span> 
-                                                            <span className="text-[9px] text-gray-400 font-medium ml-1">({formatTime(leg || {}, dep || {})})</span>
+                                                            <span className="text-[9px] text-gray-400 font-medium ml-1">({entryTimeStr})</span>
                                                             <span className="mx-1.5">|</span> 
                                                             LTP: <span className="text-blue-600 dark:text-blue-400 font-bold">₹{liveLtp.toFixed(2)}</span>
-                                                            {/* LTP Time ke liye aap new Date() use kar sakte hain ya sirf static polling time */}
                                                             <span className="text-[9px] text-gray-400 font-medium ml-1">({new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })})</span>
                                                         </div>
                                                     </div>
 
-                                                    {/* Right Side: P&L */}
                                                     <div className="flex flex-col items-end">
                                                         <span className={`text-[11px] font-bold whitespace-nowrap ${isLegProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                             ₹ {isLegProfit ? `+${legPnl.toFixed(2)}` : legPnl.toFixed(2)}
@@ -827,7 +1133,7 @@ const DeployedStrategiesTab = () => {
                                 )}
                             </div>
 
-                            <div className="p-5 flex items-center justify-between bg-gray-50 dark:bg-slate-800/50 mt-auto">
+                            <div className="p-5 flex items-center justify-between bg-gray-50 dark:bg-slate-800/50 mt-auto border-t border-gray-100 dark:border-slate-700">
                                 <div>
                                     <p className="text-xs font-bold text-gray-500 mb-1">Total Live P&L</p>
                                     <p className={`text-xl font-bold flex items-center gap-1 transition-colors duration-300 ${currentPnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
