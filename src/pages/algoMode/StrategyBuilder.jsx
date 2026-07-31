@@ -316,9 +316,384 @@
 
 
 
+// import React, { useState, useEffect } from "react";
+// import { Zap, ArrowLeft, Loader2 } from "lucide-react"; 
+// import { useNavigate, useLocation } from "react-router-dom"; 
+
+// // ✅ Service Import
+// import { createStrategy, updateStrategy } from '../../data/AlogoTrade/strategyService';
+
+// // Components Import
+// import StrategyTypeSection from "../../components/algoComponents/StrategyBuilder/StrategyTypeSection";
+// import InstrumentSection from "../../components/algoComponents/StrategyBuilder/InstrumentSection";
+// import OrderConfigSection from "../../components/algoComponents/StrategyBuilder/OrderConfigSection";
+// import StrategyLegsSection from "../../components/algoComponents/StrategyBuilder/StrategyLegsSection";
+// import RiskManagementSection from "../../components/algoComponents/StrategyBuilder/RiskManagementSection";
+// import AdvanceFeaturesSection from "../../components/algoComponents/StrategyBuilder/AdvanceFeaturesSection";
+// import EntryConditionSection from "../../components/algoComponents/StrategyBuilder/EntryConditionSection";
+// import StrategyFooter from "../../components/algoComponents/StrategyBuilder/StrategyFooter";
+
+// import PriceActionConditionSection from "../../components/algoComponents/StrategyBuilder/PriceActionConditionSection";
+// import ExecutionLogic from "../../components/algoComponents/StrategyBuilder/ExecutionLogic";
+
+// const StrategyBuilder = () => {
+//   const navigate = useNavigate(); 
+//   const location = useLocation();
+
+//   // ✅ Safe Access to Edit Data
+//   const incomingData = location.state?.strategyData;
+//   const backendData = incomingData?.data || incomingData || null; 
+//   const isEditing = !!incomingData;
+
+//   // --- STATES ---
+//   const [selectedStrategyType, setSelectedStrategyType] = useState(incomingData?.type || "Time Based");
+//   const [instruments, setInstruments] = useState(backendData?.instruments || []);
+//   const [strategyName, setStrategyName] = useState(incomingData?.name || "");
+//   const [loading, setLoading] = useState(false); 
+
+//   // 🔥 THE FIX: Edit mode me purana (Spot/Future) data load karo
+//   const [underlyingType, setUnderlyingType] = useState(backendData?.config?.underlying || "Spot");
+
+// //   const [priceActionSettings, setPriceActionSettings] = useState(backendData?.priceActionSettings || {
+// //     masterTimeframe: "15 min",
+// //     entryTimeframe: "1 min",
+// //     setupType: "BOS (Break of Structure)",
+// //     entryTrigger: "Candle Close",
+// //     volumeConfirmation: false,
+// //     startingTrend: "AUTO",
+// //     counterStructureDepth: 0 // 🔥 NEW: 0, 1, या 2 हिस्ट्री लिमिट के लिए
+// // });
+
+// const [priceActionSettings, setPriceActionSettings] = useState({
+//     masterTimeframe: backendData?.priceActionSettings?.masterTimeframe || "15 min",
+//     entryTimeframe: backendData?.priceActionSettings?.entryTimeframe || "1 min",
+//     setupType: backendData?.priceActionSettings?.setupType || "BOS (Break of Structure)",
+//     entryTrigger: backendData?.priceActionSettings?.entryTrigger || "Candle Close",
+//     volumeConfirmation: backendData?.priceActionSettings?.volumeConfirmation || false,
+//     startingTrend: backendData?.priceActionSettings?.startingTrend || "AUTO",
+//     counterStructureDepth: backendData?.priceActionSettings?.counterStructureDepth || 0,
+//     structureMode: backendData?.priceActionSettings?.structureMode || "DISCOUNTED",
+//     strictDecisional: backendData?.priceActionSettings?.strictDecisional || false,
+//     strictCounter: backendData?.priceActionSettings?.strictCounter || false,
+//     majorOnly: backendData?.priceActionSettings?.majorOnly ?? true,
+    
+//     // 🎛️ NAYE 4 CHECKBOX VARIABLES YAHAN ADD KIYE HAIN
+//     showD2S_DOB: backendData?.priceActionSettings?.showD2S_DOB ?? true,
+//     showD2S_DOF: backendData?.priceActionSettings?.showD2S_DOF ?? true,
+//     showD2S_EOB: backendData?.priceActionSettings?.showD2S_EOB ?? true,
+//     showD2S_EOF: backendData?.priceActionSettings?.showD2S_EOF ?? true
+//   });
+  
+//   const [legs, setLegs] = useState(backendData?.legs && backendData.legs.length > 0 ? backendData.legs : [
+//     { id: 1, action: "BUY", optionType: "Call", quantity: 65, expiry: "WEEKLY", strikeCriteria: "ATM pt", strikeType: "ATM", slType: "SL%", slValue: 30, tpType: "TP%", tpValue: 0 }
+//   ]);
+
+//   const [activeLegId, setActiveLegId] = useState(legs[0]?.id || null);
+//   const activeLegIndex = legs.findIndex(leg => leg.id === activeLegId);
+//   const activeLegData = legs[activeLegIndex];
+
+//   const [config, setConfig] = useState(backendData?.config || {
+//     underlying: "Spot",
+//     orderType: "MIS", 
+//     days: ["MON", "TUE", "WED", "THU", "FRI"], 
+//     interval: "1 min", 
+//     transactionType: "Both Side", 
+//     chartType: "Candle", 
+//     cncEntryDays: 4, 
+//     cncExitDays: 0,
+//     startTime: "09:45",       // 🔥 THE FIX: Ab hamesha default save hoga!
+//     squareOffTime: "15:15",    // 🔥 THE FIX: Square Off bhi!
+//     nextDaySquareOff: "09:15" // 🔥 THE NEW FIX: BTST Default time
+//   });
+
+//   const [advanceSettings, setAdvanceSettings] = useState(backendData?.advanceSettings || {
+//     moveSLToCost: false, exitAllOnSLTgt: false, prePunchSL: false, waitAndTrade: false, premiumDifference: false, reEntryExecute: false, trailSL: false
+//   });
+
+//   const [entrySettings, setEntrySettings] = useState(backendData?.entrySettings || {
+//     useCombinedChart: false, useOptionsChart: false, entryConditions: []
+//   });
+
+//   // ✅ NEW: Risk Management State
+//   const [riskSettings, setRiskSettings] = useState(backendData?.riskManagement || {
+//       maxProfit: 0,
+//       maxLoss: 0,
+//       maxTradeCycle: 1,
+//       noTradeAfter: "15:15",
+//       profitTrailing: "No Trailing", // Radio button value
+//       lockFixProfit: 0,
+//       trailProfit: 0
+//   });
+
+//   // --- EDIT MODE FLAGS ---
+//   const [isEditMode, setIsEditMode] = useState(isEditing);
+
+//   const [editingId, setEditingId] = useState(incomingData?._id || incomingData?.id || null);
+
+//   // --- FORCE DATA RELOAD ---
+//   useEffect(() => {
+//     if (isEditMode && backendData) {
+//         setInstruments(backendData.instruments || []);
+//         setSelectedStrategyType(incomingData.type || "Time Based");
+        
+//         // 🔥 THE FIX: InstrumentSection ke reset karne ke baad, yahan se wapas Data restore karo!
+//         setUnderlyingType(backendData.config?.underlying || "Spot");
+
+//         if(backendData.legs && backendData.legs.length > 0) {
+//             setLegs(backendData.legs);
+//         }
+//     }
+//   }, []);
+
+//   // --- RESET EFFECTS ---
+//   useEffect(() => {
+//     // जब भी Strategy Type बदलेगा, हम Advance Settings और Legs दोनों को एकदम नया (Fresh) कर देंगे
+//     if (!isEditMode) {
+//         // 1. Advance Settings Reset
+//         setAdvanceSettings({ moveSLToCost: false, exitAllOnSLTgt: false, prePunchSL: false, waitAndTrade: false, premiumDifference: false, reEntryExecute: false, trailSL: false });
+        
+//         // 2. Legs Reset (एकदम फ्रेश डिफॉल्ट लेग बनाएंगे जिसमें पुराना smcSetup नहीं होगा)
+//         const freshLegId = Date.now();
+//         setLegs([{ 
+//             id: freshLegId, 
+//             action: "BUY", 
+//             optionType: "Call", 
+//             quantity: instruments.length > 0 ? (instruments[0].lot || 1) : 1, 
+//             expiry: "WEEKLY", 
+//             strikeCriteria: "ATM pt", 
+//             strikeType: "ATM", 
+//             slType: "SL%", 
+//             slValue: 30, 
+//             tpType: "TP%", 
+//             tpValue: 0 
+//         }]);
+
+//         // 3. Active Leg ID को भी इस नए लेग पर सेट कर देंगे ताकि कोई क्रैश ना हो
+//         setActiveLegId(freshLegId);
+//     }
+//   }, [selectedStrategyType]);
+
+//   // Combined Chart Automation
+//   useEffect(() => {
+//     if (entrySettings.useCombinedChart) {
+//       if (legs.length === 1) {
+//         const firstLeg = legs[0];
+//         const newLeg = { ...firstLeg, id: Date.now(), optionType: firstLeg.optionType === 'Call' ? 'Put' : 'Call', longCondition: firstLeg.longCondition === 'CE' ? 'PE' : 'CE', shortCondition: firstLeg.shortCondition === 'PE' ? 'CE' : 'PE', action: firstLeg.action };
+//         setLegs(prev => [...prev, newLeg]);
+//       }
+//     } else {
+//       if (legs.length === 2 && !isEditMode) setLegs(prev => [prev[0]]);
+//     }
+//   }, [entrySettings.useCombinedChart]);
+
+//   // Auto-Reset Transaction Type
+//   useEffect(() => {
+//     const isSpecialChart = entrySettings.useCombinedChart || entrySettings.useOptionsChart;
+//     if (isSpecialChart && config.transactionType === 'Both Side') setConfig(prev => ({ ...prev, transactionType: 'Long' }));
+//   }, [entrySettings.useCombinedChart, entrySettings.useOptionsChart, config.transactionType]);
+
+//   // --- HANDLERS ---
+//   const addLeg = (legToCopy = null) => {
+//     const defaultLeg = { action: 'BUY', optionType: 'Call', quantity: instruments.length > 0 ? (instruments[0].lot || 1) : 1, expiry: 'WEEKLY', strikeCriteria: 'ATM pt', strikeType: 'ATM', slType: 'SL%', tpType: 'TP%', slValue: 0, tpValue: 0, priceMovement: 0, trailValue: 0, longCondition: 'CE', shortCondition: 'PE' };
+//     const dataToUse = (legToCopy && legToCopy.action) ? legToCopy : defaultLeg;
+//     const newLeg = { ...dataToUse, id: Date.now() };
+//     setLegs([...legs, newLeg]);
+
+//     setActiveLegId(newLeg.id);
+//   };
+//   const updateLeg = (id, field, value) => { setLegs(prevLegs => prevLegs.map(leg => leg.id === id ? { ...leg, [field]: value } : leg)); };
+//   const removeLeg = (id) => setLegs(legs.filter((l) => l.id !== id));
+  
+//   const isEquityOrFutureMode = (selectedStrategyType === "Indicator Based" || selectedStrategyType === "Price Action Based") && instruments.length > 0 && (instruments[0].segment === "Equity" || instruments[0].segment === "Future");
+
+//   // ✅ NEW SAVE LOGIC (Handles Create AND Update)
+//   const handleSaveStrategy = async () => {
+//     // 1. Validation 
+//     if (!strategyName.trim()) { alert("⚠️ Please enter a Strategy Name!"); return; }
+//     if (instruments.length === 0) { alert("⚠️ Please select at least one Instrument!"); return; }
+//     if (!isEquityOrFutureMode && legs.length === 0) { alert("⚠️ Please add at least one Strategy Leg!"); return; }
+
+//     setLoading(true);
+
+//     // 🔥 THE FIX: Indicator Based Strategy me 'longCondition' se 'optionType' sync karein 🔥
+//     const legsToSave = isEquityOrFutureMode ? [] : legs.map(leg => {
+//         let updatedLeg = { ...leg };
+        
+//         if (selectedStrategyType === "Indicator Based") {
+//             // User ne jo UI me chuna (PE ya CE), wahi asli Option Type ban jayega
+//             updatedLeg.optionType = leg.longCondition === "PE" ? "Put" : "Call";
+//         }
+        
+//         return updatedLeg;
+//     });
+
+//     const strategyPayload = {
+//       name: strategyName,
+//       type: selectedStrategyType,
+//       status: "Inactive",
+//       data: {
+//           type: selectedStrategyType,
+//           instruments: instruments,
+//           legs: legsToSave, 
+//           // 🔥 THE FIX: Payload bhejte waqt state se fresh 'underlying' add kardo
+//           config: { ...config, underlying: underlyingType }, 
+//           advanceSettings: advanceSettings,
+//           entrySettings: entrySettings,
+//           riskManagement: riskSettings, 
+//           priceActionSettings: selectedStrategyType === "Price Action Based" ? priceActionSettings : undefined,
+          
+//       }
+//     };
+
+//     try {
+//       if (isEditMode) {
+//           await updateStrategy(editingId, strategyPayload);
+//           alert("✅ Strategy Updated Successfully!");
+//       } else {
+//           await createStrategy(strategyPayload);
+//           alert("✅ Strategy Created Successfully!");
+//       }
+//       navigate("/strategies"); 
+//     } catch (error) {
+//       console.error("Save Error:", error);
+//       alert("❌ Failed to save strategy.");
+//     } finally {
+//       setLoading(false); 
+//     }
+//   };
+
+//   return (
+//     <div className="p-4 md:p-6 text-gray-900 dark:text-white min-h-screen bg-gray-100 dark:bg-slate-950 font-sans pb-24 transition-colors duration-300 animate-in fade-in">
+//       {/* HEADER */}
+//       <div className="mx-auto border-b border-gray-200 dark:border-gray-800 pb-4 mb-6 flex justify-between items-center transition-colors">
+//         <div className="flex items-center gap-4">
+//              {isEditMode && (
+//                  <button onClick={() => navigate("/strategies")} className="text-blue-600 dark:text-blue-500 hover:text-blue-800 dark:hover:text-white transition-colors flex items-center gap-1 text-sm font-bold">
+//                      <ArrowLeft size={16} /> Back
+//                  </button>
+//              )}
+//              <h1 className="text-2xl font-bold flex items-center gap-2">
+//                 {!isEditMode && <Zap className="text-blue-600 dark:text-blue-500" />} 
+//                 {isEditMode ? "Edit Strategy" : "Strategy Builder"}
+//              </h1>
+//         </div>
+//         {isEditMode && <span className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 px-3 py-1 rounded border border-gray-200 dark:border-slate-800">Editing: <span className="text-blue-600 dark:text-blue-400 font-bold">{strategyName}</span></span>}
+//       </div>
+
+//       <div className="mx-auto space-y-4">
+//         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+//             <div className="lg:col-span-6 space-y-6">
+//                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+//                     <StrategyTypeSection selected={selectedStrategyType} onSelect={setSelectedStrategyType} />
+//                     <InstrumentSection isComingSoon={false} strategyType={selectedStrategyType} instruments={instruments} setInstruments={setInstruments} underlyingType={underlyingType} setUnderlyingType={setUnderlyingType} />
+//                 </div>
+                
+//                 {!isEquityOrFutureMode && selectedStrategyType === "Time Based" && (
+//                     <OrderConfigSection config={config} setConfig={setConfig} strategyType={selectedStrategyType} isComingSoon={selectedStrategyType === "Price Action Based"} entrySettings={entrySettings} />
+//                 )}
+                
+//                 {!isEquityOrFutureMode && (selectedStrategyType === "Indicator Based" || selectedStrategyType === "Price Action Based") && (
+//                     <OrderConfigSection config={config} setConfig={setConfig} strategyType={selectedStrategyType} isComingSoon={false} entrySettings={entrySettings} />
+//                 )}
+//             </div>
+
+//             <div className="lg:col-span-6 h-full">
+//                 {isEquityOrFutureMode ? (
+//                    <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+//                       <OrderConfigSection config={config} setConfig={setConfig} strategyType={selectedStrategyType} isComingSoon={false} entrySettings={entrySettings} />
+//                    </div>
+//                 ) : (
+//                     // <StrategyLegsSection legs={legs} addLeg={addLeg} updateLeg={updateLeg} removeLeg={removeLeg} isComingSoon={selectedStrategyType === 'Price Action Based'} strategyType={selectedStrategyType} instruments={instruments} advanceSettings={advanceSettings} entrySettings={entrySettings} />
+//                     <StrategyLegsSection 
+//                         config={config} 
+//                         legs={legs} 
+//                         addLeg={addLeg} 
+//                         updateLeg={updateLeg} 
+//                         removeLeg={removeLeg} 
+//                         isComingSoon={false} 
+//                         strategyType={selectedStrategyType} 
+//                         instruments={instruments} 
+//                         advanceSettings={advanceSettings} 
+//                         entrySettings={entrySettings} 
+//                         setEntrySettings={setEntrySettings} 
+//                         setAdvanceSettings={setAdvanceSettings}
+
+//                         activeLegId={activeLegId}
+//                         setActiveLegId={setActiveLegId}
+//                     />
+                
+//                 )}
+//             </div>
+//         </div>
+
+        
+//         {selectedStrategyType === "Indicator Based" && (
+//             <EntryConditionSection 
+//                 entrySettings={entrySettings} 
+//                 setEntrySettings={setEntrySettings} 
+//                 transactionType={config.transactionType} 
+//             />
+//         )}
+
+//         {/* 📈 NEW: Price Action / SMC Logic UI */}
+//         {selectedStrategyType === "Price Action Based" && (
+//             <PriceActionConditionSection 
+//                 priceActionSettings={priceActionSettings}
+//                 setPriceActionSettings={setPriceActionSettings}
+                
+//                 // 👇 ExecutionLogic के प्रॉप्स अब हम यहाँ से अंदर भेजेंगे
+//                 activeLegIndex={activeLegIndex !== -1 ? activeLegIndex : 0} 
+//                 activeLegData={activeLegData || legs[0]} 
+//                 onSaveToLeg={(index, smcData) => {
+//                     updateLeg(legs[index].id, 'smcSetup', smcData);
+//                 }} 
+//             />
+//         )}
+
+//         {/* ✅ PASSING PROPS TO RISK MANAGEMENT */}
+//         {selectedStrategyType === "Indicator Based" || selectedStrategyType === "Price Action Based" ? (
+//             <RiskManagementSection 
+//                 riskSettings={riskSettings} 
+//                 setRiskSettings={setRiskSettings} 
+//                 isComingSoon={false} 
+//                 strategyType={selectedStrategyType}
+                
+//             />
+//         ) : (
+//             <div className={`grid grid-cols-1 ${selectedStrategyType === "Time Based" ? 'lg:grid-cols-2 gap-6' : 'lg:grid-cols-1 gap-6'}`}>
+//                 <RiskManagementSection 
+//                     riskSettings={riskSettings} 
+//                     setRiskSettings={setRiskSettings} 
+//                     isComingSoon={false} 
+//                     strategyType={selectedStrategyType}
+//                     legs={legs}
+//                 />
+//                 {selectedStrategyType === "Time Based" && (<AdvanceFeaturesSection advanceSettings={advanceSettings} setAdvanceSettings={setAdvanceSettings} legs={legs} addLeg={addLeg} removeLeg={removeLeg}/>)}
+//             </div>
+//         )}
+
+//         <StrategyFooter 
+//             name={strategyName} 
+//             setName={setStrategyName} 
+//             onSave={handleSaveStrategy} 
+//             isEditMode={isEditMode} 
+//             loading={loading}
+//         />
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default StrategyBuilder;
+
+
+
+
+
 import React, { useState, useEffect } from "react";
-import { Zap, ArrowLeft, Loader2 } from "lucide-react"; 
+import { Zap, ArrowLeft, Loader2, ShieldCheck } from "lucide-react"; 
 import { useNavigate, useLocation } from "react-router-dom"; 
+import axios from "axios"; // 🔥 NEW: Template API call ke liye Axios import kiya
 
 // ✅ Service Import
 import { createStrategy, updateStrategy } from '../../data/AlogoTrade/strategyService';
@@ -340,8 +715,14 @@ const StrategyBuilder = () => {
   const navigate = useNavigate(); 
   const location = useLocation();
 
-  // ✅ Safe Access to Edit Data
-  const incomingData = location.state?.strategyData;
+  // 🔥 THE FIX: Template aur Normal Strategy dono ka state receive karna
+  const isCreatingTemplate = location.state?.isCreatingTemplate || false;
+  const isEditingTemplate = location.state?.isEditingTemplate || false;
+  const isTemplateMode = isCreatingTemplate || isEditingTemplate;
+  const templateId = location.state?.templateId || null;
+
+  // ✅ Safe Access to Edit Data (Dono check karega - strategyData ya templateData)
+  const incomingData = location.state?.strategyData || location.state?.templateData;
   const backendData = incomingData?.data || incomingData || null; 
   const isEditing = !!incomingData;
 
@@ -351,20 +732,9 @@ const StrategyBuilder = () => {
   const [strategyName, setStrategyName] = useState(incomingData?.name || "");
   const [loading, setLoading] = useState(false); 
 
-  // 🔥 THE FIX: Edit mode me purana (Spot/Future) data load karo
   const [underlyingType, setUnderlyingType] = useState(backendData?.config?.underlying || "Spot");
 
-//   const [priceActionSettings, setPriceActionSettings] = useState(backendData?.priceActionSettings || {
-//     masterTimeframe: "15 min",
-//     entryTimeframe: "1 min",
-//     setupType: "BOS (Break of Structure)",
-//     entryTrigger: "Candle Close",
-//     volumeConfirmation: false,
-//     startingTrend: "AUTO",
-//     counterStructureDepth: 0 // 🔥 NEW: 0, 1, या 2 हिस्ट्री लिमिट के लिए
-// });
-
-const [priceActionSettings, setPriceActionSettings] = useState({
+  const [priceActionSettings, setPriceActionSettings] = useState({
     masterTimeframe: backendData?.priceActionSettings?.masterTimeframe || "15 min",
     entryTimeframe: backendData?.priceActionSettings?.entryTimeframe || "1 min",
     setupType: backendData?.priceActionSettings?.setupType || "BOS (Break of Structure)",
@@ -376,8 +746,6 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     strictDecisional: backendData?.priceActionSettings?.strictDecisional || false,
     strictCounter: backendData?.priceActionSettings?.strictCounter || false,
     majorOnly: backendData?.priceActionSettings?.majorOnly ?? true,
-    
-    // 🎛️ NAYE 4 CHECKBOX VARIABLES YAHAN ADD KIYE HAIN
     showD2S_DOB: backendData?.priceActionSettings?.showD2S_DOB ?? true,
     showD2S_DOF: backendData?.priceActionSettings?.showD2S_DOF ?? true,
     showD2S_EOB: backendData?.priceActionSettings?.showD2S_EOB ?? true,
@@ -401,9 +769,9 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     chartType: "Candle", 
     cncEntryDays: 4, 
     cncExitDays: 0,
-    startTime: "09:45",       // 🔥 THE FIX: Ab hamesha default save hoga!
-    squareOffTime: "15:15",    // 🔥 THE FIX: Square Off bhi!
-    nextDaySquareOff: "09:15" // 🔥 THE NEW FIX: BTST Default time
+    startTime: "09:45",      
+    squareOffTime: "15:15",    
+    nextDaySquareOff: "09:15" 
   });
 
   const [advanceSettings, setAdvanceSettings] = useState(backendData?.advanceSettings || {
@@ -414,20 +782,18 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     useCombinedChart: false, useOptionsChart: false, entryConditions: []
   });
 
-  // ✅ NEW: Risk Management State
   const [riskSettings, setRiskSettings] = useState(backendData?.riskManagement || {
       maxProfit: 0,
       maxLoss: 0,
       maxTradeCycle: 1,
       noTradeAfter: "15:15",
-      profitTrailing: "No Trailing", // Radio button value
+      profitTrailing: "No Trailing",
       lockFixProfit: 0,
       trailProfit: 0
   });
 
   // --- EDIT MODE FLAGS ---
   const [isEditMode, setIsEditMode] = useState(isEditing);
-
   const [editingId, setEditingId] = useState(incomingData?._id || incomingData?.id || null);
 
   // --- FORCE DATA RELOAD ---
@@ -435,10 +801,7 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     if (isEditMode && backendData) {
         setInstruments(backendData.instruments || []);
         setSelectedStrategyType(incomingData.type || "Time Based");
-        
-        // 🔥 THE FIX: InstrumentSection ke reset karne ke baad, yahan se wapas Data restore karo!
         setUnderlyingType(backendData.config?.underlying || "Spot");
-
         if(backendData.legs && backendData.legs.length > 0) {
             setLegs(backendData.legs);
         }
@@ -447,28 +810,13 @@ const [priceActionSettings, setPriceActionSettings] = useState({
 
   // --- RESET EFFECTS ---
   useEffect(() => {
-    // जब भी Strategy Type बदलेगा, हम Advance Settings और Legs दोनों को एकदम नया (Fresh) कर देंगे
     if (!isEditMode) {
-        // 1. Advance Settings Reset
         setAdvanceSettings({ moveSLToCost: false, exitAllOnSLTgt: false, prePunchSL: false, waitAndTrade: false, premiumDifference: false, reEntryExecute: false, trailSL: false });
-        
-        // 2. Legs Reset (एकदम फ्रेश डिफॉल्ट लेग बनाएंगे जिसमें पुराना smcSetup नहीं होगा)
         const freshLegId = Date.now();
         setLegs([{ 
-            id: freshLegId, 
-            action: "BUY", 
-            optionType: "Call", 
-            quantity: instruments.length > 0 ? (instruments[0].lot || 1) : 1, 
-            expiry: "WEEKLY", 
-            strikeCriteria: "ATM pt", 
-            strikeType: "ATM", 
-            slType: "SL%", 
-            slValue: 30, 
-            tpType: "TP%", 
-            tpValue: 0 
+            id: freshLegId, action: "BUY", optionType: "Call", quantity: instruments.length > 0 ? (instruments[0].lot || 1) : 1, 
+            expiry: "WEEKLY", strikeCriteria: "ATM pt", strikeType: "ATM", slType: "SL%", slValue: 30, tpType: "TP%", tpValue: 0 
         }]);
-
-        // 3. Active Leg ID को भी इस नए लेग पर सेट कर देंगे ताकि कोई क्रैश ना हो
         setActiveLegId(freshLegId);
     }
   }, [selectedStrategyType]);
@@ -486,7 +834,6 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     }
   }, [entrySettings.useCombinedChart]);
 
-  // Auto-Reset Transaction Type
   useEffect(() => {
     const isSpecialChart = entrySettings.useCombinedChart || entrySettings.useOptionsChart;
     if (isSpecialChart && config.transactionType === 'Both Side') setConfig(prev => ({ ...prev, transactionType: 'Long' }));
@@ -498,65 +845,92 @@ const [priceActionSettings, setPriceActionSettings] = useState({
     const dataToUse = (legToCopy && legToCopy.action) ? legToCopy : defaultLeg;
     const newLeg = { ...dataToUse, id: Date.now() };
     setLegs([...legs, newLeg]);
-
     setActiveLegId(newLeg.id);
   };
+  
   const updateLeg = (id, field, value) => { setLegs(prevLegs => prevLegs.map(leg => leg.id === id ? { ...leg, [field]: value } : leg)); };
   const removeLeg = (id) => setLegs(legs.filter((l) => l.id !== id));
   
   const isEquityOrFutureMode = (selectedStrategyType === "Indicator Based" || selectedStrategyType === "Price Action Based") && instruments.length > 0 && (instruments[0].segment === "Equity" || instruments[0].segment === "Future");
 
-  // ✅ NEW SAVE LOGIC (Handles Create AND Update)
+  // ✅ THE ULTIMATE SAVE LOGIC (Handles Normal Strategy + Admin Templates)
   const handleSaveStrategy = async () => {
-    // 1. Validation 
     if (!strategyName.trim()) { alert("⚠️ Please enter a Strategy Name!"); return; }
     if (instruments.length === 0) { alert("⚠️ Please select at least one Instrument!"); return; }
     if (!isEquityOrFutureMode && legs.length === 0) { alert("⚠️ Please add at least one Strategy Leg!"); return; }
 
     setLoading(true);
 
-    // 🔥 THE FIX: Indicator Based Strategy me 'longCondition' se 'optionType' sync karein 🔥
     const legsToSave = isEquityOrFutureMode ? [] : legs.map(leg => {
         let updatedLeg = { ...leg };
-        
         if (selectedStrategyType === "Indicator Based") {
-            // User ne jo UI me chuna (PE ya CE), wahi asli Option Type ban jayega
             updatedLeg.optionType = leg.longCondition === "PE" ? "Put" : "Call";
         }
-        
         return updatedLeg;
     });
 
-    const strategyPayload = {
-      name: strategyName,
-      type: selectedStrategyType,
-      status: "Inactive",
-      data: {
-          type: selectedStrategyType,
-          instruments: instruments,
-          legs: legsToSave, 
-          // 🔥 THE FIX: Payload bhejte waqt state se fresh 'underlying' add kardo
-          config: { ...config, underlying: underlyingType }, 
-          advanceSettings: advanceSettings,
-          entrySettings: entrySettings,
-          riskManagement: riskSettings, 
-          priceActionSettings: selectedStrategyType === "Price Action Based" ? priceActionSettings : undefined,
-          
-      }
+    const coreData = {
+        type: selectedStrategyType,
+        instruments: instruments,
+        legs: legsToSave, 
+        config: { ...config, underlying: underlyingType }, 
+        advanceSettings: advanceSettings,
+        entrySettings: entrySettings,
+        riskManagement: riskSettings, 
+        priceActionSettings: selectedStrategyType === "Price Action Based" ? priceActionSettings : undefined,
     };
 
     try {
-      if (isEditMode) {
-          await updateStrategy(editingId, strategyPayload);
-          alert("✅ Strategy Updated Successfully!");
-      } else {
-          await createStrategy(strategyPayload);
-          alert("✅ Strategy Created Successfully!");
+      // 👑 ADMIN TEMPLATE SAVE LOGIC
+      if (isTemplateMode) {
+          const templatePayload = {
+              name: strategyName,
+              description: "A battle-tested strategy template crafted by Admin.", // Default description
+              segment: instruments.length > 0 ? instruments[0].segment : 'Options',
+              type: selectedStrategyType,
+              risk: "Medium",
+              roi: "TBD",
+              capital: "1.0L",
+              data: coreData // Pura logic 'data' object me
+          };
+
+          if (isEditingTemplate) {
+              await axios.put(`${import.meta.env.VITE_API_URL}/api/strategy-templates/${templateId}`, templatePayload);
+              alert("👑 Admin Template Updated Successfully!");
+          } else {
+              await axios.post(`${import.meta.env.VITE_API_URL}/api/strategy-templates`, templatePayload);
+              alert("👑 Admin Template Created Successfully!");
+          }
+      } 
+      
+      // 👤 NORMAL USER STRATEGY SAVE LOGIC
+      else {
+          const strategyPayload = {
+              name: strategyName,
+              type: selectedStrategyType,
+              status: "Inactive",
+              data: coreData
+          };
+
+          if (isEditMode) {
+              await updateStrategy(editingId, strategyPayload);
+              alert("✅ Strategy Updated Successfully!");
+          } else {
+              await createStrategy(strategyPayload);
+              alert("✅ Strategy Created Successfully!");
+          }
       }
-      navigate("/strategies"); 
+
+      // 🔥 THE FIX: Redirect to specific tab based on what was saved
+      if (isTemplateMode) {
+          navigate("/strategies", { state: { activeTab: 'templates' } });
+      } else {
+          navigate("/strategies", { state: { activeTab: 'my' } });
+      }
+
     } catch (error) {
       console.error("Save Error:", error);
-      alert("❌ Failed to save strategy.");
+      alert("❌ Failed to save. Check console for details.");
     } finally {
       setLoading(false); 
     }
@@ -567,17 +941,30 @@ const [priceActionSettings, setPriceActionSettings] = useState({
       {/* HEADER */}
       <div className="mx-auto border-b border-gray-200 dark:border-gray-800 pb-4 mb-6 flex justify-between items-center transition-colors">
         <div className="flex items-center gap-4">
-             {isEditMode && (
-                 <button onClick={() => navigate("/strategies")} className="text-blue-600 dark:text-blue-500 hover:text-blue-800 dark:hover:text-white transition-colors flex items-center gap-1 text-sm font-bold">
-                     <ArrowLeft size={16} /> Back
-                 </button>
-             )}
+             {(isEditMode || isTemplateMode) && (
+                <button 
+                    onClick={() => {
+                        if (isTemplateMode) {
+                            navigate("/strategies", { state: { activeTab: 'templates' } });
+                        } else {
+                            navigate("/strategies", { state: { activeTab: 'my' } });
+                        }
+                    }} 
+                    className="text-blue-600 dark:text-blue-500 hover:text-blue-800 dark:hover:text-white transition-colors flex items-center gap-1 text-sm font-bold"
+                >
+                    <ArrowLeft size={16} /> Back
+                </button>
+            )}
              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {!isEditMode && <Zap className="text-blue-600 dark:text-blue-500" />} 
-                {isEditMode ? "Edit Strategy" : "Strategy Builder"}
+                {isTemplateMode ? (
+                    <ShieldCheck className="text-amber-500" /> 
+                ) : (
+                    !isEditMode && <Zap className="text-blue-600 dark:text-blue-500" />
+                )}
+                {isTemplateMode ? (isEditingTemplate ? "Edit Admin Template" : "Create Admin Template") : (isEditMode ? "Edit Strategy" : "Strategy Builder")}
              </h1>
         </div>
-        {isEditMode && <span className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 px-3 py-1 rounded border border-gray-200 dark:border-slate-800">Editing: <span className="text-blue-600 dark:text-blue-400 font-bold">{strategyName}</span></span>}
+        {(isEditMode || isEditingTemplate) && <span className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 px-3 py-1 rounded border border-gray-200 dark:border-slate-800">Editing: <span className="text-blue-600 dark:text-blue-400 font-bold">{strategyName}</span></span>}
       </div>
 
       <div className="mx-auto space-y-4">
@@ -603,7 +990,6 @@ const [priceActionSettings, setPriceActionSettings] = useState({
                       <OrderConfigSection config={config} setConfig={setConfig} strategyType={selectedStrategyType} isComingSoon={false} entrySettings={entrySettings} />
                    </div>
                 ) : (
-                    // <StrategyLegsSection legs={legs} addLeg={addLeg} updateLeg={updateLeg} removeLeg={removeLeg} isComingSoon={selectedStrategyType === 'Price Action Based'} strategyType={selectedStrategyType} instruments={instruments} advanceSettings={advanceSettings} entrySettings={entrySettings} />
                     <StrategyLegsSection 
                         config={config} 
                         legs={legs} 
@@ -617,16 +1003,13 @@ const [priceActionSettings, setPriceActionSettings] = useState({
                         entrySettings={entrySettings} 
                         setEntrySettings={setEntrySettings} 
                         setAdvanceSettings={setAdvanceSettings}
-
                         activeLegId={activeLegId}
                         setActiveLegId={setActiveLegId}
                     />
-                
                 )}
             </div>
         </div>
 
-        
         {selectedStrategyType === "Indicator Based" && (
             <EntryConditionSection 
                 entrySettings={entrySettings} 
@@ -635,13 +1018,10 @@ const [priceActionSettings, setPriceActionSettings] = useState({
             />
         )}
 
-        {/* 📈 NEW: Price Action / SMC Logic UI */}
         {selectedStrategyType === "Price Action Based" && (
             <PriceActionConditionSection 
                 priceActionSettings={priceActionSettings}
                 setPriceActionSettings={setPriceActionSettings}
-                
-                // 👇 ExecutionLogic के प्रॉप्स अब हम यहाँ से अंदर भेजेंगे
                 activeLegIndex={activeLegIndex !== -1 ? activeLegIndex : 0} 
                 activeLegData={activeLegData || legs[0]} 
                 onSaveToLeg={(index, smcData) => {
@@ -650,14 +1030,12 @@ const [priceActionSettings, setPriceActionSettings] = useState({
             />
         )}
 
-        {/* ✅ PASSING PROPS TO RISK MANAGEMENT */}
         {selectedStrategyType === "Indicator Based" || selectedStrategyType === "Price Action Based" ? (
             <RiskManagementSection 
                 riskSettings={riskSettings} 
                 setRiskSettings={setRiskSettings} 
                 isComingSoon={false} 
                 strategyType={selectedStrategyType}
-                
             />
         ) : (
             <div className={`grid grid-cols-1 ${selectedStrategyType === "Time Based" ? 'lg:grid-cols-2 gap-6' : 'lg:grid-cols-1 gap-6'}`}>
@@ -676,7 +1054,7 @@ const [priceActionSettings, setPriceActionSettings] = useState({
             name={strategyName} 
             setName={setStrategyName} 
             onSave={handleSaveStrategy} 
-            isEditMode={isEditMode} 
+            isEditMode={isEditMode || isEditingTemplate} // Buttons properly show "Update" if editing
             loading={loading}
         />
       </div>
@@ -685,4 +1063,3 @@ const [priceActionSettings, setPriceActionSettings] = useState({
 };
 
 export default StrategyBuilder;
-
