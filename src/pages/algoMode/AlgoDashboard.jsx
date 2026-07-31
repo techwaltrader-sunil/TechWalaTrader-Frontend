@@ -689,9 +689,12 @@ import { Box, ChevronDown, Check, ArrowRight, Phone, Plus } from 'lucide-react';
 import { FaTelegramPlane, FaYoutube, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client'; 
+import axios from 'axios'; // 🔥 NEW: Template fetch karne ke liye
 
 import { getConnectedBrokers, updateBrokerStatus } from '../../data/AlogoTrade/brokerService';
 import LiveLogTicker from '../../components/algoComponents/AlgoDashboard/LiveLogTicker';
+
+import TemplateCard from '../../components/algoComponents/Strategies/TemplateCard';
 // ✅ Connect to Backend Socket
 const socket = io.connect(import.meta.env.VITE_SOCKET_URL);
 
@@ -707,8 +710,12 @@ const AlgoDashboard = () => {
   // ✅ Live P&L State
   const [totalPnL, setTotalPnL] = useState(0.00); 
 
-
   const [logs, setLogs] = useState([]);
+
+
+  // 🔥 NEW: Featured Templates State
+  const [featuredTemplates, setFeaturedTemplates] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
 
   // --- 1. FETCH DATA & SOCKET LISTENER ---
   useEffect(() => {
@@ -719,10 +726,18 @@ const AlgoDashboard = () => {
             if (data && data.length > 0) {
                 setActiveBroker(data[0]); 
             }
+            // 🔥 NEW: 2. Fetch Featured Templates
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/strategy-templates`);
+            if (res.data) {
+                // Sirf wo templates filter karo jinka showOnDashboard true hai
+                const likedTemplates = res.data.filter(t => t.showOnDashboard === true || t.data?.templateConfig?.showOnDashboard === true);
+                setFeaturedTemplates(likedTemplates);
+            }
         } catch (error) {
             console.error("Error loading dashboard data:", error);
         } finally {
             setLoading(false);
+            setLoadingTemplates(false); // 🔥 STOP LOADER
         }
     };
 
@@ -1040,18 +1055,40 @@ const AlgoDashboard = () => {
 
       <div className="mb-8">
         <div className="flex justify-between items-end mb-4">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Strategy Templates</h3>
-            <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">See All <ArrowRight size={12}/></button>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                Featured Templates <span className="text-pink-500 animate-pulse">❤️</span>
+            </h3>
+            <button onClick={() => navigate('/strategies', { state: { activeTab: 'templates' } })} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 transition-all">
+                See All <ArrowRight size={12}/>
+            </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {templates.map((_, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all group cursor-pointer">
-                    <div className="h-4 bg-gray-100 dark:bg-slate-800 rounded w-3/4 mb-3 group-hover:bg-blue-50 dark:group-hover:bg-slate-700 transition-colors"></div>
-                    <div className="h-20 bg-gray-50 dark:bg-slate-800/50 rounded w-full mb-4 border border-dashed border-gray-200 dark:border-slate-800"></div>
-                    <div className="flex justify-between items-center"><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-1/3"></div><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-1/4"></div></div>
-                </div>
-            ))}
-        </div>
+        
+        {loadingTemplates ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((_, idx) => (
+                    <div key={idx} className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5 shadow-sm animate-pulse">
+                        <div className="h-4 bg-gray-100 dark:bg-slate-800 rounded w-3/4 mb-3"></div>
+                        <div className="h-20 bg-gray-50 dark:bg-slate-800/50 rounded w-full mb-4"></div>
+                        <div className="flex justify-between items-center"><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-1/3"></div><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-1/4"></div></div>
+                    </div>
+                ))}
+            </div>
+        ) : featuredTemplates.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {featuredTemplates.slice(0, 3).map((template) => (
+                    <TemplateCard 
+                        key={template._id || template.id} 
+                        template={template} 
+                        isAdmin={false} // Dashboard par edit/delete nahi dikhana
+                        onUse={() => navigate('/strategies', { state: { activeTab: 'templates' } })}
+                    />
+                ))}
+            </div>
+        ) : (
+            <div className="bg-white dark:bg-slate-900 border border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-10 text-center shadow-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No featured templates yet. Admin can feature them by clicking the ❤️ icon in Strategy Templates.</p>
+            </div>
+        )}
       </div>
       
 

@@ -1157,6 +1157,42 @@ const Strategies = () => {
       setShowDuplicateModal(true);
   };
 
+  const handleToggleHeart = async (template) => {
+      const templateId = template._id || template.id;
+      // Check current status
+      const currentStatus = template.data?.templateConfig?.showOnDashboard || template.showOnDashboard || false;
+      const newStatus = !currentStatus;
+
+      try {
+          // Prepare updated core data
+          const updatedCoreData = {
+              ...template.data,
+              templateConfig: {
+                  ...template.data?.templateConfig,
+                  showOnDashboard: newStatus
+              }
+          };
+
+          // 🔥 THE FIX: Use Axios directly for the Templates API endpoint
+          await axios.put(`${import.meta.env.VITE_API_URL}/api/strategy-templates/${templateId}`, { 
+              data: updatedCoreData, 
+              showOnDashboard: newStatus 
+          });
+          
+          // Update UI state immediately for quick response
+          setTemplates(prev => prev.map(t => 
+              (t._id || t.id) === templateId 
+                  ? { ...t, showOnDashboard: newStatus, data: updatedCoreData } 
+                  : t
+          ));
+          
+          setNotification({ message: newStatus ? "Added to Dashboard! ❤️" : "Removed from Dashboard 💔", type: "success" });
+      } catch (error) {
+          console.error("Heart Toggle Error:", error);
+          setNotification({ message: "Failed to update status", type: "error" });
+      }
+  };
+
   const handleEditTemplate = (template) => {
       navigate('/strategy-builder', { state: { templateData: template, templateId: template._id || template.id, isEditingTemplate: true } });
   };
@@ -1281,6 +1317,7 @@ const Strategies = () => {
                           isAdmin={isAdmin}              
                           onEdit={handleEditTemplate}    
                           onDelete={handleDeleteTemplate}
+                          onToggleHeart={handleToggleHeart}
                           isCloning={cloningId === (strat.id || strat._id)}
                       />
                   ) : (

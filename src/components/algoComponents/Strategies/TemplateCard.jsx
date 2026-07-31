@@ -80,9 +80,9 @@
 
 
 import React from 'react';
-import { TrendingUp, Wallet, ArrowRight, Edit, Trash2, Loader2 } from 'lucide-react';
+import { TrendingUp, Wallet, ArrowRight, Edit, Trash2, Loader2, Heart } from 'lucide-react';
 
-const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, isCloning = false }) => {
+const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, onToggleHeart, isCloning = false }) => {
   
   return (
     // ✅ Main Container
@@ -112,6 +112,19 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, isCl
             {/* 👑 ADMIN CONTROLS (Edit & Delete) */}
             {isAdmin && (
                 <div className="flex items-center gap-2 mb-1">
+                    {/* 🔥 THE FIX: Heart / Featured Toggle Button */}
+                    <button 
+                        onClick={() => onToggleHeart && onToggleHeart(template)} 
+                        className={`p-1 rounded transition-colors ${
+                            template.data?.templateConfig?.showOnDashboard || template.showOnDashboard
+                                ? 'text-pink-500 bg-pink-50 dark:bg-pink-500/10' 
+                                : 'text-gray-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'
+                        }`}
+                        title={template.data?.templateConfig?.showOnDashboard || template.showOnDashboard ? "Remove from Dashboard" : "Show on Dashboard"}
+                    >
+                        <Heart size={14} className={template.data?.templateConfig?.showOnDashboard || template.showOnDashboard ? "fill-pink-500" : ""} />
+                    </button>
+
                     <button 
                         onClick={() => onEdit(template)} 
                         className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors"
@@ -120,7 +133,7 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, isCl
                         <Edit size={14} />
                     </button>
                     <button 
-                        onClick={() => onDelete(template._id)} 
+                        onClick={() => onDelete(template._id || template.id)} 
                         className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
                         title="Delete Template"
                     >
