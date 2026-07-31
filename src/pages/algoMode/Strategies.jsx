@@ -973,14 +973,40 @@ const Strategies = () => {
                 segment: firstInstrument?.segment || "Options",
                 startTime: coreData.config?.startTime || "09:15",
                 endTime: coreData.config?.squareOff || "15:15",
-                legs: (coreData.legs || []).map(l => {
+
+                legs: (coreData.legs || []).flatMap(l => {
                     const rawOpt = (l.optionType || l.type || l.right || l.option_type || "").toString().toUpperCase();
                     let finalOptType = "FUT";
                     if (rawOpt === "CALL" || rawOpt === "CE") finalOptType = "CE";
                     else if (rawOpt === "PUT" || rawOpt === "PE") finalOptType = "PE";
 
-                    return { action: l.action || "BUY", symbol: instrumentName, type: finalOptType, qty: l.quantity || 1, strike: formatStrikeDisplay(l) };
+                    const strikeDisplay = formatStrikeDisplay(l);
+                    const qty = l.quantity || 1;
+
+                    // 🔥 THE FIX: Added 'optionType' explicitly so the UI Badge renders correctly (CE/PE)
+                    if (strikeDisplay.includes("Ratio Spread")) {
+                        // BUY legs ke liye "/X" hata do
+                        const buyStrikeDisplay = strikeDisplay.replace("/X", ""); 
+                        
+                        return [
+                            { action: "BUY", symbol: instrumentName, type: "CE", optionType: "Call", qty: qty, strike: buyStrikeDisplay },
+                            { action: "BUY", symbol: instrumentName, type: "PE", optionType: "Put", qty: qty, strike: buyStrikeDisplay },
+                            { action: "SELL", symbol: instrumentName, type: "CE", optionType: "Call", qty: qty, strike: strikeDisplay }, // Sell me waise hi rahega
+                            { action: "SELL", symbol: instrumentName, type: "PE", optionType: "Put", qty: qty, strike: strikeDisplay }
+                        ];
+                    }
+
+                    // Default return for normal strategies
+                    return [{ 
+                        action: l.action || "BUY", 
+                        symbol: instrumentName, 
+                        type: finalOptType, 
+                        optionType: l.optionType || (finalOptType === "CE" ? "Call" : "Put"), 
+                        qty: qty, 
+                        strike: strikeDisplay 
+                    }];
                 }),
+
                 originalData: s,
                 data: coreData,
                 isSignalActive: s.isSignalActive || false,
@@ -1095,13 +1121,27 @@ const Strategies = () => {
   const handleConfirmDuplicate = async () => {
       if(!strategyToDuplicate) return;
       try {
-          const payload = { name: newStrategyName, type: strategyToDuplicate.type || "Time Based", status: "Inactive", data: strategyToDuplicate.data };
+          // 🔥 THE FIX: Safely extract core data whether it's a Template or a Normal Strategy
+          const coreData = strategyToDuplicate.data || strategyToDuplicate.originalData?.data || strategyToDuplicate.originalData || {};
+          const strategyType = strategyToDuplicate.type || coreData.type || "Time Based";
+
+          const payload = { 
+              name: newStrategyName, 
+              type: strategyType, 
+              status: "Inactive", 
+              data: coreData 
+          };
+          
           await createStrategy(payload);
-          setNotification({ message: "Duplicated Successfully!", type: "success" });
+          setNotification({ message: "Saved as Mine Successfully!", type: "success" });
           setShowDuplicateModal(false);
           fetchData(); 
+          
+          // 🔥 THE FIX: Auto-redirect user to 'My Strategies' tab after saving
+          setActiveTab('my-strategies'); // नोट: अगर आपके कोड में टैब का नाम कुछ और है (जैसे 'myStrategies' या 'My Strategies'), तो उसे यहाँ बदल लीजिएगा।
+
       } catch (error) {
-          setNotification({ message: "Failed to duplicate", type: "error" });
+          setNotification({ message: "Failed to save strategy", type: "error" });
       }
   };
 
@@ -1111,14 +1151,14 @@ const Strategies = () => {
 
   // --- 🔥 NEW HANDLERS FOR TEMPLATES 🔥 ---
   const handleUseTemplate = (template) => {
-      // Direct Strategy Builder me le jao ya Duplicate Model open karo (Aapki choice, abhi Duplicate Modal open kar rahe hain)
-      setStrategyToDuplicate({ originalData: template.originalData || template.data || {}, name: template.name });
+      // 🔥 THE FIX: Pass the entire template object directly
+      setStrategyToDuplicate(template);
       setNewStrategyName(template.name);
       setShowDuplicateModal(true);
   };
 
   const handleEditTemplate = (template) => {
-      navigate('/strategy-builder', { state: { templateData: template.data || template.originalData, templateId: template._id || template.id, isEditingTemplate: true } });
+      navigate('/strategy-builder', { state: { templateData: template, templateId: template._id || template.id, isEditingTemplate: true } });
   };
 
   const handleDeleteTemplate = async (templateId) => {

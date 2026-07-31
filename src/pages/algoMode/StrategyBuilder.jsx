@@ -796,14 +796,33 @@ const StrategyBuilder = () => {
   const [isEditMode, setIsEditMode] = useState(isEditing);
   const [editingId, setEditingId] = useState(incomingData?._id || incomingData?.id || null);
 
+
+  // 🔥 NEW: Template Meta States
+  const [templateDesc, setTemplateDesc] = useState("A battle-tested strategy template crafted by Admin.");
+  const [templateRisk, setTemplateRisk] = useState("Medium Risk");
+  const [templateRoi, setTemplateRoi] = useState("~1-2% / Mo");
+  const [templateCapital, setTemplateCapital] = useState("₹1.0L");
+
+  // Check if we are creating or editing a template
+//   const isTemplateMode = location.state?.isCreatingTemplate || location.state?.isEditingTemplate || false;
+
   // --- FORCE DATA RELOAD ---
   useEffect(() => {
     if (isEditMode && backendData) {
+        setStrategyName(incomingData.name || "");
         setInstruments(backendData.instruments || []);
         setSelectedStrategyType(incomingData.type || "Time Based");
         setUnderlyingType(backendData.config?.underlying || "Spot");
         if(backendData.legs && backendData.legs.length > 0) {
             setLegs(backendData.legs);
+        }
+
+        // 🔥 Set Template Meta if available
+        if (backendData.templateConfig) {
+            setTemplateDesc(backendData.templateConfig.description || "A battle-tested strategy template crafted by Admin.");
+            setTemplateRisk(backendData.templateConfig.riskLevel || "Medium Risk");
+            setTemplateRoi(backendData.templateConfig.roi || "~1-2% / Mo");
+            setTemplateCapital(backendData.templateConfig.capital || "₹1.0L");
         }
     }
   }, []);
@@ -878,6 +897,16 @@ const StrategyBuilder = () => {
         entrySettings: entrySettings,
         riskManagement: riskSettings, 
         priceActionSettings: selectedStrategyType === "Price Action Based" ? priceActionSettings : undefined,
+    
+
+        // 🔥 THE FIX: Template Meta Data exactly yahan aayega
+        templateConfig: isTemplateMode ? {
+            description: templateDesc,
+            riskLevel: templateRisk,
+            roi: templateRoi,
+            capital: templateCapital
+        } : undefined
+
     };
 
     try {
@@ -1049,6 +1078,37 @@ const StrategyBuilder = () => {
                 {selectedStrategyType === "Time Based" && (<AdvanceFeaturesSection advanceSettings={advanceSettings} setAdvanceSettings={setAdvanceSettings} legs={legs} addLeg={addLeg} removeLeg={removeLeg}/>)}
             </div>
         )}
+
+        {/* 🔥 NEW: Template Settings (Only visible in Template Mode) */}
+      {isTemplateMode && (
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-blue-200 dark:border-blue-500/30 mb-5 shadow-sm">
+              <h3 className="font-bold text-[15px] text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Template Display Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="col-span-1 lg:col-span-4">
+                      <label className="text-[11px] text-gray-500 font-bold block mb-1.5 uppercase">Description</label>
+                      <input type="text" value={templateDesc} onChange={e => setTemplateDesc(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 transition-colors" placeholder="e.g. A battle-tested strategy template..." />
+                  </div>
+                  <div>
+                      <label className="text-[11px] text-gray-500 font-bold block mb-1.5 uppercase">Risk Level</label>
+                      <select value={templateRisk} onChange={e => setTemplateRisk(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 transition-colors">
+                          <option value="Low Risk">Low Risk</option>
+                          <option value="Medium Risk">Medium Risk</option>
+                          <option value="High Risk">High Risk</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label className="text-[11px] text-gray-500 font-bold block mb-1.5 uppercase">Expected ROI</label>
+                      <input type="text" value={templateRoi} onChange={e => setTemplateRoi(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 transition-colors" placeholder="e.g. ~1-2% / Mo" />
+                  </div>
+                  <div>
+                      <label className="text-[11px] text-gray-500 font-bold block mb-1.5 uppercase">Min Capital</label>
+                      <input type="text" value={templateCapital} onChange={e => setTemplateCapital(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 transition-colors" placeholder="e.g. ₹1.0L" />
+                  </div>
+              </div>
+          </div>
+      )}
 
         <StrategyFooter 
             name={strategyName} 

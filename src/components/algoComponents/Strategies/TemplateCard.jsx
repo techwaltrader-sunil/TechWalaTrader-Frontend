@@ -131,20 +131,22 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, isCl
 
             {/* Risk Badge */}
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded border 
-                ${template.risk === 'Low' 
+                ${(template.data?.templateConfig?.riskLevel || template.risk || '').includes('Low') 
                     ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' 
-                    : template.risk === 'High' 
+                    : (template.data?.templateConfig?.riskLevel || template.risk || '').includes('High') 
                         ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' 
                         : 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20'}
             `}>
-                {template.risk || 'Medium'} Risk
+                {/* 🔥 THE FIX: Dynamic rendering with backward compatibility for old templates */}
+                {template.data?.templateConfig?.riskLevel || (template.risk ? `${template.risk} Risk` : 'Medium Risk')}
             </span>
         </div>
       </div>
 
       {/* 2. DESCRIPTION */}
       <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-5 line-clamp-2">
-          {template.description}
+          {/* 🔥 THE FIX: Dynamic rendering with fallback to old description */}
+          {template.data?.templateConfig?.description || template.description || "A battle-tested strategy template crafted by Admin."}
       </p>
 
       {/* 3. METRICS GRID (ROI & Capital) */}
@@ -154,7 +156,10 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, isCl
               <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-bold flex items-center gap-1 mb-1">
                   <TrendingUp size={10} className="text-green-600 dark:text-green-500"/> Exp. ROI
               </p>
-              <p className="text-sm font-bold text-green-600 dark:text-green-400">{template.roi || 'TBD'}</p>
+              <p className="text-sm font-bold text-green-600 dark:text-green-400">
+                  {/* 🔥 THE FIX: Dynamic ROI with fallback */}
+                  {template.data?.templateConfig?.roi || template.roi || 'TBD'}
+              </p>
           </div>
           
           {/* Capital Box */}
@@ -162,7 +167,10 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, isCl
               <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-bold flex items-center gap-1 mb-1">
                   <Wallet size={10} className="text-blue-600 dark:text-blue-500"/> Min Capital
               </p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">₹{template.capital || '0'}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {/* 🔥 THE FIX: Dynamic Capital (₹ symbol is handled smartly to avoid double printing) */}
+                  {template.data?.templateConfig?.capital || (template.capital ? `₹${template.capital}` : '₹1.0L')}
+              </p>
           </div>
       </div>
 

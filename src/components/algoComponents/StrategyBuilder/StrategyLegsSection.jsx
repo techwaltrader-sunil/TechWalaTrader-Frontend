@@ -1025,7 +1025,8 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
       
       <div className="flex justify-between items-center mb-5">
         <h3 className="font-bold text-lg text-gray-800 dark:text-white">Strategy Legs</h3>
-        {(!advanceSettings?.moveSLToCost) && (
+        {/* 🔥 THE FIX: Hide "+ Add Leg" button completely if Ratio Spread is selected in any leg */}
+        {(!advanceSettings?.moveSLToCost && !legs.some(leg => leg.strikeCriteria === 'Ratio Spread (Prem/X)')) && (
             <button onClick={() => addLeg()} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 shadow-md shadow-blue-500/20 transition-all">
                 <Plus size={14} /> Add Leg
             </button>
@@ -1054,10 +1055,19 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
               <div className={`flex justify-between items-center p-3 ${isExpanded ? 'border-b border-gray-300 dark:border-slate-700' : ''}`}>
                  <div className="flex-1 cursor-pointer" onClick={() => setActiveLegId(leg.id)}>
                     <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm flex items-center gap-2">
-                       Leg {index + 1} 
-                       <span className={`text-xs font-bold px-1.5 rounded ${leg.action === 'BUY' ? 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/20' : 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/20'}`}>
-                           {leg.action} {displayTypeLabel}
-                       </span>
+                       {/* 🔥 THE FIX: Fully custom exact text for Ratio Spread */}
+                       {leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? (
+                           <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center gap-1.5 flex-wrap tracking-wide border border-indigo-200 dark:border-indigo-500/30">
+                               Leg 1 BUY CE <span className="opacity-40">|</span> Leg 2 BUY PE <span className="opacity-40">|</span> Leg 3 SELL CE <span className="opacity-40">|</span> Leg 4 SELL PE
+                           </span>
+                       ) : (
+                           <>
+                               Leg {index + 1} 
+                               <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${leg.action === 'BUY' ? 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30' : 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/20 border border-red-200 dark:border-red-500/30'}`}>
+                                   {leg.action} {displayTypeLabel}
+                               </span>
+                           </>
+                       )}
                     </h4>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">{getLegSummary(leg)}</p>
                  </div>
@@ -1142,21 +1152,21 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     </div>
                                     
                                     {/* Position (Buy/Sell) */}
-                                    <div>
+                                    <div className={leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? 'opacity-50 cursor-not-allowed' : ''}>
                                         <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Position</label>
                                         <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-slate-600">
-                                            <button onClick={() => updateLeg(leg.id, 'action', 'BUY')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.action === 'BUY' ? 'bg-green-100 text-green-700 dark:bg-green-600/20 dark:text-green-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'}`}>BUY</button>
-                                            <button onClick={() => updateLeg(leg.id, 'action', 'SELL')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.action === 'SELL' ? 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'}`}>SELL</button>
+                                            <button disabled={leg.strikeCriteria === 'Ratio Spread (Prem/X)'} onClick={() => updateLeg(leg.id, 'action', 'BUY')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.action === 'BUY' ? 'bg-green-100 text-green-700 dark:bg-green-600/20 dark:text-green-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'} ${leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? 'cursor-not-allowed' : ''}`}>BUY</button>
+                                            <button disabled={leg.strikeCriteria === 'Ratio Spread (Prem/X)'} onClick={() => updateLeg(leg.id, 'action', 'SELL')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.action === 'SELL' ? 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'} ${leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? 'cursor-not-allowed' : ''}`}>SELL</button>
                                         </div>
                                     </div>
 
                                     {/* Option Type (Call/Put) */}
                                     {strategyType !== 'Indicator Based' && (
-                                        <div>
+                                        <div className={leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? 'opacity-50 cursor-not-allowed' : ''}>
                                             <label className="text-[11px] text-gray-500 dark:text-gray-500 font-bold block mb-1.5">Option Type</label>
                                             <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-slate-600">
-                                                <button onClick={() => updateLeg(leg.id, 'optionType', 'Call')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.optionType === 'Call' ? 'bg-blue-100 text-blue-700 dark:bg-blue-600/20 dark:text-blue-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'}`}>Call</button>
-                                                <button onClick={() => updateLeg(leg.id, 'optionType', 'Put')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.optionType === 'Put' ? 'bg-blue-100 text-blue-700 dark:bg-blue-600/20 dark:text-blue-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'}`}>Put</button>
+                                                <button disabled={leg.strikeCriteria === 'Ratio Spread (Prem/X)'} onClick={() => updateLeg(leg.id, 'optionType', 'Call')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.optionType === 'Call' ? 'bg-blue-100 text-blue-700 dark:bg-blue-600/20 dark:text-blue-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'} ${leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? 'cursor-not-allowed' : ''}`}>Call</button>
+                                                <button disabled={leg.strikeCriteria === 'Ratio Spread (Prem/X)'} onClick={() => updateLeg(leg.id, 'optionType', 'Put')} className={`flex-1 py-1.5 text-xs font-bold transition-colors ${leg.optionType === 'Put' ? 'bg-blue-100 text-blue-700 dark:bg-blue-600/20 dark:text-blue-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-500'} ${leg.strikeCriteria === 'Ratio Spread (Prem/X)' ? 'cursor-not-allowed' : ''}`}>Put</button>
                                             </div>
                                         </div>
                                     )}
@@ -1547,20 +1557,23 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                     </label>
                                 )}
                                 <div className="flex items-center gap-3 text-gray-400 dark:text-gray-400 ml-auto">
-                                    <button 
-                                        className="hover:text-blue-500 transition-colors" 
-                                        title="Duplicate Leg (Opposite Type)" 
-                                        onClick={() => {
-                                            addLeg({
-                                                ...leg,
-                                                optionType: leg.optionType === 'Call' ? 'Put' : 'Call',
-                                                longCondition: leg.longCondition === 'CE' ? 'PE' : 'CE',
-                                                shortCondition: leg.shortCondition === 'PE' ? 'CE' : 'PE'
-                                            });
-                                        }}
-                                    >
-                                        <Copy size={16} className="text-yellow-500 dark:text-yellow-400"/>
-                                    </button>
+                                    {/* 🔥 THE FIX: Hide Copy button completely for Ratio Spread */}
+                                    {leg.strikeCriteria !== 'Ratio Spread (Prem/X)' && (
+                                        <button 
+                                            className="hover:text-blue-500 transition-colors" 
+                                            title="Duplicate Leg (Opposite Type)" 
+                                            onClick={() => {
+                                                addLeg({
+                                                    ...leg,
+                                                    optionType: leg.optionType === 'Call' ? 'Put' : 'Call',
+                                                    longCondition: leg.longCondition === 'CE' ? 'PE' : 'CE',
+                                                    shortCondition: leg.shortCondition === 'PE' ? 'CE' : 'PE'
+                                                });
+                                            }}
+                                        >
+                                            <Copy size={16} className="text-yellow-500 dark:text-yellow-400"/>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </>

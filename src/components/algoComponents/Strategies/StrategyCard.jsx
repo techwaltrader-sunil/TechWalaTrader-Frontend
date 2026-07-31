@@ -987,6 +987,16 @@ const StrategyCard = ({
       const activeLegs = (strategy.legs?.length > 0 ? strategy.legs : strategy.data?.legs) || [];
       const isEquity = strategy.segment === 'Equity' || strategy.segment === 'Future';
 
+      // 🌟 NEW FIX: CHECK FOR RATIO SPREAD FIRST
+      const isRatioSpread = activeLegs.some(leg => {
+          const strikeText = leg.strike || leg.strikeCriteria || leg.strikeType || "";
+          return String(strikeText).includes("Ratio Spread");
+      });
+
+      if (isRatioSpread) {
+          return { text: "RATIO SPREAD", color: "text-indigo-600 bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30" };
+      }
+
       // 1. Indicator + Both Side -> "Both Directions" (Blue Color for Dynamic/Neutral)
       if (stratType === 'Indicator Based' && txnType === 'Both Side') {
           return { text: "Both Directions", color: "text-blue-600 bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400" };
@@ -999,21 +1009,6 @@ const StrategyCard = ({
               ? { text: "Bullish", color: "text-green-600 bg-green-100 dark:bg-green-500/10 dark:text-green-400" }
               : { text: "Bearish", color: "text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-400" };
       }
-
-    //   // 3. Two Legs (Straddle / Strangle / Hedged)
-    //   if (activeLegs.length === 2) {
-    //       // DB Se Action nikalna
-    //       const action1 = (activeLegs[0]?.action || strategy.data?.legs?.[0]?.action || "BUY").toUpperCase();
-    //       const action2 = (activeLegs[1]?.action || strategy.data?.legs?.[1]?.action || "BUY").toUpperCase();
-          
-    //       if (action1 === 'BUY' && action2 === 'BUY') 
-    //           return { text: "Long Straddle/Strangle", color: "text-purple-600 bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400" };
-    //       if (action1 === 'SELL' && action2 === 'SELL') 
-    //           return { text: "Short Straddle/Strangle", color: "text-orange-600 bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400" };
-          
-    //       return { text: "Hedged", color: "text-indigo-600 bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" };
-    //   }
-    
 
     // 3. Two Legs (Straddle / Strangle / Hedged) - 🔥 SMART DETECTION 🔥
       if (activeLegs.length === 2) {
@@ -1156,11 +1151,19 @@ const StrategyCard = ({
           <div>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-0.5 uppercase tracking-wider">Segment</p>
             <p className="text-xs text-gray-800 dark:text-gray-200 font-semibold uppercase">
-                {strategy.segment} - {
-                    (strategy.segment === 'Equity' || strategy.segment === 'Future') 
-                    ? ((strategy.equityAction || 'BUY').toUpperCase() === 'BUY' ? 'BUYING' : 'SELLING')
-                    : (((strategy.legs?.[0]?.action || strategy.data?.legs?.[0]?.action || 'BUY').toUpperCase() === 'BUY') ? 'BUYING' : 'SELLING')
-                }
+                {strategy.segment} - {(() => {
+                    // 🔥 THE FIX: Safe detection for Ratio Spread to force 'SELLING' label
+                    const legs = (strategy.legs?.length > 0 ? strategy.legs : strategy.data?.legs) || [];
+                    const isRatio = legs.some(l => String(l.strike || l.strikeCriteria || l.strikeType || "").includes("Ratio Spread"));
+                    
+                    if (isRatio) return 'SELLING'; // Ratio Spread is always a Selling strategy
+                    
+                    if (strategy.segment === 'Equity' || strategy.segment === 'Future') {
+                        return (strategy.equityAction || 'BUY').toUpperCase() === 'BUY' ? 'BUYING' : 'SELLING';
+                    }
+                    
+                    return (legs[0]?.action || 'BUY').toUpperCase() === 'BUY' ? 'BUYING' : 'SELLING';
+                })()}
             </p>
           </div>
           <div className="text-right">
