@@ -685,7 +685,7 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, ChevronDown, Check, ArrowRight, Phone, Plus } from 'lucide-react';
+import { Box, ChevronDown, ChevronLeft, ChevronRight, Check, ArrowRight, Phone, Plus } from 'lucide-react';
 import { FaTelegramPlane, FaYoutube, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client'; 
@@ -695,6 +695,8 @@ import { getConnectedBrokers, updateBrokerStatus } from '../../data/AlogoTrade/b
 import LiveLogTicker from '../../components/algoComponents/AlgoDashboard/LiveLogTicker';
 
 import TemplateCard from '../../components/algoComponents/Strategies/TemplateCard';
+
+import { fetchActiveDeployments } from '../../data/AlogoTrade/deploymentService';
 // ✅ Connect to Backend Socket
 const socket = io.connect(import.meta.env.VITE_SOCKET_URL);
 
@@ -711,6 +713,12 @@ const AlgoDashboard = () => {
   const [totalPnL, setTotalPnL] = useState(0.00); 
 
   const [userStrategies, setUserStrategies] = useState([]);
+
+  const [activeDeployments, setActiveDeployments] = useState([]);
+
+  // 🔥 NEW: Pagination State for Deployed Strategies
+  const [deployedPage, setDeployedPage] = useState(1);
+  const ITEMS_PER_PAGE = 2;
 
   const [logs, setLogs] = useState([]);
 
@@ -741,6 +749,15 @@ const AlgoDashboard = () => {
             const userStratsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/strategies`);
             if (userStratsRes.data) {
                 setUserStrategies(userStratsRes.data);
+            }
+
+            // 🔥 NEW: 4. Fetch Active Deployments for the "Strategy Deployed" box
+            try {
+                const deploymentsData = await fetchActiveDeployments();
+                setActiveDeployments(deploymentsData || []);
+            } catch (depErr) {
+                console.error("Failed to load active deployments", depErr);
+                setActiveDeployments([]);
             }
 
         } catch (error) {
@@ -839,6 +856,18 @@ const AlgoDashboard = () => {
       </div>
     );
   }
+
+  // 🔥 NEW: Filter deployed strategies (Exclude 'Inactive' ones)
+  const deployedStrategies = userStrategies.filter(
+      s => s.status && s.status.toUpperCase() !== 'INACTIVE'
+  );
+
+  // 🔥 NEW: Pagination Logic
+  const totalDeployedPages = Math.ceil(activeDeployments.length / ITEMS_PER_PAGE);
+  const paginatedDeployments = activeDeployments.slice(
+      (deployedPage - 1) * ITEMS_PER_PAGE,
+      deployedPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="p-6 min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-white font-sans transition-colors duration-300">
@@ -1048,19 +1077,98 @@ const AlgoDashboard = () => {
         )}
 
         {/* RIGHT: Strategy Deployed */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-sm dark:shadow-lg p-6 flex flex-col transition-colors min-h-[220px]">
-            <div className="flex justify-between items-start mb-6">
-                <h3 className="font-bold text-gray-700 dark:text-gray-200">Strategy Deployed</h3>
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-sm dark:shadow-lg p-6 flex flex-col transition-colors h-full min-h-[220px]">
+            
+            <div className="flex justify-between items-start mb-4 shrink-0">
+                <h3 className="font-bold text-[15px] text-gray-800 dark:text-gray-200">Strategy Deployed</h3>
                 <button className="flex items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors">
-                    {isBrokerConnected ? activeBroker?.name : 'No broker selected'} <ChevronDown size={12}/>
+                    {isBrokerConnected ? activeBroker?.name : 'No broker'} <ChevronDown size={12}/>
                 </button>
             </div>
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <div className="w-14 h-14 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-gray-400 dark:text-slate-500"><Box size={28} /></div>
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">No Strategies Deployed</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 px-4">You haven't deployed any trading strategies yet.</p>
-                <button onClick={() => navigate('/strategy-builder')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-xs font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95">Create Strategy</button>
-            </div>
+
+            {activeDeployments.length > 0 ? (
+                <>
+                    {/* 🔥 FIX: Removed overflow-y-auto to disable scrolling, using flex-col instead */}
+                    <div className="flex-1 flex flex-col space-y-3">
+                        {/* 🔥 FIX: Mapped over 'paginatedDeployments' instead of 'activeDeployments' */}
+                        {paginatedDeployments.map((dep) => {
+                            const strategyName = dep.strategyId?.name || 'Unknown Strategy';
+                            const isLive = dep.executionType === 'LIVE';
+                            
+                            let currentPnl = 0;
+                            if (dep.executedLegs && dep.executedLegs.length > 0) {
+                                currentPnl = dep.executedLegs.reduce((sum, leg) => sum + (leg.livePnl || 0), 0);
+                            }
+
+                            return (
+                                <div 
+                                    key={dep._id || dep.id}
+                                    onClick={() => navigate('/strategies', { state: { activeTab: 'deployed' } })}
+                                    className="flex justify-between items-center p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500/50 cursor-pointer transition-all group"
+                                >
+                                    <div className="flex flex-col overflow-hidden">
+                                        <p className="text-[13px] font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate mb-1.5">
+                                            {strategyName}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider
+                                                ${isLive ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/30' 
+                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30'}`}
+                                            >
+                                                {dep.executionType?.replace('_', ' ') || 'ACTIVE'}
+                                            </span>
+                                            <span className="text-[9px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_4px_#22c55e]"></span> Running
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-col items-end shrink-0 pl-3 border-l border-gray-100 dark:border-slate-700/50">
+                                        <span className="text-[9px] text-gray-400 uppercase font-bold mb-1">Live P&L</span>
+                                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded border ${currentPnl >= 0 ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20' : 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20'}`}>
+                                            ₹ {currentPnl >= 0 ? `+${currentPnl.toFixed(2)}` : currentPnl.toFixed(2)}
+                                        </span> 
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* 🔥 NEW: Pagination Controls (Visible only if items > 3) */}
+                    {totalDeployedPages > 1 && (
+                        <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-100 dark:border-slate-800">
+                            <button 
+                                onClick={() => setDeployedPage(prev => Math.max(prev - 1, 1))}
+                                disabled={deployedPage === 1}
+                                className="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                Page {deployedPage} of {totalDeployedPages}
+                            </span>
+                            <button 
+                                onClick={() => setDeployedPage(prev => Math.min(prev + 1, totalDeployedPages))}
+                                disabled={deployedPage === totalDeployedPages}
+                                className="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center pb-2">
+                    <div className="w-10 h-10 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 text-gray-400 dark:text-slate-500 shadow-inner">
+                        <Box size={20} />
+                    </div>
+                    <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-1">No Strategies Deployed</h4>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-3 px-2 leading-tight">You haven't deployed any trading strategies yet.</p>
+                    <button onClick={() => navigate('/strategy-builder')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95">
+                        Create Strategy
+                    </button>
+                </div>
+            )}
         </div>
       </div>
 
@@ -1093,7 +1201,7 @@ const AlgoDashboard = () => {
                         isAdmin={false} // Dashboard par edit/delete nahi dikhana
 
                         isAlreadyAdded={userStrategies.some(s => s.name.includes(template.name))}
-                        
+
                         onUse={() => navigate('/strategies', { 
                             state: { 
                                 activeTab: 'templates', 

@@ -204,7 +204,7 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, onTo
                  </>
              ) : isAlreadyAdded ? (
                  <>
-                     <Check size={14} className="text-green-500 dark:text-green-400" /> Already Added
+                     <Check size={14} className="text-green-500 dark:text-green-400" /> Already Added on Strategies Page
                  </>
              ) : (
                  <>
