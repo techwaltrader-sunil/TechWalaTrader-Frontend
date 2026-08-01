@@ -80,9 +80,9 @@
 
 
 import React from 'react';
-import { TrendingUp, Wallet, ArrowRight, Edit, Trash2, Loader2, Heart } from 'lucide-react';
+import { TrendingUp, Wallet, ArrowRight, Edit, Trash2, Loader2, Heart, Check } from 'lucide-react';
 
-const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, onToggleHeart, isCloning = false }) => {
+const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, onToggleHeart, isCloning = false, isAlreadyAdded = false }) => {
   
   return (
     // ✅ Main Container
@@ -191,12 +191,20 @@ const TemplateCard = ({ template, onUse, isAdmin = false, onEdit, onDelete, onTo
       <div className="mt-auto">
           <button 
             onClick={() => onUse(template)}
-            disabled={isCloning}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-3 rounded-lg shadow-lg shadow-blue-500/20 dark:shadow-blue-900/20 transition-all flex items-center justify-center gap-2 group-active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={isCloning || isAlreadyAdded}
+            className={`w-full text-xs font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+                isAlreadyAdded 
+                ? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-600 shadow-none'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 dark:shadow-blue-900/20 group-active:scale-95'
+            }`}
           >
              {isCloning ? (
                  <>
                      <Loader2 size={14} className="animate-spin" /> Loading Config...
+                 </>
+             ) : isAlreadyAdded ? (
+                 <>
+                     <Check size={14} className="text-green-500 dark:text-green-400" /> Already Added
                  </>
              ) : (
                  <>

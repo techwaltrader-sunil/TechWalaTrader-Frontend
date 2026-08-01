@@ -1035,6 +1035,17 @@ const Strategies = () => {
     fetchData();
   }, []);
 
+  // 🔥 THE FIX: Catch template data from AlgoDashboard and open duplicate modal automatically
+  useEffect(() => {
+      if (location.state?.action === 'openDuplicateModal' && location.state?.templateData) {
+          // 1. Trigger the duplicate function instantly
+          handleUseTemplate(location.state.templateData);
+          
+          // 2. Clear the router state so it doesn't reopen if the user refreshes the page
+          window.history.replaceState({}, document.title);
+      }
+  }, [location.state]);
+
   // --- HANDLERS FOR STRATEGIES ---
   const handleSaveSignalConfig = async (newAlertType) => {
       if (!selectedStrategyForWebhook) return;
@@ -1319,6 +1330,7 @@ const Strategies = () => {
                           onDelete={handleDeleteTemplate}
                           onToggleHeart={handleToggleHeart}
                           isCloning={cloningId === (strat.id || strat._id)}
+                          isAlreadyAdded={strategies.some(s => s.name.includes(strat.name))}
                       />
                   ) : (
                   <StrategyCard 

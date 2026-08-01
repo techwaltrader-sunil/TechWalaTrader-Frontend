@@ -710,6 +710,8 @@ const AlgoDashboard = () => {
   // ✅ Live P&L State
   const [totalPnL, setTotalPnL] = useState(0.00); 
 
+  const [userStrategies, setUserStrategies] = useState([]);
+
   const [logs, setLogs] = useState([]);
 
 
@@ -726,6 +728,7 @@ const AlgoDashboard = () => {
             if (data && data.length > 0) {
                 setActiveBroker(data[0]); 
             }
+            
             // 🔥 NEW: 2. Fetch Featured Templates
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/strategy-templates`);
             if (res.data) {
@@ -733,8 +736,16 @@ const AlgoDashboard = () => {
                 const likedTemplates = res.data.filter(t => t.showOnDashboard === true || t.data?.templateConfig?.showOnDashboard === true);
                 setFeaturedTemplates(likedTemplates);
             }
+
+            // 🔥 NEW: 3. Fetch User Strategies directly using Axios
+            const userStratsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/strategies`);
+            if (userStratsRes.data) {
+                setUserStrategies(userStratsRes.data);
+            }
+
         } catch (error) {
             console.error("Error loading dashboard data:", error);
+            setUserStrategies([]); // 🔥 FALLBACK (Agar API fail hui to error nahi aayega)
         } finally {
             setLoading(false);
             setLoadingTemplates(false); // 🔥 STOP LOADER
@@ -1056,7 +1067,7 @@ const AlgoDashboard = () => {
       <div className="mb-8">
         <div className="flex justify-between items-end mb-4">
             <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                Featured Templates <span className="text-pink-500 animate-pulse">❤️</span>
+                Strategy Template <span className="text-pink-500 animate-pulse">❤️</span>
             </h3>
             <button onClick={() => navigate('/strategies', { state: { activeTab: 'templates' } })} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 transition-all">
                 See All <ArrowRight size={12}/>
@@ -1080,7 +1091,16 @@ const AlgoDashboard = () => {
                         key={template._id || template.id} 
                         template={template} 
                         isAdmin={false} // Dashboard par edit/delete nahi dikhana
-                        onUse={() => navigate('/strategies', { state: { activeTab: 'templates' } })}
+
+                        isAlreadyAdded={userStrategies.some(s => s.name.includes(template.name))}
+                        
+                        onUse={() => navigate('/strategies', { 
+                            state: { 
+                                activeTab: 'templates', 
+                                action: 'openDuplicateModal', 
+                                templateData: template 
+                            } 
+                        })}
                     />
                 ))}
             </div>
