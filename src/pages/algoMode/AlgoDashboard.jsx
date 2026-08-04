@@ -726,15 +726,27 @@ const AlgoDashboard = () => {
   );
 
   // 🔥 Smart Check: Koi trade running hai ya nahi (Blinking logic ke liye)
-  const isTradeActive = activeDeployments.some(dep => dep.executionType === tradeMode && dep.status !== 'SQUARED_OFF');
+//   const isTradeActive = activeDeployments.some(dep => dep.executionType === tradeMode && dep.status !== 'SQUARED_OFF');
   
+// 🔥 Smart Check: Koi trade running hai ya nahi (Blinking logic)
+  const isTradeActive = activeDeployments.some(dep => {
+      // Agar trade squared off ya inactive hai toh ignore karo
+      if (dep.status === 'SQUARED_OFF' || dep.status === 'INACTIVE') return false;
+      
+      // LIVE mode ke liye
+      if (tradeMode === 'LIVE') return dep.executionType === 'LIVE';
+      
+      // PAPER mode ke liye FORWARD_TEST ya PAPER check karo
+      return ['PAPER', 'PAPER_TRADE', 'FORWARD_TEST'].includes(dep.executionType);
+  });
+
 
   // 🔥 THE MAGIC: Filter data exactly for the selected Dropdown Broker
   const activeBrokerId = String(activeBroker?.id || activeBroker?._id);
   
   const brokerPnlData = allBrokersPnl[activeBrokerId] || {
       LIVE: { total: 0.00, booked: 0.00, running: 0.00, margin: 0.00 },
-      PAPER: { total: 0.00, booked: 0.00, running: 0.00, margin: 1000000.00 }
+      PAPER: { total: 0.00, booked: 0.00, running: 0.00, margin: 1500000.00 }
   };
   
   // Current Mode ka Data (Live ya Paper)
@@ -759,74 +771,114 @@ const AlgoDashboard = () => {
         {isBrokerConnected ? (
             <>
                 {/* 🌟 A. PORTFOLIO P&L CARD (ADVANCED UI) 🌟 */}
-                <div className="lg:col-span-4 bg-gradient-to-br from-blue-700 via-blue-600 to-purple-700 rounded-2xl shadow-xl shadow-blue-500/20 flex flex-col justify-between relative overflow-hidden min-h-[220px]">
+                <div className={`lg:col-span-4 rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden min-h-[220px] transition-all duration-500 ${
+                    tradeMode === 'LIVE' 
+                        ? 'bg-gradient-to-br from-blue-700 via-blue-600 to-purple-700 shadow-blue-500/20' 
+                        : 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 shadow-orange-500/20'
+                }`}>
                     
                     {/* Background glow effects */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
                     
                     <div className="p-6 relative z-10">
                         <div className="flex justify-between items-start mb-4">
-                            <p className="text-blue-100 text-[10px] font-extrabold uppercase tracking-widest opacity-90 drop-shadow-sm">
+                            <p className={`text-[10px] font-extrabold uppercase tracking-widest opacity-90 drop-shadow-sm ${
+                                tradeMode === 'LIVE' ? 'text-blue-100' : 'text-orange-950'
+                            }`}>
                                 Portfolio P&L
                             </p>
                             
                             {/* 🔥 Switch Button: Live/Paper */}
                             <button 
                                 onClick={() => setTradeMode(prev => prev === 'LIVE' ? 'PAPER' : 'LIVE')}
-                                className="flex items-center gap-1.5 bg-black/20 hover:bg-black/30 transition-all px-2.5 py-1 rounded-full backdrop-blur-sm cursor-pointer border border-white/10 active:scale-95"
+                                className={`flex items-center gap-1.5 transition-all px-2.5 py-1 rounded-full backdrop-blur-sm cursor-pointer border active:scale-95 ${
+                                    tradeMode === 'LIVE' ? 'bg-black/20 hover:bg-black/30 border-white/10' : 'bg-black/10 hover:bg-black/20 border-black/10'
+                                }`}
                             >
-                                <div className={`w-1.5 h-1.5 rounded-full ${tradeMode === 'LIVE' ? 'bg-green-400' : 'bg-orange-400'} ${isTradeActive ? 'animate-pulse' : 'opacity-40'}`}></div>
-                                <span className="text-[9px] font-bold text-white uppercase tracking-wider">{tradeMode}</span>
+                                {/* 👇 Yahan Paper mode me bg-white ki jagah bg-green-600 aur green shadow laga diya hai 👇 */}
+                                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                    tradeMode === 'LIVE' 
+                                        ? `bg-green-400 ${isTradeActive ? 'animate-pulse shadow-[0_0_8px_#4ade80]' : 'opacity-40'}` 
+                                        : `bg-green-400 ${isTradeActive ? 'animate-pulse shadow-[0_0_4px_#4ade80]' : 'opacity-40'}` 
+                                }`}></div>
+                                
+                                <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                                    tradeMode === 'LIVE' ? 'text-white' : 'text-slate-900'
+                                }`}>{tradeMode}</span>
                             </button>
                         </div>
 
-                        {/* Main MTM (Total P&L) - Hamesha Dikhega */}
-                        <h2 className={`text-4xl font-extrabold tracking-tighter mb-5 drop-shadow-md ${currentPnlData.total >= 0 ? 'text-white' : 'text-red-200'}`}>
+                        {/* Main MTM (Total P&L) */}
+                        <h2 className={`text-4xl font-extrabold tracking-tighter mb-5 drop-shadow-md ${
+                            tradeMode === 'LIVE'
+                                ? (currentPnlData.total >= 0 ? 'text-white' : 'text-red-200')
+                                : (currentPnlData.total >= 0 ? 'text-slate-900' : 'text-red-700')
+                        }`}>
                             {currentPnlData.total >= 0 ? '+' : '-'}₹{Math.abs(currentPnlData.total).toFixed(2)}
                         </h2>
 
-                        {/* Booked & Running Breakdown - Hamesha Dikhega */}
-                        <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
+                        {/* Booked & Running Breakdown */}
+                        <div className={`grid grid-cols-2 gap-4 border-t pt-4 transition-colors duration-500 ${
+                            tradeMode === 'LIVE' ? 'border-white/10' : 'border-black/10'
+                        }`}>
                             <div>
-                                <p className="text-[9px] text-blue-200 uppercase font-bold tracking-widest mb-0.5">Booked</p>
-                                <p className={`text-sm font-bold ${currentPnlData.booked >= 0 ? 'text-white' : 'text-red-200'}`}>
+                                <p className={`text-[9px] uppercase font-bold tracking-widest mb-0.5 ${
+                                    tradeMode === 'LIVE' ? 'text-blue-200' : 'text-orange-950'
+                                }`}>Booked</p>
+                                <p className={`text-sm font-bold ${
+                                    tradeMode === 'LIVE'
+                                        ? (currentPnlData.booked >= 0 ? 'text-white' : 'text-red-200')
+                                        : (currentPnlData.booked >= 0 ? 'text-slate-900' : 'text-red-700')
+                                }`}>
                                     ₹{currentPnlData.booked.toFixed(2)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-[9px] text-blue-200 uppercase font-bold tracking-widest mb-0.5">Running</p>
-                                <p className={`text-sm font-bold ${currentPnlData.running >= 0 ? 'text-white' : 'text-red-200'}`}>
+                                <p className={`text-[9px] uppercase font-bold tracking-widest mb-0.5 ${
+                                    tradeMode === 'LIVE' ? 'text-blue-200' : 'text-orange-950'
+                                }`}>Running</p>
+                                <p className={`text-sm font-bold ${
+                                    tradeMode === 'LIVE'
+                                        ? (currentPnlData.running >= 0 ? 'text-white' : 'text-red-200')
+                                        : (currentPnlData.running >= 0 ? 'text-slate-900' : 'text-red-700')
+                                }`}>
                                     ₹{currentPnlData.running.toFixed(2)}
                                 </p>
                             </div>
                         </div>
                     </div>
                     
-                {/* 🔥 BOTTOM SECTION: Broker Margin & Hide Icon (Eye Icon Sirf Yahan Kaam Karega) */}
-                <div className="bg-black/20 backdrop-blur-md px-6 py-3 flex justify-between items-center border-t border-white/5 relative z-10">
+                {/* 🔥 BOTTOM SECTION: Broker Margin & Hide Icon */}
+                <div className="bg-black/20 backdrop-blur-md px-6 py-3 flex justify-between items-center border-t border-white/5 relative z-10 transition-colors duration-500">
                     <div className="flex items-center gap-2">
                         {activeBroker && (
                             <div className="w-5 h-5 rounded-full bg-white p-0.5 flex items-center justify-center shadow-sm">
                                 <img src={activeBroker.logo} alt="broker" className="w-full h-full rounded-full object-contain" />
                             </div>
                         )}
-                        <span className="text-white text-[11px] font-bold uppercase tracking-wider drop-shadow-sm">
+                        <span className={`text-[11px] font-bold uppercase tracking-wider drop-shadow-sm ${
+                            tradeMode === 'LIVE' ? 'text-white' : 'text-slate-900'
+                        }`}>
                             {activeBroker?.name || "SMART TRADER"}
                         </span>
                     </div>
 
                     <div className="flex items-center gap-4">
                         <div className="text-right">
-                            <p className="text-[8px] text-blue-200/80 uppercase font-bold tracking-widest mb-0.5">Available Margin</p>
-                            <p className="text-xs font-bold text-white tracking-wide">
-                                {/* 👀 Sirf Available Margin hide/show hoga */}
+                            <p className={`text-[8px] uppercase font-bold tracking-widest mb-0.5 ${
+                                tradeMode === 'LIVE' ? 'text-blue-200/80' : 'text-orange-950/80'
+                            }`}>Available Margin</p>
+                            <p className={`text-xs font-bold tracking-wide ${
+                                tradeMode === 'LIVE' ? 'text-white' : 'text-slate-900'
+                            }`}>
                                 {isDetailsHidden ? '••••••' : `₹${currentPnlData.margin.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
                             </p>
                         </div>
-                        {/* Eye Toggle Icon */}
                         <button 
                             onClick={() => setIsDetailsHidden(!isDetailsHidden)} 
-                            className="text-blue-200 hover:text-white transition-colors p-1"
+                            className={`transition-colors p-1 ${
+                                tradeMode === 'LIVE' ? 'text-blue-200 hover:text-white' : 'text-orange-900 hover:text-black'
+                            }`}
                             title={isDetailsHidden ? "Show Balances" : "Hide Balances"}
                         >
                             {isDetailsHidden ? <EyeOff size={16} /> : <Eye size={16} />}
