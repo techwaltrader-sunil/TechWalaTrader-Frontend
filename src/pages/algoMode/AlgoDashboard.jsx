@@ -686,6 +686,11 @@ const AlgoDashboard = () => {
       return () => socket.off("log-update");
   }, []);
 
+  useEffect(() => {
+      // जब भी activeBroker चेंज होगा, ये पेज को वापस 1 पर सेट कर देगा
+      setDeployedPage(1);
+  }, [activeBroker]);
+
   const handleTerminalToggle = async () => {
     if (!activeBroker) return;
     if (!activeBroker.terminalOn) {
@@ -719,31 +724,57 @@ const AlgoDashboard = () => {
   const isBrokerConnected = brokers.length > 0;
   const deployedStrategies = userStrategies.filter(s => s.status && s.status.toUpperCase() !== 'INACTIVE');
 
-  const totalDeployedPages = Math.ceil(activeDeployments.length / ITEMS_PER_PAGE);
-  const paginatedDeployments = activeDeployments.slice(
+  // 🔥 THE MAGIC FIX: 1. Sabse pehle selected broker ki sari details nikalenge
+  const activeBrokerId = String(activeBroker?.id || activeBroker?._id || "");
+  const activeBrokerName = String(activeBroker?.name || "").toLowerCase();
+  const activeClientId = String(activeBroker?.clientId || "").toLowerCase();
+
+  // 🔥 2. Super Robust Filtering (Deep Search Logic)
+  const brokerFilteredDeployments = activeDeployments.filter(dep => {
+      if (!activeBroker) return false;
+      
+      // A. Direct common paths check (Jitne bhi tarike se DB me data aa sakta hai)
+      const depBroker = dep.broker || dep.brokerId || dep.account || dep.strategyId?.broker;
+      const depBrokerId = String(depBroker?._id || depBroker?.id || (typeof depBroker === 'string' ? depBroker : ""));
+      const depBrokerName = String(depBroker?.name || dep.brokerName || (typeof depBroker === 'string' ? depBroker : "")).toLowerCase();
+      const depClientId = String(depBroker?.clientId || dep.clientId || "").toLowerCase();
+
+      // Agar direct field match ho jaye
+      if (activeBrokerId && depBrokerId === activeBrokerId) return true;
+      if (activeBrokerName && depBrokerName.includes(activeBrokerName)) return true;
+      if (activeClientId && depClientId === activeClientId) return true;
+
+      // B. Deep Search Fallback (Kyunki MongoDB ID 24 chars ki hoti hai, ye safely kahin bhi nested ID dhund lega)
+      const stringifiedDep = JSON.stringify(dep);
+      if (activeBrokerId && activeBrokerId.length > 10 && stringifiedDep.includes(activeBrokerId)) {
+          return true;
+      }
+      
+      // C. Agar backend me broker object ke andar 'Dhan' ya 'Groww' text format me directly save hua ho
+      if (activeBrokerName && stringifiedDep.toLowerCase().includes(`"${activeBrokerName}"`)) {
+          return true;
+      }
+
+      return false;
+  });
+
+  // 🔥 3. Pagination ab sirf "Filtered" list par chalegi
+  const totalDeployedPages = Math.ceil(brokerFilteredDeployments.length / ITEMS_PER_PAGE) || 1; // 0 page na dikhe isliye || 1
+  const paginatedDeployments = brokerFilteredDeployments.slice(
       (deployedPage - 1) * ITEMS_PER_PAGE,
       deployedPage * ITEMS_PER_PAGE
   );
 
-  // 🔥 Smart Check: Koi trade running hai ya nahi (Blinking logic ke liye)
-//   const isTradeActive = activeDeployments.some(dep => dep.executionType === tradeMode && dep.status !== 'SQUARED_OFF');
-  
-// 🔥 Smart Check: Koi trade running hai ya nahi (Blinking logic)
-  const isTradeActive = activeDeployments.some(dep => {
-      // Agar trade squared off ya inactive hai toh ignore karo
+  // 🔥 4. Trade Active (Blinking Dot) check bhi ab sirf selected broker ke data par hoga
+  const isTradeActive = brokerFilteredDeployments.some(dep => {
       if (dep.status === 'SQUARED_OFF' || dep.status === 'INACTIVE') return false;
       
-      // LIVE mode ke liye
       if (tradeMode === 'LIVE') return dep.executionType === 'LIVE';
       
-      // PAPER mode ke liye FORWARD_TEST ya PAPER check karo
       return ['PAPER', 'PAPER_TRADE', 'FORWARD_TEST'].includes(dep.executionType);
   });
 
-
-  // 🔥 THE MAGIC: Filter data exactly for the selected Dropdown Broker
-  const activeBrokerId = String(activeBroker?.id || activeBroker?._id);
-  
+  // Portfolio P&L Data Fetching
   const brokerPnlData = allBrokersPnl[activeBrokerId] || {
       LIVE: { total: 0.00, booked: 0.00, running: 0.00, margin: 0.00 },
       PAPER: { total: 0.00, booked: 0.00, running: 0.00, margin: 1500000.00 }
@@ -998,10 +1029,10 @@ const AlgoDashboard = () => {
                 </button>
             </div>
 
-            {activeDeployments.length > 0 ? (
+            {brokerFilteredDeployments.length > 0 ? (
                 <>
                     {/* 🔥 FIX: Removed overflow-y-auto to disable scrolling, using flex-col instead */}
-                    <div className="flex-1 flex flex-col space-y-3">
+                    <div className="flex-1 flex flex-col space-y-3.5">
                         {/* 🔥 FIX: Mapped over 'paginatedDeployments' instead of 'activeDeployments' */}
                         {paginatedDeployments.map((dep) => {
                             const strategyName = dep.strategyId?.name || 'Unknown Strategy';
@@ -1016,13 +1047,13 @@ const AlgoDashboard = () => {
                                 <div 
                                     key={dep._id || dep.id}
                                     onClick={() => navigate('/strategies', { state: { activeTab: 'deployed' } })}
-                                    className="flex justify-between items-center p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500/50 cursor-pointer transition-all group"
+                                    className="flex justify-between items-center p-5  border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-500/50 cursor-pointer transition-all duration-300 group"
                                 >
                                     <div className="flex flex-col overflow-hidden">
                                         <p className="text-[13px] font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate mb-1.5">
                                             {strategyName}
                                         </p>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-4">
                                             <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider
                                                 ${isLive ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/30' 
                                                 : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30'}`}
