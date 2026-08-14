@@ -116,14 +116,37 @@ const OrderConfigSection = ({ config, setConfig, isComingSoon, strategyType, ent
             
             {/* CONDITIONAL RENDER: Next Day Square Off OR Normal Square Off */}
             {config.orderType === 'BTST' ? (
-                <div className="animate-in fade-in zoom-in duration-300">
-                   <label className="text-xs text-blue-600 dark:text-blue-400 font-bold block mb-1">Next Day Square Off</label>
-                   <input 
-                     type="time" 
-                     value={config.nextDaySquareOff || "09:15"} 
-                     onChange={(e) => updateConfig('nextDaySquareOff', e.target.value)}
-                     className="w-full bg-blue-50 dark:bg-slate-900 border-2 border-blue-400 dark:border-blue-500 rounded px-2 py-2 text-xs text-gray-900 dark:text-white focus:border-blue-600 focus:outline-none transition-colors shadow-sm" 
-                   />
+                <div className="animate-in fade-in zoom-in duration-300 flex flex-col gap-2">
+                   
+                   {/* 🔥 NAYA BTST MODE SELECTOR 🔥 */}
+                   <div className="flex gap-2 w-full">
+                      {['Next Day', 'Expiry Day'].map(mode => (
+                         <button
+                            key={mode}
+                            onClick={() => updateConfig('btstExitMode', mode)}
+                            className={`text-[10px] py-1.5 flex-1 rounded border font-bold transition-colors 
+                            ${(config.btstExitMode || 'Next Day') === mode 
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
+                              : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:border-blue-400'}`}
+                         >
+                            {mode}
+                         </button>
+                      ))}
+                   </div>
+                   
+                   {/* BTST TIME INPUT WITH DYNAMIC LABEL */}
+                   <div>
+                       <label className="text-xs text-blue-600 dark:text-blue-400 font-bold block mb-1">
+                           {config.btstExitMode === 'Expiry Day' ? 'Expiry Day Square Off' : 'Next Day Square Off'}
+                       </label>
+                       <input 
+                         type="time" 
+                         value={config.nextDaySquareOff || "09:15"} 
+                         onChange={(e) => updateConfig('nextDaySquareOff', e.target.value)}
+                         className="w-full bg-blue-50 dark:bg-slate-900 border-2 border-blue-400 dark:border-blue-500 rounded px-2 py-2 text-xs text-gray-900 dark:text-white focus:border-blue-600 focus:outline-none transition-colors shadow-sm" 
+                       />
+                   </div>
+
                 </div>
             ) : (
                 <div>
