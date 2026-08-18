@@ -2433,7 +2433,11 @@ const SimulatorPage = () => {
     const fetchSimulatorData = async (selectedTime) => {
         setLoading(true);
         try {
-            const res = await axios.get(`http://65.0.164.229:5500/api/simulator/data`, {
+            const API_BASE_URL = window.location.hostname === 'localhost' 
+                ? 'http://localhost:5500' 
+                : 'http://65.0.164.229:5500';
+
+            const res = await axios.get(`${API_BASE_URL}/api/simulator/data`, {
                 params: { date: date, time: selectedTime }
             });
             if (res.data.success) {
