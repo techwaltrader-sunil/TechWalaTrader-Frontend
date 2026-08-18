@@ -24,6 +24,7 @@ import BrokerLogin from './pages/algoMode/BrokerLogin';
 
 import ImportNotion from "./components/forms/ImportNotion";
 import AddBrokers from "./components/algoComponents/AlgoDashboard/AddBrokers";
+import SimulatorPage from "./pages/algoMode/SimulatorPage";
 
 
 function App() {
@@ -57,6 +58,7 @@ function App() {
 
           <Route path="/broker-login/:brokerId" element={<BrokerLogin />} />
 
+          <Route path="/simulator" element={<SimulatorPage />} />
           
         </Routes>
       </Layout>
