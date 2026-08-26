@@ -87,6 +87,42 @@ const SimulatorPage = () => {
     const [availableExpiries, setAvailableExpiries] = useState([]);
     const [selectedExpiry, setSelectedExpiry] = useState("");
 
+    // 🎯 SMART UI: Expiry Slider ke states
+    const [expiryStartIndex, setExpiryStartIndex] = useState(0);
+    const [visibleExpiriesCount, setVisibleExpiriesCount] = useState(5); // Default for desktop
+
+    // Screen size ke hisab se visible dates set karna
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) {
+                setVisibleExpiriesCount(3); // Mobile
+            } else {
+                setVisibleExpiriesCount(5); // Desktop
+            }
+        };
+
+        handleResize(); // Initial check
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Jab nayi list aaye, toh index reset kar do
+    useEffect(() => {
+        setExpiryStartIndex(0);
+    }, [availableExpiries]);
+
+    const handlePrevExpiries = () => {
+        if (expiryStartIndex > 0) {
+            setExpiryStartIndex(prev => prev - 1);
+        }
+    };
+
+    const handleNextExpiries = () => {
+        if (expiryStartIndex + visibleExpiriesCount < availableExpiries.length) {
+            setExpiryStartIndex(prev => prev + 1);
+        }
+    };
+
     const fetchMonthExpiries = async (dateObj, symbol = 'NIFTY') => {
         try {
             const year = dateObj.getFullYear();
@@ -104,6 +140,7 @@ const SimulatorPage = () => {
             console.error("Error fetching expiries:", error);
         }
     };
+    
 
     useEffect(() => {
         fetchMonthExpiries(currentMonth);
@@ -304,23 +341,32 @@ const SimulatorPage = () => {
         return `${day} ${month} '${year}`; 
     };
 
-    // 🎯 HELPER 3: Har tab ke liye alag DTE aur Label (CW/NW/CM) nikalne ke liye
+    // 🎯 HELPER 3: Har tab ke liye alag DTE aur Label (CW/NW/CM/NM) nikalne ke liye
     const getTabDteInfo = (simDateStr, expDateStr) => {
         if (!simDateStr || !expDateStr) return { dte: 0, label: 'CW' };
         
         const simDate = new Date(simDateStr);
         const expDate = new Date(expDateStr);
         
-        // Dino ka difference nikalna
+        // 1. Dino (Days) ka difference nikalna
         const diffTime = expDate.getTime() - simDate.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        // DTE ke hisab se CW (Current Week), NW (Next Week) ya CM (Current Month) set karna
+        // 2. Mahino (Months) ka difference nikalna (Saal badalne par bhi sahi kaam karega)
+        const monthDiff = (expDate.getFullYear() - simDate.getFullYear()) * 12 + (expDate.getMonth() - simDate.getMonth());
+        
         let label = 'CW';
-        if (diffDays > 14) {
-            label = 'CM'; 
-        } else if (diffDays > 7) {
-            label = 'NW'; 
+        if (diffDays <= 7) {
+            label = 'CW'; // Current Week (0 se 7 din)
+        } else if (diffDays <= 14) {
+            label = 'NW'; // Next Week (8 se 14 din)
+        } else {
+            // Agar expiry 2 mahine aage ki hai (jaise August se October), toh wo Next Month (NM) hogi
+            if (monthDiff >= 2) {
+                label = 'NM'; 
+            } else {
+                label = 'CM'; // Current Month
+            }
         }
         
         return { dte: diffDays, label };
@@ -338,29 +384,36 @@ const SimulatorPage = () => {
     return (
         <div className="bg-gray-50 min-h-screen text-[13px] font-sans text-gray-800">
             {/* 1. TOP BAR */}
-            <div className="bg-white border-b border-gray-200 px-2 md:px-4 py-2 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-sm relative z-50">
-                <div className="w-full xl:w-auto flex justify-between xl:justify-start items-center">
-                    <select className="border border-gray-300 rounded px-3 py-1.5 bg-white text-gray-700 font-medium w-40 focus:outline-none focus:border-blue-500">
+            <div className="bg-white border-b border-gray-200 px-3 md:px-4 py-3 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-sm relative z-50">
+                
+                {/* Nifty Dropdown & Snapshot */}
+                <div className="w-full xl:w-auto flex justify-between items-center">
+                    <select className="border border-gray-300 rounded px-3 py-1.5 bg-white text-gray-700 font-medium w-40 md:w-48 focus:outline-none focus:border-blue-500">
                         <option>Nifty</option>
                         <option>BankNifty</option>
                         <option>FinNifty</option>
                     </select>
-                    <button className="xl:hidden text-gray-500 hover:text-gray-700 flex items-center gap-1">
-                        <Camera size={16} /> Snapshot
+                    <button className="xl:hidden text-gray-500 hover:text-gray-800 flex items-center gap-1.5 text-sm font-medium px-2 py-1 bg-gray-50 rounded border border-gray-200">
+                        <Camera size={14} /> Snapshot
                     </button>
                 </div>
-                <div className="flex flex-wrap justify-center items-center gap-1.5 md:gap-2 w-full xl:w-auto">
-                    {/* 🎯 FUNCTIONAL DAY & TIME BUTTONS */}
-                    <button onClick={() => handleDayChange(-1)} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded">&lt;&lt; Day</button>
-                    <button onClick={() => setTime('09:16')} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded">SOD</button>
-                    <button onClick={() => handleTimeChange(-120)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">-2h</button>
-                    <button onClick={() => handleTimeChange(-30)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">-30m</button>
-                    <button onClick={() => handleTimeChange(-15)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">-15m</button>
-                    <button onClick={() => handleTimeChange(-5)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">-5m</button>
-                    <button onClick={() => handleTimeChange(-1)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">-1m</button>
+
+                {/* 🎯 FIX: Time Controls Keypad (Stacked on Mobile, Inline on Desktop) */}
+                <div className="flex flex-col xl:flex-row justify-center items-center gap-2.5 md:gap-3 w-full xl:w-auto bg-gray-50 xl:bg-transparent p-2 xl:p-0 rounded-lg border border-gray-200 xl:border-0">
                     
-                    <div className="flex items-center gap-2 mx-1">
-                        {/* 🎯 NEW: PREMIUM DATE PICKER WITH MONTH & YEAR DROPDOWN (STOCKMOCK STYLE) */}
+                    {/* Minus Controls Row */}
+                    <div className="flex flex-wrap justify-center items-center gap-1.5 md:gap-2">
+                        <button onClick={() => handleDayChange(-1)} className="px-2 py-1 text-gray-500 hover:bg-gray-200 rounded text-[11px] md:text-sm font-medium">&lt;&lt; Day</button>
+                        <button onClick={() => setTime('09:16')} className="px-2 py-1 text-gray-500 hover:bg-gray-200 rounded text-[11px] md:text-sm font-medium">SOD</button>
+                        <button onClick={() => handleTimeChange(-120)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">-2h</button>
+                        <button onClick={() => handleTimeChange(-30)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">-30m</button>
+                        <button onClick={() => handleTimeChange(-15)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">-15m</button>
+                        <button onClick={() => handleTimeChange(-5)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">-5m</button>
+                        <button onClick={() => handleTimeChange(-1)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">-1m</button>
+                    </div>
+                    
+                    {/* Date & Time Selectors Row */}
+                    <div className="flex justify-center items-center gap-2 my-1 w-full md:w-auto">
                         <DatePicker
                             selected={new Date(date)}
                             onChange={(selectedDate) => {
@@ -375,120 +428,108 @@ const SimulatorPage = () => {
                             dateFormat="yyyy-MM-dd"
                             dayClassName={highlightExpiry}
                             onMonthChange={(date) => setCurrentMonth(date)}
-                            className="border border-gray-300 px-2 py-1 bg-white font-medium rounded shadow-inner outline-none cursor-pointer text-gray-700 uppercase w-[130px] text-center"
+                            className="border border-gray-300 px-2 py-1.5 bg-white font-bold rounded shadow-inner outline-none cursor-pointer text-gray-800 uppercase w-[130px] md:w-[140px] text-center text-[13px] md:text-sm"
                             
-                            // 👇 YAHAN SE CUSTOM HEADER (MONTH & YEAR DROPDOWN) SHURU HOTA HAI
                             renderCustomHeader={({
-                                date: headerDate,
-                                changeYear,
-                                changeMonth,
-                                decreaseMonth,
-                                increaseMonth,
-                                prevMonthButtonDisabled,
-                                nextMonthButtonDisabled,
+                                date: headerDate, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled,
                             }) => (
                                 <div className="flex justify-between items-center px-2 py-2 bg-gray-50 border-b border-gray-200">
-                                    <button 
-                                        onClick={decreaseMonth} 
-                                        disabled={prevMonthButtonDisabled} 
-                                        className="text-gray-500 hover:text-gray-800 disabled:opacity-30 font-bold px-2 cursor-pointer"
-                                    >
-                                        {"<"}
-                                    </button>
-                                    
+                                    <button onClick={decreaseMonth} disabled={prevMonthButtonDisabled} className="text-gray-500 hover:text-gray-800 disabled:opacity-30 font-bold px-2 cursor-pointer">{"<"}</button>
                                     <div className="flex gap-1">
-                                        {/* Month Dropdown */}
-                                        <select
-                                            value={headerDate.getMonth()}
-                                            onChange={({ target: { value } }) => changeMonth(Number(value))}
-                                            className="border border-gray-300 bg-white text-gray-700 font-medium rounded px-1 py-0.5 outline-none cursor-pointer text-sm hover:border-blue-400"
-                                        >
+                                        <select value={headerDate.getMonth()} onChange={({ target: { value } }) => changeMonth(Number(value))} className="border border-gray-300 bg-white text-gray-700 font-medium rounded px-1 py-0.5 outline-none cursor-pointer text-sm hover:border-blue-400">
                                             {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month, index) => (
-                                                <option key={month} value={index}>
-                                                    {month}
-                                                </option>
+                                                <option key={month} value={index}>{month}</option>
                                             ))}
                                         </select>
-
-                                        {/* Year Dropdown */}
-                                        <select
-                                            value={headerDate.getFullYear()}
-                                            onChange={({ target: { value } }) => changeYear(Number(value))}
-                                            className="border border-gray-300 bg-white text-gray-700 font-medium rounded px-1 py-0.5 outline-none cursor-pointer text-sm hover:border-blue-400"
-                                        >
-                                            {/* Yahan hum 2018 se lekar current year tak ka dropdown bana rahe hain */}
+                                        <select value={headerDate.getFullYear()} onChange={({ target: { value } }) => changeYear(Number(value))} className="border border-gray-300 bg-white text-gray-700 font-medium rounded px-1 py-0.5 outline-none cursor-pointer text-sm hover:border-blue-400">
                                             {Array.from({ length: new Date().getFullYear() - 2018 + 1 }, (_, i) => 2018 + i).map((year) => (
-                                                <option key={year} value={year}>
-                                                    {year}
-                                                </option>
+                                                <option key={year} value={year}>{year}</option>
                                             ))}
                                         </select>
                                     </div>
-
-                                    <button 
-                                        onClick={increaseMonth} 
-                                        disabled={nextMonthButtonDisabled} 
-                                        className="text-gray-500 hover:text-gray-800 disabled:opacity-30 font-bold px-2 cursor-pointer"
-                                    >
-                                        {">"}
-                                    </button>
+                                    <button onClick={increaseMonth} disabled={nextMonthButtonDisabled} className="text-gray-500 hover:text-gray-800 disabled:opacity-30 font-bold px-2 cursor-pointer">{">"}</button>
                                 </div>
                             )}
                         />
 
                         <div className="flex gap-1">
-                            {/* 🎯 FUNCTIONAL HOUR DROPDOWN */}
-                            <select 
-                                className="border border-gray-300 px-2 py-1 bg-white rounded font-medium outline-none cursor-pointer hover:border-blue-400" 
-                                value={parseInt(time.split(':')[0])} // Removes leading zero for match (09 -> 9)
-                                onChange={(e) => handleManualTimeChange('hour', e.target.value)}
-                            >
-                                {[9, 10, 11, 12, 13, 14, 15].map(h => (
-                                    <option key={h} value={h}>{h}</option>
-                                ))}
+                            <select className="border border-gray-300 px-1.5 py-1.5 bg-white rounded font-bold text-gray-800 outline-none cursor-pointer hover:border-blue-400 text-[13px] md:text-sm" value={parseInt(time.split(':')[0])} onChange={(e) => handleManualTimeChange('hour', e.target.value)}>
+                                {[9, 10, 11, 12, 13, 14, 15].map(h => (<option key={h} value={h}>{h}</option>))}
                             </select>
-
-                            {/* 🎯 FUNCTIONAL MINUTE DROPDOWN */}
-                            <select 
-                                className="border border-gray-300 px-2 py-1 bg-white rounded font-medium outline-none cursor-pointer hover:border-blue-400 custom-scrollbar" 
-                                value={time.split(':')[1]} 
-                                onChange={(e) => handleManualTimeChange('minute', e.target.value)}
-                            >
-                                {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => (
-                                    <option key={m} value={m}>{m}</option>
-                                ))}
+                            <select className="border border-gray-300 px-1.5 py-1.5 bg-white rounded font-bold text-gray-800 outline-none cursor-pointer hover:border-blue-400 text-[13px] md:text-sm custom-scrollbar" value={time.split(':')[1]} onChange={(e) => handleManualTimeChange('minute', e.target.value)}>
+                                {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => (<option key={m} value={m}>{m}</option>))}
                             </select>
                         </div>
                     </div>
 
-                    <button onClick={() => handleTimeChange(1)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">1m+</button>
-                    <button onClick={() => handleTimeChange(5)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">5m+</button>
-                    <button onClick={() => handleTimeChange(15)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">15m+</button>
-                    <button onClick={() => handleTimeChange(30)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">30m+</button>
-                    <button onClick={() => handleTimeChange(120)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-gray-50 shadow-sm rounded text-gray-600">2h+</button>
-                    <button onClick={() => setTime('15:30')} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded">EOD</button>
-                    <button onClick={() => handleDayChange(1)} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded cursor-pointer">Day &gt;&gt;</button>
+                    {/* Plus Controls Row */}
+                    <div className="flex flex-wrap justify-center items-center gap-1.5 md:gap-2">
+                        <button onClick={() => handleTimeChange(1)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">1m+</button>
+                        <button onClick={() => handleTimeChange(5)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">5m+</button>
+                        <button onClick={() => handleTimeChange(15)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">15m+</button>
+                        <button onClick={() => handleTimeChange(30)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">30m+</button>
+                        <button onClick={() => handleTimeChange(120)} className="px-2 py-1 border border-gray-200 bg-white hover:bg-blue-50 shadow-sm rounded text-gray-700 text-[11px] md:text-sm font-medium min-w-[36px] text-center">2h+</button>
+                        <button onClick={() => setTime('15:30')} className="px-2 py-1 text-gray-500 hover:bg-gray-200 rounded text-[11px] md:text-sm font-medium">EOD</button>
+                        <button onClick={() => handleDayChange(1)} className="px-2 py-1 text-gray-500 hover:bg-gray-200 rounded text-[11px] md:text-sm font-medium cursor-pointer">Day &gt;&gt;</button>
+                    </div>
                 </div>
-                <div className="hidden xl:flex w-40 justify-end">
-                    <button className="text-gray-500 hover:text-gray-700 flex items-center gap-1"><Camera size={16} /> Snapshot</button>
+                
+                {/* Desktop Snapshot (Hidden on mobile) */}
+                <div className="hidden xl:flex w-32 justify-end">
+                    <button className="text-gray-500 hover:text-gray-800 flex items-center gap-1 font-medium"><Camera size={16} /> Snapshot</button>
                 </div>
             </div>
 
-            {/* 2. STATS BAR */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3 flex flex-col lg:flex-row items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-8 font-medium">
-                    <div className="flex items-center gap-2 text-green-600">
-                        <span className="bg-green-100 text-green-700 rounded-full w-4 h-4 flex items-center justify-center font-bold text-[10px]">+</span> Add Futures
+            {/* 2. STATS BAR (Stockmock Clean Mobile View) */}
+            <div className="bg-white border-b border-gray-200 px-4 py-3 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+                
+                {/* Stats Wrapper */}
+                <div className="flex flex-col xl:flex-row w-full xl:w-auto gap-3 xl:gap-8 font-medium">
+                    
+                    {/* Add Futures Button */}
+                    <div className="flex justify-start">
+                        <button className="flex items-center gap-2 text-green-600 font-bold bg-green-50 px-3 py-1.5 rounded-md border border-green-100 xl:border-0 xl:bg-transparent xl:p-0">
+                            <span className="bg-green-100 xl:bg-green-100 text-green-700 rounded-full w-4 h-4 flex items-center justify-center font-bold text-[10px]">+</span> Add Futures
+                        </button>
                     </div>
-                    <div><span className="text-gray-500">Day Open:</span> 24343.5 <span className="text-red-500">(-23pt, -0.1%)</span></div>
-                    <div><span className="text-gray-500">Spot:</span> {data.spotPrice ? data.spotPrice : '---'} <span className="text-red-500">(-36pt, -0.1%)</span></div>
-                    <div><span className="text-gray-500">Fut:</span> 24361.4</div>
-                    <div><span className="text-gray-500">Synth Fut:</span> 24320.8 <span className="text-gray-400 font-normal">(18 AUG)</span></div>
+
+                    {/* 🎯 FIX: Mobile List View (Label Left, Value Right), Inline on Desktop */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-row gap-x-6 gap-y-0 xl:gap-y-0 text-[13px] bg-gray-50 xl:bg-transparent px-3 py-1 xl:p-0 rounded-lg border border-gray-200 xl:border-0 w-full xl:w-auto">
+                        
+                        <div className="flex justify-between xl:justify-start items-center gap-2 border-b border-gray-200 xl:border-0 py-2 xl:py-0">
+                            <span className="text-gray-500">Day Open:</span> 
+                            <span className="text-gray-800 font-bold">24343.5 <span className="text-red-500 font-medium">(-23pt, -0.1%)</span></span>
+                        </div>
+                        
+                        <div className="flex justify-between xl:justify-start items-center gap-2 border-b border-gray-200 md:border-b-0 xl:border-0 py-2 xl:py-0">
+                            <span className="text-gray-500">Spot:</span> 
+                            <span className="text-gray-800 font-bold">{data.spotPrice ? data.spotPrice : '---'} <span className="text-red-500 font-medium">(-36pt, -0.1%)</span></span>
+                        </div>
+                        
+                        <div className="flex justify-between xl:justify-start items-center gap-2 border-b border-gray-200 md:border-b-0 xl:border-0 py-2 xl:py-0">
+                            <span className="text-gray-500">Fut:</span> 
+                            <span className="text-gray-800 font-bold">24361.4</span>
+                        </div>
+                        
+                        <div className="flex justify-between xl:justify-start items-center gap-2 py-2 xl:py-0">
+                            <span className="text-gray-500">Synth Fut:</span> 
+                            <span className="text-gray-800 font-bold">24320.8 <span className="text-gray-400 font-normal text-[11px]">(18 AUG)</span></span>
+                        </div>
+
+                    </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 rounded font-medium transition-colors"><Search size={14} /> Strategy Finder</button>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-gray-700 border border-gray-300 hover:bg-gray-50 rounded font-medium transition-colors">Saved Strategies</button>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-gray-700 hover:text-gray-900 font-medium transition-colors"><Download size={14} /> Import Strategy</button>
+
+                {/* Strategy Buttons */}
+                <div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-2 w-full xl:w-auto mt-1 xl:mt-0">
+                    <button className="flex justify-center items-center gap-1.5 px-3 py-2 text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 rounded-md font-bold transition-colors w-full md:w-auto text-[13px]">
+                        <Search size={14} /> Strategy Finder
+                    </button>
+                    <button className="flex justify-center items-center gap-1.5 px-3 py-2 text-gray-700 border border-gray-300 hover:bg-gray-100 rounded-md font-bold transition-colors w-full md:w-auto text-[13px]">
+                        Saved Strategies
+                    </button>
+                    <button className="col-span-2 md:col-span-1 flex justify-center items-center gap-1.5 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-bold transition-colors w-full md:w-auto text-[13px] border border-gray-200 xl:border-0">
+                        <Download size={14} /> Import Strategy
+                    </button>
                 </div>
             </div>
 
@@ -524,14 +565,22 @@ const SimulatorPage = () => {
                         <div className="w-16"></div> 
                     </div>
 
-                    <div className="flex items-center border-b border-gray-200 overflow-x-auto custom-scrollbar shrink-0">
-                        <button className="p-2 text-gray-400 hover:text-gray-600"><ChevronLeft size={16}/></button>
+                    <div className="flex items-center border-b border-gray-200 overflow-hidden shrink-0 w-full">
+                        {/* LEFT ARROW */}
+                        <button 
+                            onClick={handlePrevExpiries}
+                            disabled={expiryStartIndex === 0}
+                            className={`p-2 transition-colors ${expiryStartIndex === 0 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-200'}`}
+                        >
+                            <ChevronLeft size={16}/>
+                        </button>
                         
-                        <div className="flex-1 flex min-w-max">
-                            {/* 🎯 EXPIRE DATES LOOP */}
-                            {availableExpiries.map((expDate, idx) => {
-                                // 🎯 HAR TAB KA APNA PERSONAL DTE AUR LABEL NIKALO
-                                // (Yahan 'date' tumhara wo state hai jisme Simulator ka current date save hai)
+                        {/* 🎯 FIX: 'justify-center' हटाया और 'w-full' लगाया */}
+                        <div className="flex-1 flex w-full transition-all duration-300">
+                            {/* Sliced Expiry Dates Loop */}
+                            {availableExpiries
+                                .slice(expiryStartIndex, expiryStartIndex + visibleExpiriesCount)
+                                .map((expDate, idx) => {
                                 const tabInfo = getTabDteInfo(date, expDate); 
 
                                 return (
@@ -541,17 +590,17 @@ const SimulatorPage = () => {
                                             setSelectedExpiry(expDate);
                                             fetchSimulatorData(time, expDate);
                                         }}
-                                        className={`px-4 py-2 flex flex-col items-center justify-center cursor-pointer transition-colors
+                                        // 🎯 FIX: Fixed width हटाकर 'flex-1' लगाया ताकि ये पूरा स्पेस बराबर बाँट लें
+                                        className={`flex-1 px-1 md:px-2 py-2 flex flex-col items-center justify-center cursor-pointer transition-colors
                                             ${selectedExpiry === expDate 
                                                 ? 'border-b-2 border-blue-500 bg-blue-50' 
                                                 : 'hover:bg-gray-50 border-b-2 border-transparent'
                                             }`}
                                     >
-                                        <span className={`font-semibold ${selectedExpiry === expDate ? 'text-blue-600' : 'text-gray-500 font-medium'}`}>
+                                        <span className={`font-semibold text-sm ${selectedExpiry === expDate ? 'text-blue-600' : 'text-gray-500 font-medium'}`}>
                                             {formatHeaderDate(expDate)}
                                         </span>
                                         
-                                        {/* 🎯 NAYA DYNAMIC DTE LABEL */}
                                         <span className={`text-[10px] ${selectedExpiry === expDate ? 'text-gray-500' : 'text-gray-400'}`}>
                                             ({tabInfo.label}: {tabInfo.dte} DTE)
                                         </span>
@@ -560,7 +609,14 @@ const SimulatorPage = () => {
                             })}
                         </div>
 
-                        <button className="p-2 text-gray-400 hover:text-gray-600"><ChevronRight size={16}/></button>
+                        {/* RIGHT ARROW */}
+                        <button 
+                            onClick={handleNextExpiries}
+                            disabled={expiryStartIndex + visibleExpiriesCount >= availableExpiries.length}
+                            className={`p-2 transition-colors ${expiryStartIndex + visibleExpiriesCount >= availableExpiries.length ? 'text-gray-200 cursor-not-allowed' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-200'}`}
+                        >
+                            <ChevronRight size={16}/>
+                        </button>
                     </div>
 
                     <div className="p-3 border-b border-gray-200 text-[12px] space-y-3 bg-white shrink-0">
