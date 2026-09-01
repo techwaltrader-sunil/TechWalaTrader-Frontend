@@ -3,14 +3,13 @@ import axios from 'axios';
 import { init, dispose, registerOverlay } from 'klinecharts';
 import { 
     MousePointer2, Slash, Minus, ArrowRight, Square, Circle, 
-    GripHorizontal, Trash2, Loader2, X, Pencil, PaintBucket, Type,
-    MoreHorizontal, Copy, EyeOff, Layers, Settings, ChevronDown // 🎯 ये 4 नए आइकन्स जोड़े हैं
+    GripHorizontal, Loader2, Type, 
+    Plus, Bell, TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 
 import { registerAllDrawingTools } from './DrawingPanel';
-import { hexToRgba, TV_COLORS, aggregateCandles } from './DrawingPanel/utils';
+import { hexToRgba, aggregateCandles } from './DrawingPanel/utils';
 
-import { textOverlay } from './DrawingPanel/text';
 import { SettingsModal } from './ui/SettingsModal';
 import { EditPanel } from './ui/EditPanel';
 import { LeftToolbar } from './ui/LeftToolbar';
@@ -20,6 +19,71 @@ import ToastNotification from '../../../components/ToastNotification';
 
 registerAllDrawingTools();
 
+
+
+// 🌟 1. अपग्रेडेड (Upgraded) अलर्ट लाइन डिज़ाइन!
+if (!window.alertLineRegistered) {
+    registerOverlay({
+        name: 'alertLine',
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: false,
+        needDefaultYAxisFigure: true,
+        createPointFigures: ({ overlay, coordinates, bounding }) => {
+            const y = coordinates[0].y;
+            const ext = overlay.extendData || {};
+            const isHovered = ext.isHovered || false;
+            const price = ext.price || 0;
+            const symbol = ext.symbol || 'NIFTY';
+
+            const figures = [
+                {
+                    type: 'line',
+                    attrs: { coordinates: [{ x: 0, y }, { x: bounding.width, y }] },
+                    styles: { style: 'dashed', color: '#3b3b3b', size: 1.5, dashedValue: [5, 5] }
+                },
+                {
+                    type: 'text',
+                    attrs: { x: bounding.width - 22, y: y - 10, text: '⮞' },
+                    styles: { color: 'black', backgroundColor: 'transparent', size: 20, paddingLeft: 6, paddingRight: 6, paddingTop: 3, paddingBottom: 3, borderRadius: 4 }
+                }
+            ];
+
+            // 🌟 🎯 The Pro Fix: Text को एक 'rect' (Rectangle) डिब्बे के अंदर रखना
+           if (isHovered) {
+                figures.push({
+                    type: 'text',
+                    attrs: {
+                        x: bounding.width / 2, // स्क्रीन के एकदम सेंटर में
+                        y: y - 12, // लाइन से थोड़ा ऊपर
+                        text: `${symbol} Crossing ${parseFloat(price).toFixed(2)}    ✖`,
+                    },
+                    styles: {
+                        style: 'stroke_fill', // 🚨 THE MAGIC KEY: यह बॉर्डर और बैकग्राउंड दोनों को इनेबल करेगा!
+                        color: '#000000', // टेक्स्ट का रंग (ब्लैक)
+                        backgroundColor: '#ffffff', // 🎯 वाइट बैकग्राउंड
+                        borderColor: '#000000', // 🎯 ब्लैक बॉर्डर
+                        borderSize: 1, // बॉर्डर की मोटाई (डॉक्युमेंटेशन के हिसाब से एकदम सही)
+                        borderStyle: 'solid',
+                        borderRadius: 4,
+                        paddingLeft: 10,
+                        paddingRight: 10,
+                        paddingTop: 5,
+                        paddingBottom: 5,
+                        size: 12,
+                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', // 🌟 THE FIX: मॉडर्न और क्लीन फ़ॉन्ट
+                        weight: '500',
+                        align: 'center', // टेक्स्ट को बीच में अलाइन करेगा
+                        baseline: 'bottom' // लाइन के ऊपर टिकाएगा
+                    }
+                });
+
+            }
+
+            return figures;
+        }
+    });
+    window.alertLineRegistered = true;
+}
 
 // ==========================================
 // 📊 MAIN CHART COMPONENT
@@ -35,17 +99,45 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
 
     const [toastData, setToastData] = useState(null);
 
-
-
     // 🌟 KLineCharts 10.x के Live Update Callback को सेव करने के लिए
     const liveUpdateCallbackRef = useRef(null);
 
+    // 🌟 1. State में 'x: 0' जोड़ें
+    const [crosshairBtn, setCrosshairBtn] = useState({ visible: false, x: 0, y: 0, price: 0 });
+    const [tvMenu, setTvMenu] = useState({ visible: false, y: 0, price: 0 });
+
+    const tvMenuRef = useRef(false); 
+
+    // 🌟 2. Hover को ट्रैक करने के लिए State और Ref दोनों का कॉम्बिनेशन
+    const [isHoveringBtn, setIsHoveringBtn] = useState(false);
+    const isHoveringBtnRef = useRef(false);
+
+    const setHoverState = (val) => {
+        setIsHoveringBtn(val);
+        isHoveringBtnRef.current = val;
+    };
+
+    useEffect(() => { tvMenuRef.current = tvMenu.visible; }, [tvMenu.visible]);
 
     // 🌟 अलार्म्स को लाइव एनिमेशन में ट्रैक करने के लिए
     const activeAlertsRef = useRef(priceAlerts);
     useEffect(() => {
         activeAlertsRef.current = priceAlerts;
     }, [priceAlerts]);
+
+
+    // 🌟 Advanced Alert Config Modal State
+    const [alertConfigModal, setAlertConfigModal] = useState({
+        visible: false,
+        mode: 'create', // 'create' या 'edit'
+        id: null,
+        symbol: 'NIFTY',
+        price: 0,
+        condition: 'Crossing',
+        trigger: 'Only Once',
+        alertName: '',
+        message: ''
+    });
 
     
     // API को सही टाइमफ्रेम भेजने के लिए Ref
@@ -58,6 +150,14 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
 
     const dateRef = useRef(date);
     useEffect(() => { dateRef.current = date; }, [date]);
+
+
+    const [deleteAlertModal, setDeleteAlertModal] = useState({ 
+        visible: false, 
+        alertId: null, 
+        price: 0, 
+        symbol: 'NIFTY' 
+    });
 
   
     const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -222,7 +322,6 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
         chart.setSymbol({ ticker: symbol });
         chart.setPeriod({ span: timeframe.value, type: timeframe.unit });
 
-      
         // 🌟 KLineCharts 10.x का ऑफिशियल डेटा लोडर
         chart.setDataLoader({
             getBars: async ({ callback }) => {
@@ -255,10 +354,51 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
             }
         });
 
+
+        // ====================================================
+        // 🚀 🎯 THE TRADINGVIEW '+' BUTTON TRACKER (नया कोड)
+        // ====================================================
+        const crosshairHandler = (data) => {
+            // अगर मेनू खुला है, तो क्रॉसहेयर बटन को फ्रीज़ कर दें
+            if (tvMenuRef.current || isHoveringBtnRef.current) return;
+
+            // अगर क्रॉसहेयर गायब है या चार्ट से बाहर है
+            if (!data || data.y === undefined || data.y < 0) {
+                setCrosshairBtn(prev => ({ ...prev, visible: false }));
+                return;
+            }
+
+            try {
+                // Pixel (Y) को असली Price में बदलें
+                const val = chart.convertFromPixel([{ y: data.y }], { paneId: 'candle_pane' });
+                const price = val?.[0]?.value || val?.[0] || 0;
+
+                setCrosshairBtn({
+                    visible: true,
+                    x: data.x,
+                    y: data.y,
+                    price: price
+                });
+            } catch (err) {}
+        };
+
+        // क्रॉसहेयर मूवमेंट को सब्सक्राइब करें
+        chart.subscribeAction('onCrosshairChange', crosshairHandler);
+        // ====================================================
+
+
         const handleResize = () => { if (chartRef.current) chartRef.current.resize(); };
         window.addEventListener('resize', handleResize);
 
-        return () => { window.removeEventListener('resize', handleResize); if (domElement) dispose(domElement); chartRef.current = null; };
+        return () => { 
+            window.removeEventListener('resize', handleResize); 
+            
+            // 🧹 🚨 Cleanup: जब चार्ट रीलोड हो तो पुराने ट्रैकर को हटा दें
+            chart.unsubscribeAction('onCrosshairChange', crosshairHandler); 
+            
+            if (domElement) dispose(domElement); 
+            chartRef.current = null; 
+        };
     }, [symbol, base1mData, timeframe]);
     
 
@@ -478,29 +618,31 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                             if (!alertItem.isTriggered) {
                                 const targetPrice = Number(alertItem.price);
                                 
-                                // 🎯 अब हम असली (Historical) High/Low नहीं, 
-                                // बल्कि स्क्रीन पर बन रहे डायनामिक (Animated) High/Low को चेक कर रहे हैं!
+                                // 🎯 डायनामिक (Animated) High/Low चेक कर रहे हैं!
                                 const isHit = (dynamicLow <= targetPrice) && (dynamicHigh >= targetPrice);
                                 
                                 if (isHit) {
+                                    // 1. अलार्म बजाएं और Toast दिखाएं (तुम्हारा ओरिजिनल कोड)
                                     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
                                     audio.play().catch(e => console.log(e));
                                     
                                     setToastData({
                                         title: `Alert on ${symbol || 'NIFTY'}`, 
                                         message: `${symbol || 'NIFTY'} Crossing ${targetPrice.toFixed(2)} at ${time}`, 
-                                        type: 'alarm' // 🌟 यहाँ 'success' की जगह 'alarm' कर दिया!
+                                        type: 'alarm' 
                                     });
                                     
-                                    setPriceAlerts(prev => prev.map(a => a.id === alertItem.id ? { ...a, isTriggered: true } : a));
-                                    
-                                    const overlay = chartRef.current.getOverlayById(alertItem.id);
-                                    if (overlay) {
-                                        chartRef.current.overrideOverlay({
-                                            id: alertItem.id,
-                                            extendData: { ...overlay.extendData, borderColor: '#2962FF', lineWidth: 2 }
-                                        });
+                                    // 🚀 2. THE AUTO-DELETE MAGIC 🚀
+                                    // A. चार्ट से डैश लाइन को तुरंत गायब करें
+                                    if (chartRef.current) {
+                                        chartRef.current.removeOverlay(alertItem.id);
                                     }
+                                    
+                                    // B. स्टेट (मेमोरी) से अलर्ट को हमेशा के लिए डिलीट कर दें ताकि दुबारा हिट न हो
+                                    setPriceAlerts(prev => prev.filter(a => a.id !== alertItem.id));
+
+                                    // C. Console Log (चेकिंग के लिए)
+                                    console.log(`✅ ALERT AUTO-DELETED: ${symbol} hit ${targetPrice.toFixed(2)}`);
                                 }
                             }
                         });
@@ -1027,7 +1169,492 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                         autoClose={false}  
                     />
                 )}
+
+
+                
+
+                {/* 🚀 1. THE FLOATING '+' BUTTON (TradingView Style) */}
+                {(isHoveringBtn || tvMenu.visible) && crosshairBtn.visible && (
+                    <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden">
+                        {/* Horizontal Dashed Line (X-Axis) */}
+                        <div 
+                            className="absolute left-0 border-t border-dashed border-gray-600 opacity-60"
+                            style={{ top: crosshairBtn.y, width: 'calc(100% - 64px)' }} 
+                        />
+                        {/* Vertical Dashed Line (Y-Axis) */}
+                        <div 
+                            className="absolute top-0 border-l border-dashed border-gray-600 opacity-60"
+                            style={{ left: crosshairBtn.x, height: '100%' }} 
+                        />
+                    </div>
+                )}
+
+                {/* 🚀 1. THE FLOATING '+' BUTTON & PRICE LABEL (TradingView Style) */}
+                {crosshairBtn.visible && !tvMenu.visible && (
+                    <div 
+                        className="absolute z-40 flex items-center cursor-pointer group"
+                        style={{
+                            top: crosshairBtn.y - 12, 
+                            right: 0, 
+                        }}
+                        // 🌟 Hover स्टेट को सेट करें
+                        onMouseEnter={() => setHoverState(true)}
+                        onMouseLeave={() => setHoverState(false)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setTvMenu({ visible: true, y: crosshairBtn.y, price: crosshairBtn.price });
+                        }}
+                    >
+                        {/* गोल '+' आइकॉन */}
+                        <div className="flex items-center justify-center w-5 h-5 mr-1.5 bg-white border border-gray-400 rounded-full shadow-sm text-gray-600 group-hover:text-blue-600 group-hover:border-blue-600 transition-colors">
+                            <Plus size={14} strokeWidth={2.5} />
+                        </div>
+                        
+                        {/* 🌟 TradingView स्टाइल डार्क प्राइस लेबल */}
+                        <div 
+                            className="flex items-center justify-center h-6 bg-slate-800 text-white text-[11px] font-semibold rounded-sm shadow-sm"
+                            style={{ width: '64px' }} 
+                        >
+                            {crosshairBtn.price.toFixed(2)}
+                        </div>
+                    </div>
+                )}
+
+                {/* 🚀 2. THE CONTEXT MENU (Add Alert, Buy, Sell) */}
+                {tvMenu.visible && (
+                    <>
+                        {/* Background Overlay (क्लिक करके बंद करने के लिए) */}
+                        <div 
+                            className="absolute inset-0 z-40 cursor-crosshair" 
+                            onClick={() => {
+                                setTvMenu({ ...tvMenu, visible: false });
+                                setHoverState(false); // 🌟 Lock खोलें
+                                setCrosshairBtn(prev => ({ ...prev, visible: false })); // 🌟 बटन को छुपाएं
+                            }} 
+                        />
+                        
+                        <div 
+                            className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg flex flex-col py-1 text-xs text-gray-700 w-60 animate-in fade-in zoom-in duration-150"
+                            style={{
+                                top: tvMenu.y - 10,
+                                right: 85, // बटन के थोड़ा बाईं (Left) तरफ खुलेगा
+                            }}
+                        >
+                            {/* Header (Price) */}
+                            <div className="px-3 py-2 border-b border-gray-100 font-bold flex justify-between items-center text-blue-600 bg-blue-50/50">
+                                <span className="text-[13px]">{tvMenu.price.toFixed(2)}</span>
+                                <X 
+                                    size={14} 
+                                    className="cursor-pointer text-gray-400 hover:text-red-500" 
+                                    onClick={() => {
+                                        setTvMenu({ ...tvMenu, visible: false });
+                                        setHoverState(false); // 🌟 Lock खोलें
+                                        setCrosshairBtn(prev => ({ ...prev, visible: false })); // 🌟 बटन को छुपाएं
+                                    }} 
+                                />
+                            </div>
+
+                            {/* Options */}
+                            <div className="hover:bg-blue-50 px-3 py-2 cursor-pointer flex items-center gap-2 transition-colors"
+                                 onClick={() => {
+                                     // 🎯 THE FIX: सीधा लाइन बनाने के बजाय, पहले TradingView जैसा कॉन्फ़िगरेशन मोडल खोलें
+                                     setAlertConfigModal({
+                                         visible: true,
+                                         mode: 'create',
+                                         id: `alert_${Date.now()}`,
+                                         symbol: symbol || 'NIFTY',
+                                         price: tvMenu.price,
+                                         condition: 'Crossing',
+                                         trigger: 'Only Once',
+                                         alertName: `${symbol || 'NIFTY'} Alert`,
+                                         message: `${symbol || 'NIFTY'} Crossing ${tvMenu.price.toFixed(2)}`
+                                     });
+                                     
+                                     // 🌟 Clean Close for Context Menu
+                                     setTvMenu({ ...tvMenu, visible: false });
+                                     setHoverState(false);
+                                     setCrosshairBtn(prev => ({ ...prev, visible: false }));
+                                 }}>
+                                <Bell size={14} className="text-orange-500" /> 
+                                <span>Add alert on {symbol || 'NIFTY'} at {tvMenu.price.toFixed(2)}</span>
+                            </div>
+
+                            <div className="hover:bg-red-50 px-3 py-2 cursor-pointer flex items-center gap-2 text-red-600 transition-colors"
+                                 onClick={() => {
+                                     alert(`Virtual Sell Order Placed at ${tvMenu.price.toFixed(2)}`);
+                                     // 🌟 Clean Close
+                                     setTvMenu({ ...tvMenu, visible: false });
+                                     setHoverState(false);
+                                     setCrosshairBtn(prev => ({ ...prev, visible: false }));
+                                 }}>
+                                <TrendingDown size={14} /> Sell 1 {symbol || 'NIFTY'} Limit
+                            </div>
+
+                            <div className="hover:bg-green-50 px-3 py-2 cursor-pointer flex items-center gap-2 text-green-600 transition-colors"
+                                 onClick={() => {
+                                     alert(`Virtual Buy Order Placed at ${tvMenu.price.toFixed(2)}`);
+                                     // 🌟 Clean Close
+                                     setTvMenu({ ...tvMenu, visible: false });
+                                     setHoverState(false);
+                                     setCrosshairBtn(prev => ({ ...prev, visible: false }));
+                                 }}>
+                                <TrendingUp size={14} /> Buy 1 {symbol || 'NIFTY'} Stop
+                            </div>
+
+                            <div className="border-t border-gray-100 my-1"></div>
+
+                            <div className="hover:bg-blue-50 px-3 py-2 cursor-pointer flex items-center gap-2 transition-colors"
+                                 onClick={() => {
+                                     // 🎯 THE FIX: यूनिक ID और Edit Panel का जादुई onClick इवेंट
+                                     const isolatedId = `shape_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+
+                                     chartRef.current.createOverlay({
+                                         name: 'horizontalLine',
+                                         id: isolatedId,
+                                         groupId: isolatedId,
+                                         // 🌟 डिफ़ॉल्ट सेटिंग्स पास करें ताकि Edit Panel में सही डेटा दिखे
+                                         extendData: { 
+                                             borderHex: '#2962FF', lineWidth: 2, fillHex: '#2962FF', 
+                                             fillOpacity: 0.2, borderOpacity: 1, text: '', 
+                                             textColor: '#2962FF', textSize: 14, isSelected: false 
+                                         },
+                                         styles: { line: { color: '#2962FF', size: 2 } }, 
+                                         points: [{ value: tvMenu.price }],
+                                         
+                                         // 🌟 The Magic Click Handler (यही Edit Panel खोलेगा!)
+                                         onClick: function (event) {
+                                             isOverlayClickedRef.current = true; 
+                                             if (event && event.overlay) {
+                                                 activeOverlayInstanceRef.current = event.overlay;
+                                                 setSelectedOverlay({ id: event.overlay.id, name: event.overlay.name });
+                                                 setActiveColorPicker(null);
+                                                 
+                                                 const ext = event.overlay.extendData || {};
+                                                 chartRef.current.overrideOverlay({ 
+                                                     id: event.overlay.id, groupId: event.overlay.id,
+                                                     extendData: { ...ext, isSelected: true } 
+                                                 });
+
+                                                 setDrawingConfig({
+                                                     fillColor: ext.fillHex || '#2962FF', borderColor: ext.borderHex || '#2962FF', lineWidth: ext.lineWidth || 2,
+                                                     fillOpacity: ext.fillOpacity !== undefined ? ext.fillOpacity : 0.2, borderOpacity: ext.borderOpacity !== undefined ? ext.borderOpacity : 1,
+                                                     text: ext.text || '', textColor: ext.textColor || '#2962FF', textSize: ext.textSize || 14
+                                                 });
+                                             }
+                                             return true; 
+                                         },
+                                         onPressedMoveEnd: function (event) {
+                                             if (event && event.overlay && event.overlay.points) {
+                                                 const ext = event.overlay.extendData || {};
+                                                 chartRef.current.overrideOverlay({
+                                                     id: event.overlay.id, groupId: event.overlay.id,
+                                                     extendData: { ...ext, customPoints: event.overlay.points } 
+                                                 });
+                                                 activeOverlayInstanceRef.current = event.overlay;
+                                             }
+                                             return false;
+                                         }
+                                     });
+                                     
+                                     // 🌟 Clean Close
+                                     setTvMenu({ ...tvMenu, visible: false });
+                                     setHoverState(false);
+                                     setCrosshairBtn(prev => ({ ...prev, visible: false }));
+                                 }}>
+                                <Minus size={14} className="text-blue-500" /> Draw horizontal line
+                            </div>                          
+
+                        </div>
+                    </>
+                )}
             </div>
+            
+            {/* 🚀 3. TRADINGVIEW STYLE DELETE CONFIRMATION MODAL */}
+                {deleteAlertModal.visible && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[1px] transition-opacity">
+                        
+                        {/* Modal Box */}
+                        <div className="bg-white rounded-lg shadow-2xl w-[400px] max-w-[90vw] flex flex-col animate-in fade-in zoom-in duration-200">
+                            
+                            {/* Header */}
+                            <div className="flex justify-between items-center px-6 py-4">
+                                <h3 className="text-lg font-semibold text-gray-900">Delete this alert?</h3>
+                                <button 
+                                    onClick={() => setDeleteAlertModal({ ...deleteAlertModal, visible: false })}
+                                    className="text-gray-400 hover:text-gray-700 transition-colors"
+                                >
+                                    <X size={20} strokeWidth={2} />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="px-6 pb-6 text-[15px] text-gray-700">
+                                Doing this will permanently delete your "{deleteAlertModal.symbol} Crossing {parseFloat(deleteAlertModal.price).toFixed(2)}" alert.
+                            </div>
+
+                            {/* Footer (Buttons) */}
+                            <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-lg">
+                                <button 
+                                    onClick={() => setDeleteAlertModal({ ...deleteAlertModal, visible: false })}
+                                    className="px-4 py-2 rounded text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
+                                >
+                                    No
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        // 🎯 1. चार्ट से लाइन हटाएँ
+                                        if (chartRef.current) {
+                                            chartRef.current.removeOverlay(deleteAlertModal.alertId);
+                                            // कर्सर को वापस नार्मल करें
+                                            if (chartContainerRef.current) chartContainerRef.current.style.removeProperty('cursor');
+                                        }
+                                        // 🎯 2. बैकग्राउंड अलार्म्स की लिस्ट से हटाएँ
+                                        setPriceAlerts(prev => prev.filter(a => a.id !== deleteAlertModal.alertId));
+                                        
+                                        // 🎯 3. मोडल बंद करें
+                                        setDeleteAlertModal({ ...deleteAlertModal, visible: false });
+                                    }}
+                                    className="px-5 py-2 rounded bg-[#f23645] hover:bg-[#d62837] text-white text-sm font-medium shadow-sm transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 🚀 4. ADVANCED TRADINGVIEW ALERT CONFIG MODAL */}
+                {alertConfigModal.visible && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[1px] transition-opacity">
+                        <div className="bg-white rounded-lg shadow-2xl w-[500px] max-w-[95vw] flex flex-col animate-in fade-in zoom-in duration-200 font-sans">
+                            
+                            {/* Header */}
+                            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    {alertConfigModal.mode === 'create' ? 'Create Alert' : 'Edit Alert'} on {alertConfigModal.symbol}
+                                </h3>
+                                <button onClick={() => setAlertConfigModal({ ...alertConfigModal, visible: false })} className="text-gray-400 hover:text-gray-700">
+                                    <X size={20} strokeWidth={2} />
+                                </button>
+                            </div>
+
+                            {/* Body (Forms) */}
+                            <div className="px-6 py-5 flex flex-col gap-4 text-sm text-gray-700">
+                                
+                                {/* Condition Row */}
+                                <div className="flex items-center gap-4">
+                                    <label className="w-24 text-gray-500">Condition</label>
+                                    <div className="flex-1 flex gap-2">
+                                        <select className="border border-gray-300 rounded px-3 py-1.5 outline-none focus:border-blue-500 bg-gray-50 flex-1">
+                                            <option>{alertConfigModal.symbol}</option>
+                                        </select>
+                                        <select 
+                                            className="border border-gray-300 rounded px-3 py-1.5 outline-none focus:border-blue-500 bg-white flex-1"
+                                            value={alertConfigModal.condition}
+                                            onChange={(e) => setAlertConfigModal({...alertConfigModal, condition: e.target.value})}
+                                        >
+                                            <option value="Crossing">Crossing</option>
+                                            <option value="Crossing Up">Crossing Up</option>
+                                            <option value="Crossing Down">Crossing Down</option>
+                                            <option value="Greater Than">Greater Than</option>
+                                            <option value="Less Than">Less Than</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                {/* Price Value Row */}
+                                <div className="flex items-center gap-4">
+                                    <div className="w-24"></div>
+                                    <div className="flex-1 flex gap-2">
+                                        <select className="border border-gray-300 rounded px-3 py-1.5 outline-none bg-gray-50 w-24">
+                                            <option>Value</option>
+                                        </select>
+                                        <input 
+                                            type="number" 
+                                            value={alertConfigModal.price}
+                                            onChange={(e) => setAlertConfigModal({...alertConfigModal, price: parseFloat(e.target.value)})}
+                                            className="border border-gray-300 rounded px-3 py-1.5 outline-none focus:border-blue-500 flex-1 font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Trigger Row */}
+                                <div className="flex items-center gap-4 mt-2">
+                                    <label className="w-24 text-gray-500">Trigger</label>
+                                    <select 
+                                        className="border border-gray-300 rounded px-3 py-1.5 outline-none focus:border-blue-500 bg-white flex-1"
+                                        value={alertConfigModal.trigger}
+                                        onChange={(e) => setAlertConfigModal({...alertConfigModal, trigger: e.target.value})}
+                                    >
+                                        <option>Only Once</option>
+                                        <option>Once Per Bar</option>
+                                        <option>Once Per Bar Close</option>
+                                    </select>
+                                </div>
+
+                                <hr className="border-gray-100 my-2" />
+
+                                {/* Alert Name */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-gray-500">Alert name</label>
+                                    <input 
+                                        type="text" 
+                                        value={alertConfigModal.alertName}
+                                        onChange={(e) => setAlertConfigModal({...alertConfigModal, alertName: e.target.value})}
+                                        className="border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+                                        placeholder="Optional"
+                                    />
+                                </div>
+
+                                {/* Message */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-gray-500">Message</label>
+                                    <textarea 
+                                        rows="3"
+                                        value={alertConfigModal.message}
+                                        onChange={(e) => setAlertConfigModal({...alertConfigModal, message: e.target.value})}
+                                        className="border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500 resize-none"
+                                    ></textarea>
+                                </div>
+
+                            </div>
+
+                            {/* Footer Buttons */}
+                            <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-lg">
+                                <button 
+                                    onClick={() => setAlertConfigModal({ ...alertConfigModal, visible: false })}
+                                    className="px-4 py-2 rounded text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        const targetPrice = alertConfigModal.price;
+                                        const alertId = alertConfigModal.id;
+
+                                        if (alertConfigModal.mode === 'create') {
+                                            // 🎯 1. CREATE MODE (नया अलर्ट बनाएँ)
+                                            setPriceAlerts(prev => [...prev, { 
+                                                id: alertId, 
+                                                price: targetPrice, 
+                                                condition: alertConfigModal.condition,
+                                                isTriggered: false 
+                                            }]);
+
+                                            chartRef.current.createOverlay({
+                                                name: 'alertLine',
+                                                id: alertId,
+                                                groupId: alertId,
+                                                extendData: { isHovered: false, price: targetPrice, symbol: alertConfigModal.symbol },
+                                                points: [{ value: targetPrice }],
+                                                
+                                                onMouseEnter: function (event) {
+                                                    const ext = event.overlay.extendData || {};
+                                                    chartRef.current.overrideOverlay({ id: event.overlay.id, extendData: { ...ext, isHovered: true, price: event.overlay.points[0].value } });
+                                                    if(chartContainerRef.current) {
+                                                        const canvases = chartContainerRef.current.querySelectorAll('canvas');
+                                                        canvases.forEach(c => c.style.setProperty('cursor', 'ns-resize', 'important'));
+                                                    }
+                                                    return true;
+                                                },
+                                                onMouseLeave: function (event) {
+                                                    const ext = event.overlay.extendData || {};
+                                                    chartRef.current.overrideOverlay({ id: event.overlay.id, extendData: { ...ext, isHovered: false } });
+                                                    if(chartContainerRef.current) {
+                                                        const canvases = chartContainerRef.current.querySelectorAll('canvas');
+                                                        canvases.forEach(c => c.style.removeProperty('cursor'));
+                                                    }
+                                                    return true;
+                                                },
+                                                
+                                                // 🌟 THE FIX 1: सिर्फ Text Box एरिया में क्लिक करने पर डिलीट मोडल खुलेगा
+                                                onClick: function (event) {
+                                                    const clickX = event.x;
+                                                    // 🎯 Container की चौड़ाई से सटीक Center निकालें (Y-Axis के 60px हटाकर)
+                                                    const paneWidth = chartContainerRef.current ? (chartContainerRef.current.clientWidth + 50) : 1000;
+                                                    const centerX = paneWidth / 2;
+                                                    
+                                                    // 🎯 अगर क्लिक सेंटर से 40px आगे और 110px के बीच है (यहाँ हमारा ✖ होता है)
+                                                    if (clickX > centerX + 40 && clickX < centerX + 110) {
+                                                        const ext = event.overlay.extendData || {};
+                                                        setDeleteAlertModal({ 
+                                                            visible: true, 
+                                                            alertId: event.overlay.id, 
+                                                            price: event.overlay.points[0].value, 
+                                                            symbol: ext.symbol || 'NIFTY' 
+                                                        });
+
+                                                        if (chartContainerRef.current) {
+                                                            const canvases = chartContainerRef.current.querySelectorAll('canvas');
+                                                            canvases.forEach(c => c.style.removeProperty('cursor'));
+                                                        }
+                                                        return true; 
+                                                    }
+                                                    return false; 
+                                                },
+
+                                                // 🌟 THE FIX 2: डबल क्लिक (डैश लाइन या मेन टेक्स्ट पर)
+                                                onDoubleClick: function (event) {
+                                                    const clickX = event.x;
+                                                    const paneWidth = chartContainerRef.current ? (chartContainerRef.current.clientWidth - 60) : 1000;
+                                                    const centerX = paneWidth / 2;
+
+                                                    // 🎯 अगर क्लिक ✖ वाले हिस्से को छोड़कर कहीं भी (लाइन या टेक्स्ट) पर हुआ है
+                                                    if (clickX <= centerX + 40 || clickX >= centerX + 110) {
+                                                        const ext = event.overlay.extendData || {};
+                                                        setAlertConfigModal({
+                                                            visible: true,
+                                                            mode: 'edit',
+                                                            id: event.overlay.id,
+                                                            symbol: ext.symbol || 'NIFTY',
+                                                            price: event.overlay.points[0].value,
+                                                            condition: 'Crossing', 
+                                                            trigger: 'Only Once',
+                                                            alertName: `${ext.symbol || 'NIFTY'} Alert`,
+                                                            message: `${ext.symbol || 'NIFTY'} Crossing ${event.overlay.points[0].value.toFixed(2)}`
+                                                        });
+                                                        return true;
+                                                    }
+                                                    return false;
+                                                },
+                                                
+                                                onPressedMoveEnd: function (event) {
+                                                    if (event && event.overlay && event.overlay.points) {
+                                                        const newPrice = event.overlay.points[0].value;
+                                                        const ext = event.overlay.extendData || {};
+                                                        chartRef.current.overrideOverlay({
+                                                            id: event.overlay.id, groupId: event.overlay.id,
+                                                            extendData: { ...ext, customPoints: event.overlay.points, price: newPrice, isHovered: false } 
+                                                        });
+                                                        setPriceAlerts(prev => prev.map(a => a.id === event.overlay.id ? { ...a, price: newPrice } : a));
+                                                    }
+                                                    return false;
+                                                }
+                                            });
+                                        } else {
+                                            // 🎯 2. EDIT MODE (अगर डबल-क्लिक करके मोडल खोला था और Save दबाया)
+                                            // स्टेट को अपडेट करें
+                                            setPriceAlerts(prev => prev.map(a => a.id === alertId ? { ...a, price: targetPrice, condition: alertConfigModal.condition } : a));
+
+                                            // पुरानी वाली लाइन को नए प्राइस के साथ ओवरराइड (अपडेट) कर दें
+                                            chartRef.current.overrideOverlay({
+                                                id: alertId,
+                                                points: [{ value: targetPrice }],
+                                                extendData: { isHovered: false, price: targetPrice, symbol: alertConfigModal.symbol }
+                                            });
+                                        }
+
+                                        // फॉर्म मोडल बंद करें
+                                        setAlertConfigModal({ ...alertConfigModal, visible: false });
+                                    }}
+                                    className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm transition-colors"
+                                >
+                                    {alertConfigModal.mode === 'create' ? 'Create' : 'Save'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             
         </div>
     );
