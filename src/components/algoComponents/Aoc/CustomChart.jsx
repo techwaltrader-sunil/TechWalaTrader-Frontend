@@ -16,12 +16,13 @@ import { LeftToolbar } from './ui/LeftToolbar';
 
 import ToastNotification from '../../../components/ToastNotification';
 
+import { OPTION_INDICES } from '../../../data/instrumentData';
+
 
 registerAllDrawingTools();
 
 
-
-// 🌟 1. अपग्रेडेड (Upgraded) अलर्ट लाइन डिज़ाइन!
+// 🚀 1. ALERT LINE OVERLAY
 if (!window.alertLineRegistered) {
     registerOverlay({
         name: 'alertLine',
@@ -48,47 +49,268 @@ if (!window.alertLineRegistered) {
                 }
             ];
 
-            // 🌟 🎯 The Pro Fix: Text को एक 'rect' (Rectangle) डिब्बे के अंदर रखना
-           if (isHovered) {
+            if (isHovered) {
                 figures.push({
                     type: 'text',
                     attrs: {
-                        x: bounding.width / 2, // स्क्रीन के एकदम सेंटर में
-                        y: y - 12, // लाइन से थोड़ा ऊपर
+                        x: bounding.width / 2,
+                        y: y - 12,
                         text: `${symbol} Crossing ${parseFloat(price).toFixed(2)}    ✖`,
                     },
                     styles: {
-                        style: 'stroke_fill', // 🚨 THE MAGIC KEY: यह बॉर्डर और बैकग्राउंड दोनों को इनेबल करेगा!
-                        color: '#000000', // टेक्स्ट का रंग (ब्लैक)
-                        backgroundColor: '#ffffff', // 🎯 वाइट बैकग्राउंड
-                        borderColor: '#000000', // 🎯 ब्लैक बॉर्डर
-                        borderSize: 1, // बॉर्डर की मोटाई (डॉक्युमेंटेशन के हिसाब से एकदम सही)
+                        style: 'stroke_fill',
+                        color: '#000000',
+                        backgroundColor: '#ffffff',
+                        borderColor: '#000000',
+                        borderSize: 1,
                         borderStyle: 'solid',
                         borderRadius: 4,
-                        paddingLeft: 10,
-                        paddingRight: 10,
-                        paddingTop: 5,
-                        paddingBottom: 5,
+                        paddingLeft: 10, paddingRight: 10, paddingTop: 5, paddingBottom: 5,
                         size: 12,
-                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', // 🌟 THE FIX: मॉडर्न और क्लीन फ़ॉन्ट
+                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                         weight: '500',
-                        align: 'center', // टेक्स्ट को बीच में अलाइन करेगा
-                        baseline: 'bottom' // लाइन के ऊपर टिकाएगा
+                        align: 'center',
+                        baseline: 'bottom'
                     }
                 });
-
             }
-
             return figures;
         }
     });
     window.alertLineRegistered = true;
 }
 
+
+// 🚀 2. TRADING POSITION OVERLAY (Buy/Sell Line)
+if (!window.positionLineRegistered) {
+    registerOverlay({
+        name: 'positionLine',
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: true,
+        needDefaultYAxisFigure: true,
+        createPointFigures: ({ overlay, coordinates, bounding }) => {
+            const y = coordinates[0].y;
+            const ext = overlay.extendData || {};
+            const isBuy = ext.type === 'BUY';
+            const themeColor = isBuy ? '#26a69a' : '#ef5350';
+            const pnl = ext.pnl || 0;
+            
+            return [
+                {
+                    type: 'line',
+                    attrs: { coordinates: [{ x: 0, y }, { x: bounding.width, y }] },
+                    styles: { style: 'solid', color: themeColor, size: 1.5 }
+                },
+                {
+                    type: 'text',
+                    attrs: {
+                        x: bounding.width - 150,
+                        y: y - 6,
+                        text: ` ${ext.qty} ${ext.symbol} ${ext.type} @ ${ext.price}  |  ₹${pnl.toFixed(2)}   ✖ `
+                    },
+                    styles: {
+                        style: 'stroke_fill',
+                        color: '#ffffff',
+                        backgroundColor: themeColor,
+                        borderColor: themeColor,
+                        borderWidth: 1,
+                        borderStyle: 'solid',
+                        borderRadius: 4,
+                        paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4,
+                        size: 12, weight: 'bold',
+                        align: 'center', baseline: 'bottom'
+                    }
+                }
+            ];
+        }
+    });
+    window.positionLineRegistered = true;
+}
+
+
+// 🚀 3. AOC MAGICAL LINES OVERLAY (Support/Resistance)
+if (!window.aocLevelLineRegistered) {
+    registerOverlay({
+        name: 'aocLevelLine',
+        lock: true, 
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: false,
+        needDefaultYAxisFigure: true,
+        createPointFigures: ({ overlay, coordinates, bounding }) => {
+            const y = coordinates[0].y;
+            const ext = overlay.extendData || {};
+            const labels = ext.labels || [];
+            
+            const figures = [
+                {
+                    type: 'line',
+                    attrs: { coordinates: [{ x: 0, y }, { x: bounding.width, y }] },
+                    styles: { style: ext.lineStyle || 'dashed', color: ext.color, size: 1.5, dashedValue: [4, 4] }
+                }
+            ];
+
+            labels.forEach(lbl => {
+                figures.push({
+                    type: 'text',
+                    attrs: { 
+                        x: bounding.width - (lbl.offset || 120),
+                        y: y - 8, 
+                        text: ` ${lbl.text} ` 
+                    },
+                    styles: {
+                        style: 'fill', 
+                        color: '#ffffff', 
+                        backgroundColor: lbl.color,
+                        paddingLeft: 6, paddingRight: 6, paddingTop: 3, paddingBottom: 3,
+                        borderRadius: 4, size: 10, weight: 'bold',
+                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    }
+                });
+            });
+
+            return figures;
+        }
+    });
+    window.aocLevelLineRegistered = true;
+}
+
+// 🚀 4. INDEPENDENT ENTRY LINE (Perfect Center Aligned)
+    if (!window.entryLineOverlayRegistered) {
+        registerOverlay({
+            name: 'customEntryLine',
+            lock: true,
+            needDefaultPointFigure: true,
+            createPointFigures: ({ overlay, coordinates, bounding }) => {
+                const y = coordinates[0].y;
+                const ext = overlay.extendData || {};
+                const startX = bounding.width - 200;
+                return [
+                    { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#2962ff', size: 1 } },
+                    { type: 'text', 
+                      // 🌟 THE FIX: y की वैल्यू सिर्फ 'y' रखी है (कोई +6 नहीं)
+                      attrs: { x: startX, y: y - 6, text: ` ${ext.qty}  |  ${ext.pnl || '₹ 0.00'}  |  ✖ ` }, 
+                      styles: { 
+                          style: 'fill', color: '#ffffff', backgroundColor: '#2962ff', 
+                          paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+                          borderRadius: 4, size: 10, weight: 'bold', 
+                          align: 'start', 
+                          // 🎯 THE MAGIC: यह लाइन टेक्स्ट बॉक्स को बिल्कुल बीचों-बीच खड़ा कर देगी!
+                          baseline: 'middle', 
+                          family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
+                      } 
+                    }
+                ];
+            }
+        });
+        window.entryLineOverlayRegistered = true;
+    }
+
+    // 🚀 5. INDEPENDENT SL LINE (Points Display Fix)
+    if (!window.slLineOverlayRegistered) {
+        registerOverlay({
+            name: 'customSlLine',
+            lock: false, 
+            needDefaultPointFigure: true,
+            createPointFigures: ({ overlay, coordinates, bounding, yAxis }) => {
+                let y = coordinates[0].y;
+                let currentVal = overlay.points[0].value;
+                const ext = overlay.extendData || {};
+                const startX = bounding.width - 200;
+
+                const spotEntry = ext.spotEntry || 0;
+                const entryY = yAxis.convertToPixel(spotEntry);
+
+                // 🛑 THE GLASS WALL LOCK
+                if (ext.isBullish && currentVal > spotEntry) {
+                    currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
+                } else if (!ext.isBullish && currentVal < spotEntry) {
+                    currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
+                }
+
+                // 🧮 1. Calculate Points Difference
+                const ptsDiff = Math.abs(spotEntry - currentVal);
+                const ptsText = `- ${ptsDiff.toFixed(2)} pts`; // 👈 यहाँ हमने Points बना लिए
+
+                // 💸 2. Calculate P&L Amount
+                const lossAmt = ptsDiff * (ext.qty || 1);
+                const lossText = `- ₹${lossAmt.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+
+                return [
+                    { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#f57c00', size: 1 } },
+                    { type: 'text', 
+                      // 🌟 THE FIX: Qty की जगह Points (ptsText) दिखा रहे हैं
+                      attrs: { x: startX, y: y - 6, text: ` ${ptsText}  |  ${lossText}  |  ✖ ` }, 
+                      styles: { 
+                          style: 'fill', color: '#ffffff', backgroundColor: '#f57c00', 
+                          paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+                          borderRadius: 4, size: 10, weight: 'bold', 
+                          align: 'start', baseline: 'middle', 
+                          family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
+                      } 
+                    },
+                    { type: 'line', attrs: { coordinates: [{x: startX, y: Math.min(y, entryY)}, {x: startX, y: Math.max(y, entryY)}] }, styles: { style: 'dashed', color: '#787b86', size: 1 } }
+                ];
+            }
+        });
+        window.slLineOverlayRegistered = true;
+    }
+
+    // 🚀 6. INDEPENDENT TP LINE (Points Display Fix)
+    if (!window.tpLineOverlayRegistered) {
+        registerOverlay({
+            name: 'customTpLine',
+            lock: false,
+            needDefaultPointFigure: true,
+            createPointFigures: ({ overlay, coordinates, bounding, yAxis }) => {
+                let y = coordinates[0].y;
+                let currentVal = overlay.points[0].value;
+                const ext = overlay.extendData || {};
+                const startX = bounding.width - 200;
+
+                const spotEntry = ext.spotEntry || 0;
+                const entryY = yAxis.convertToPixel(spotEntry);
+
+                // 🛑 THE GLASS WALL LOCK
+                if (ext.isBullish && currentVal < spotEntry) {
+                    currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
+                } else if (!ext.isBullish && currentVal > spotEntry) {
+                    currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
+                }
+
+                // 🧮 1. Calculate Points Difference
+                const ptsDiff = Math.abs(spotEntry - currentVal);
+                const ptsText = `+ ${ptsDiff.toFixed(2)} pts`; // 👈 यहाँ हमने Points बना लिए
+
+                // 💸 2. Calculate P&L Amount
+                const profAmt = ptsDiff * (ext.qty || 1);
+                const profText = `+ ₹${profAmt.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+
+                return [
+                    { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#00b0ff', size: 1 } },
+                    { type: 'text', 
+                      // 🌟 THE FIX: Qty की जगह Points (ptsText) दिखा रहे हैं
+                      attrs: { x: startX, y: y, text: ` ${ptsText}  |  ${profText}  |  ✖ ` }, 
+                      styles: { 
+                          style: 'fill', color: '#ffffff', backgroundColor: '#00b0ff', 
+                          paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+                          borderRadius: 4, size: 10, weight: 'bold', 
+                          align: 'start', baseline: 'middle',
+                          family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
+                      } 
+                    },
+                    { type: 'line', attrs: { coordinates: [{x: startX, y: Math.min(y, entryY)}, {x: startX, y: Math.max(y, entryY)}] }, styles: { style: 'dashed', color: '#787b86', size: 1 } }
+                ];
+            }
+        });
+        window.tpLineOverlayRegistered = true;
+    }
+
+
+
 // ==========================================
 // 📊 MAIN CHART COMPONENT
 // ==========================================
-const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playbackSpeed }) => {
+const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playbackSpeed, aocStats, marketMetrics, chainData, showMagicalLines, showOrderLines }) => {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const [loading, setLoading] = useState(true);
@@ -112,10 +334,15 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
     const [isHoveringBtn, setIsHoveringBtn] = useState(false);
     const isHoveringBtnRef = useRef(false);
 
+    
+
     const setHoverState = (val) => {
         setIsHoveringBtn(val);
         isHoveringBtnRef.current = val;
     };
+
+    // 🌟 Open Positions State (For Chart Trading)
+    const [openPositions, setOpenPositions] = useState([]);
 
     useEffect(() => { tvMenuRef.current = tvMenu.visible; }, [tvMenu.visible]);
 
@@ -138,6 +365,36 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
         alertName: '',
         message: ''
     });
+
+
+// 🌟 TRADE PANEL VISIBILITY STATE
+    const [showTradePanel, setShowTradePanel] = useState(false);
+    const [tradeConfig, setTradeConfig] = useState({
+        instrument: 'Options', 
+        side: 'BUY',           
+        optionType: 'CE',      
+        qty: 65,
+        expiry: 'Current Week',
+        slType: 'Points',
+        slValue: 0,
+        tpType: 'Points',
+        tpValue: 0,
+        clickedPrice: 0,   
+        nearestStrike: 0,  
+        premium: 0,
+        
+        // 👇 🌟 NEW PARAMS FOR STRIKE SELECTION
+        strikeCriteria: 'ATM pt',
+        strikeType: 'ATM'
+    });
+
+    // 🌟 THE MAGIC: Symbol के हिसाब से सही लॉट साइज निकालें
+    const baseLotSize = OPTION_INDICES.find(inst => inst.name === symbol)?.lot || 65;
+
+    // जैसे ही चार्ट का Symbol बदलेगा (Nifty -> BankNifty), Trade Panel की Quantity अपने-आप अपडेट हो जाएगी!
+    useEffect(() => {
+        setTradeConfig(prev => ({ ...prev, qty: baseLotSize }));
+    }, [symbol, baseLotSize]);
 
     
     // API को सही टाइमफ्रेम भेजने के लिए Ref
@@ -400,6 +657,31 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
             chartRef.current = null; 
         };
     }, [symbol, base1mData, timeframe]);
+
+
+    // ==========================================
+    // 👁️ OVERLAY VISIBILITY ENFORCER ENGINE
+    // ==========================================
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const chart = chartRef.current;
+
+        // 1. Hide/Show Magical Lines (AOC Levels)
+        chart.overrideOverlay({ 
+            groupId: 'aoc_magic_lines', 
+            visible: showMagicalLines 
+        });
+
+        // 2. Hide/Show ALL Active Orders (Entry, SL, TP)
+        openPositions.forEach(pos => {
+            chart.overrideOverlay({ 
+                groupId: pos.id, 
+                visible: showOrderLines 
+            });
+        });
+        
+    }, [showMagicalLines, showOrderLines, openPositions, chainData, aocStats]);
     
 
     // 2️⃣ API CALL: डेट, सिंबल या डेटा-रेंज बदलने पर डेटा मँगाएगा
@@ -666,6 +948,198 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
             console.error("Simulator Tick Error:", err);
         }
     }, [time, date, base1mData, timeframe, priceAlerts]);
+
+
+
+
+    // 🚀 1. THE STRIKE CALCULATOR (ITM/OTM बदलने पर Strike को लाइव अपडेट करेगा)
+    useEffect(() => {
+        if (tradeConfig.instrument === 'Options' && (tradeConfig.strikeCriteria === 'ATM pt' || tradeConfig.strikeCriteria === 'ATM %')) {
+            // निफ्टी 50 के हिसाब से Base ATM निकालें
+            const baseAtm = Math.round(tradeConfig.clickedPrice / 50) * 50; 
+            let calcStrike = baseAtm;
+
+            if (typeof tradeConfig.strikeType === 'string' && tradeConfig.strikeType !== 'ATM') {
+                const isITM = tradeConfig.strikeType.includes('ITM');
+                const isCE = tradeConfig.optionType === 'CE';
+                
+                // स्ट्रिंग से सिर्फ नंबर निकालें (जैसे "ITM 100" से 100)
+                const val = parseFloat(tradeConfig.strikeType.replace(/[^\d.]/g, ''));
+                
+                let pointDiff = tradeConfig.strikeCriteria === 'ATM pt' ? val : Math.round((baseAtm * (val / 100)) / 50) * 50;
+
+                // 🎯 Call के लिए ITM मतलब कम स्ट्राइक, Put के लिए ITM मतलब ज्यादा स्ट्राइक
+                if (isITM) {
+                    calcStrike = isCE ? baseAtm - pointDiff : baseAtm + pointDiff;
+                } else { // OTM
+                    calcStrike = isCE ? baseAtm + pointDiff : baseAtm - pointDiff;
+                }
+            }
+            setTradeConfig(prev => ({ ...prev, nearestStrike: calcStrike }));
+        }
+    }, [tradeConfig.clickedPrice, tradeConfig.strikeCriteria, tradeConfig.strikeType, tradeConfig.optionType, tradeConfig.instrument]);
+
+
+    // ==========================================
+    // 🔮 THE AOC VISUAL CONFLUENCE ENGINE (Magical Lines)
+    // ==========================================
+    // ==========================================
+    // 🔮 THE AOC QUANT ENGINE (6 Magical Lines with EoR & EoS)
+    // ==========================================
+    useEffect(() => {
+        if (!chartRef.current || !aocStats || !marketMetrics || !chainData || chainData.length === 0) return;
+
+        const chart = chartRef.current;
+        
+        const resStrike = aocStats.CE?.Volume?.max?.strike;
+        const supStrike = aocStats.PE?.Volume?.max?.strike;
+        const maxPain = marketMetrics.maxPain;
+
+        // 🌟 1. डायनामिक Strike Gap निकालें (Nifty = 50, BankNifty = 100)
+        const strikeGap = chainData.length >= 2 
+            ? Math.abs(Number(chainData[1].strike) - Number(chainData[0].strike)) 
+            : 50;
+
+        // 🌟 2. Resistance (CE) और Support (PE) का लाइव प्रीमियम (LTP) निकालें
+        let ceLtp = 0;
+        let peLtp = 0;
+
+        if (resStrike) {
+            const resRow = chainData.find(r => Number(r.strike) === Number(resStrike));
+            if (resRow) ceLtp = parseFloat(resRow.CE?.ltp || 0);
+        }
+        if (supStrike) {
+            const supRow = chainData.find(r => Number(r.strike) === Number(supStrike));
+            if (supRow) peLtp = parseFloat(supRow.PE?.ltp || 0);
+        }
+
+        // 🧮 3. THE MAGICAL MATH (Calculate Extensions)
+        const eor = resStrike ? Math.round(resStrike + ceLtp) : 0; // Extension of Resistance (R Risky)
+        const eos = supStrike ? Math.round(supStrike - peLtp) : 0; // Extension of Support (S Risky)
+        
+        const rSafe = resStrike ? resStrike + strikeGap : 0; // 1 Strike Up
+        const sSafe = supStrike ? supStrike - strikeGap : 0; // 1 Strike Down
+
+        // 🚨 THE FIX: KLineChart v10 का नया और क्लीन तरीका 🚨
+        chart.removeOverlay({ groupId: 'aoc_magic_lines' });
+
+        // 🧠 4. Grouping Logic (Collision Fix)
+        const priceGroups = {};
+
+        const addToGroup = (price, text, color, isDashed) => {
+            if (!price || price === 0) return;
+            
+            if (!priceGroups[price]) {
+                priceGroups[price] = {
+                    price: price,
+                    color: color, 
+                    lineStyle: isDashed ? 'dashed' : 'solid',
+                    labels: []
+                };
+            }
+            
+            const currentLabelsCount = priceGroups[price].labels.length;
+            const offset = 120 + (currentLabelsCount * 140); // डिब्बों के बीच का गैप
+            
+            priceGroups[price].labels.push({ text, color, offset });
+        };
+
+        // 🔴 RESISTANCE ZONE
+        addToGroup(rSafe, `R Safe: ${rSafe}`, '#b71c1c', false);           // Dark Red
+        addToGroup(eor, `R Risky (EoR): ${eor}`, '#ef5350', true);         // Dashed Red (Reversal Point)
+        addToGroup(resStrike, `R Moderate: ${resStrike}`, '#ef5350', false); // Solid Red (Main Strike)
+
+        // 🔵 NEUTRAL ZONE
+        addToGroup(maxPain, `Max Pain: ${maxPain}`, '#2962ff', true);      // Dashed Blue
+
+        // 🟢 SUPPORT ZONE
+        addToGroup(supStrike, `S Moderate: ${supStrike}`, '#26a69a', false); // Solid Green (Main Strike)
+        addToGroup(eos, `S Risky (EoS): ${eos}`, '#26a69a', true);         // Dashed Green (Reversal Point)
+        addToGroup(sSafe, `S Safe: ${sSafe}`, '#004d40', false);           // Dark Green
+
+        // 🚀 5. चार्ट पर ड्रा करें
+        Object.values(priceGroups).forEach((group, index) => {
+            chart.createOverlay({
+                name: 'aocLevelLine',
+                id: `aoc_magic_${index}`,
+                groupId: 'aoc_magic_lines',
+                extendData: { 
+                    color: group.color, 
+                    lineStyle: group.lineStyle, 
+                    labels: group.labels 
+                },
+                points: [{ value: group.price }]
+            });
+        });
+
+    }, [aocStats, marketMetrics, chainData]); // 👈 जब भी AOC का डेटा बदलेगा, ये लाइन्स खुद-ब-खुद ऊपर-नीचे शिफ्ट हो जाएंगी!
+
+
+
+    // ==========================================
+    // 🚀 PHASE 1: THE LIVE PREMIUM FETCHING ENGINE
+    // ==========================================
+    useEffect(() => {
+        // सिर्फ तब काम करेगा जब Options चुना हो, Strike 0 से ज्यादा हो, और chainData मौजूद हो
+        if (tradeConfig.instrument === 'Options' && tradeConfig.nearestStrike > 0 && chainData && chainData.length > 0) {
+            
+            // 1. पूरी Option Chain में अपनी वाली Strike ढूँढें
+            const targetRow = chainData.find(r => Number(r.strike) === Number(tradeConfig.nearestStrike));
+
+            if (targetRow) {
+                // 2. CE या PE के हिसाब से सही LTP (Premium) निकालें
+                const liveLtp = tradeConfig.optionType === 'CE' 
+                    ? parseFloat(targetRow.CE?.ltp || 0) 
+                    : parseFloat(targetRow.PE?.ltp || 0);
+                
+                // 3. स्टेट को अपडेट करें (Infinite loop से बचने के लिए चेक लगाया है)
+                setTradeConfig(prev => {
+                    if (prev.premium !== liveLtp) {
+                        return { ...prev, premium: liveLtp };
+                    }
+                    return prev;
+                });
+            } else {
+                // अगर गलती से स्ट्राइक न मिले (बहुत दूर की OTM)
+                setTradeConfig(prev => {
+                    if (prev.premium !== 0) return { ...prev, premium: 0 };
+                    return prev;
+                });
+            }
+        }
+    }, [tradeConfig.nearestStrike, tradeConfig.optionType, tradeConfig.instrument, chainData]);
+
+
+
+    // 🚀 2. DROPDOWN RENDER HELPER (Strategy Builder जैसा UI)
+    const renderStrikeTypeInput = () => {
+        const criteria = tradeConfig.strikeCriteria;
+        const stepPt = symbol === 'NIFTY BANK' ? 100 : 50; // Instrument Check
+        const stepPct = symbol === 'NIFTY BANK' ? 1.0 : 0.5;
+
+        const generateOptions = (step, max, suffix) => {
+            let opts = [];
+            for (let i = max; i >= step; i -= step) opts.push(`ITM ${suffix ? i.toFixed(1) + '%' : i}`);
+            opts.push("ATM");
+            for (let i = step; i <= max; i += step) opts.push(`OTM ${suffix ? i.toFixed(1) + '%' : i}`);
+            return opts;
+        };
+
+        const inputClass = "w-full border border-gray-300 rounded px-2 py-1.5 text-[12px] outline-none focus:border-blue-500 bg-white font-medium text-gray-700";
+
+        if (criteria === "ATM pt" || criteria === "ATM %") {
+            const options = criteria === "ATM pt" ? generateOptions(stepPt, 1000, false) : generateOptions(stepPct, 10.0, true);
+            return (
+                <select className={inputClass} value={tradeConfig.strikeType} onChange={(e) => setTradeConfig({...tradeConfig, strikeType: e.target.value})}>
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+            );
+        }
+        if (criteria === "Delta") return <input type="number" step="0.1" min="0" max="1" placeholder="0.5" value={tradeConfig.strikeType} onChange={(e) => setTradeConfig({...tradeConfig, strikeType: e.target.value})} className={inputClass} />;
+        if (criteria.includes("CP")) return <input type="number" placeholder="Premium Value" value={tradeConfig.strikeType} onChange={(e) => setTradeConfig({...tradeConfig, strikeType: e.target.value})} className={inputClass} />;
+        return null;
+    };
+
 
 
     const handleToolClick = (toolId) => {
@@ -1139,6 +1613,9 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                         <Loader2 size={30} className="animate-spin text-blue-600" />
                     </div>
                 )}
+
+
+                
                 
                 {/* 📈 ACTUAL KLINECHART DOM NODE */}
                 <div ref={chartContainerRef} className="w-full h-full cursor-crosshair"></div>
@@ -1279,26 +1756,48 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                                 <span>Add alert on {symbol || 'NIFTY'} at {tvMenu.price.toFixed(2)}</span>
                             </div>
 
+                            {/* 🔴 THE SELL BUTTON */}
                             <div className="hover:bg-red-50 px-3 py-2 cursor-pointer flex items-center gap-2 text-red-600 transition-colors"
                                  onClick={() => {
-                                     alert(`Virtual Sell Order Placed at ${tvMenu.price.toFixed(2)}`);
-                                     // 🌟 Clean Close
+                                     const clickP = tvMenu.price;
+                                     const strike = Math.round(clickP / baseLotSize) * baseLotSize; // 🎯 (ऑप्शनल: अगर स्ट्राइक गैप भी लॉट साइज जैसा है)
+
+                                     setTradeConfig(prev => ({ 
+                                         ...prev, 
+                                         side: 'SELL', 
+                                         clickedPrice: clickP,
+                                         nearestStrike: Math.round(clickP / 50) * 50, // निफ्टी के लिए 50 ही रहेगा
+                                         premium: 0 
+                                     }));
+                                     
+                                     setShowTradePanel(true);
                                      setTvMenu({ ...tvMenu, visible: false });
                                      setHoverState(false);
                                      setCrosshairBtn(prev => ({ ...prev, visible: false }));
                                  }}>
-                                <TrendingDown size={14} /> Sell 1 {symbol || 'NIFTY'} Limit
+                                <TrendingDown size={14} /> Sell {baseLotSize} {symbol || 'NIFTY'} Limit @ {tvMenu.price.toFixed(2)}
                             </div>
 
-                            <div className="hover:bg-green-50 px-3 py-2 cursor-pointer flex items-center gap-2 text-green-600 transition-colors"
+                            {/* 🟢 THE BUY BUTTON */}
+                            <div className="hover:bg-green-50 px-3 py-2 cursor-pointer flex items-center gap-2 text-green-700 transition-colors font-medium"
                                  onClick={() => {
-                                     alert(`Virtual Buy Order Placed at ${tvMenu.price.toFixed(2)}`);
-                                     // 🌟 Clean Close
+                                     const clickP = tvMenu.price;
+
+                                     setTradeConfig(prev => ({ 
+                                         ...prev, 
+                                         side: 'BUY', 
+                                         clickedPrice: clickP,
+                                         nearestStrike: Math.round(clickP / 50) * 50,
+                                         premium: 0 
+                                     }));
+
+                                     setShowTradePanel(true);
                                      setTvMenu({ ...tvMenu, visible: false });
                                      setHoverState(false);
                                      setCrosshairBtn(prev => ({ ...prev, visible: false }));
                                  }}>
-                                <TrendingUp size={14} /> Buy 1 {symbol || 'NIFTY'} Stop
+                                <div className="flex items-center justify-center bg-[#26a69a] text-white rounded text-[10px] font-bold w-5 h-5">B</div>
+                                <span>Buy {baseLotSize} {symbol || 'NIFTY'} Limit @ {tvMenu.price.toFixed(2)}</span>
                             </div>
 
                             <div className="border-t border-gray-100 my-1"></div>
@@ -1655,6 +2154,270 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                         </div>
                     </div>
                 )}
+
+
+            {/* 🚀 5. THE DELTA EXCHANGE STYLE TRADE PANEL */}
+            {showTradePanel && (
+                <div className="w-[320px] bg-white border-l border-gray-200 flex flex-col z-20 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] animate-in slide-in-from-right duration-200 h-full"> {/* 🚨 FIX: Added h-full */}
+                    
+                    {/* Header: BUY / SELL */}
+                    <div className="p-4 border-b border-gray-100 flex flex-col gap-3 shrink-0"> {/* 🚨 FIX: Added shrink-0 */}
+                        <div className="flex justify-between items-center">
+                            <span className="font-bold text-gray-800 text-sm">Order Panel</span>
+                            <button onClick={() => setShowTradePanel(false)} className="text-gray-400 hover:text-red-500 p-1 rounded-md hover:bg-gray-100">
+                                <X size={16} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                        <div className="flex bg-gray-100 p-1 rounded-md">
+                            <button onClick={() => setTradeConfig({...tradeConfig, side: 'BUY'})} className={`flex-1 py-1.5 text-[13px] font-bold rounded ${tradeConfig.side === 'BUY' ? 'bg-white shadow text-[#26a69a]' : 'text-gray-500 hover:text-gray-700'}`}>BUY (Long)</button>
+                            <button onClick={() => setTradeConfig({...tradeConfig, side: 'SELL'})} className={`flex-1 py-1.5 text-[13px] font-bold rounded ${tradeConfig.side === 'SELL' ? 'bg-white shadow text-[#ef5350]' : 'text-gray-500 hover:text-gray-700'}`}>SELL (Short)</button>
+                        </div>
+                    </div>
+
+                    {/* Body: Inputs & Configuration (Scrollable Area) */}
+                    <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar"> {/* 🚨 FIX: Added custom-scrollbar class for beautiful scroll */}
+                        
+                        {/* 🌟 THE DYNAMIC PRICE DISPLAY 🌟 */}
+                        <div className="flex justify-between items-center bg-gray-50 px-3 py-2.5 rounded border border-gray-200 shadow-inner shrink-0">
+                            {tradeConfig.instrument === 'Options' ? (
+                                <>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Strike Selected</span>
+                                        <span className="text-[15px] font-extrabold text-blue-700">{tradeConfig.nearestStrike} {tradeConfig.optionType}</span>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Premium (LTP)</span>
+                                        <span className={`text-[15px] font-extrabold ${tradeConfig.premium > 0 ? 'text-gray-800' : 'text-orange-500 animate-pulse'}`}>
+                                            {tradeConfig.premium > 0 ? `₹${tradeConfig.premium.toFixed(2)}` : 'Fetching... ⏳'}
+                                        </span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-xs font-semibold text-gray-500">Future Limit Price</span>
+                                    <span className="text-[15px] font-bold text-gray-800">{tradeConfig.clickedPrice.toFixed(2)}</span>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Instrument Type */}
+                        <div className="shrink-0">
+                            <div className="flex bg-gray-50 border border-gray-200 rounded text-[13px]">
+                                <button onClick={() => setTradeConfig({...tradeConfig, instrument: 'Options'})} className={`flex-1 py-1.5 font-medium ${tradeConfig.instrument === 'Options' ? 'bg-blue-600 text-white rounded shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}>Options</button>
+                                <button onClick={() => setTradeConfig({...tradeConfig, instrument: 'Futures'})} className={`flex-1 py-1.5 font-medium ${tradeConfig.instrument === 'Futures' ? 'bg-blue-600 text-white rounded shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}>Futures</button>
+                            </div>
+                        </div>
+
+                        {/* Conditional: Option Type (Call / Put) & Strike Criteria */}
+                        {tradeConfig.instrument === 'Options' && (
+                            <div className="flex flex-col gap-3 shrink-0">
+                                {/* Option Type Toggle */}
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Option Type</label>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setTradeConfig({...tradeConfig, optionType: 'CE'})} className={`flex-1 py-1.5 border rounded text-[13px] font-bold transition-colors ${tradeConfig.optionType === 'CE' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>CALL (CE)</button>
+                                        <button onClick={() => setTradeConfig({...tradeConfig, optionType: 'PE'})} className={`flex-1 py-1.5 border rounded text-[13px] font-bold transition-colors ${tradeConfig.optionType === 'PE' ? 'bg-red-50 border-red-500 text-red-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>PUT (PE)</button>
+                                    </div>
+                                </div>
+
+                                {/* STRIKE CRITERIA DROPDOWNS */}
+                                <div className="grid grid-cols-2 gap-3 bg-blue-50/30 p-2.5 rounded-lg border border-blue-100">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Strike Criteria</label>
+                                        <select 
+                                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-[12px] font-medium text-gray-700 outline-none focus:border-blue-500 bg-white"
+                                            value={tradeConfig.strikeCriteria}
+                                            onChange={(e) => {
+                                                const newCri = e.target.value;
+                                                let newInitial = "ATM";
+                                                if(newCri === 'Delta') newInitial = 0.5;
+                                                else if(newCri.includes('CP')) newInitial = "";
+                                                setTradeConfig({...tradeConfig, strikeCriteria: newCri, strikeType: newInitial});
+                                            }}
+                                        >
+                                            {["ATM pt", "ATM %", "Delta", "CP", "CP >=", "CP <="].map(cri => <option key={cri} value={cri}>{cri}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Strike Selection</label>
+                                        {renderStrikeTypeInput()}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Expiry Dropdown */}
+                        <div className="shrink-0">
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Expiry</label>
+                            <select className="w-full border border-gray-300 rounded px-3 py-2 text-[13px] font-medium text-gray-700 outline-none focus:border-blue-500 bg-white" value={tradeConfig.expiry} onChange={(e) => setTradeConfig({...tradeConfig, expiry: e.target.value})}>
+                                <option value="Current Week">Current Weekly</option>
+                                <option value="Next Week">Next Weekly</option>
+                            </select>
+                        </div>
+
+                        {/* Quantity Selector */}
+                        <div className="shrink-0">
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1.5 flex justify-between">
+                                <span>Quantity (Lots)</span>
+                                <span className="text-gray-400 font-normal">Lot Size: {baseLotSize}</span>
+                            </label>
+                            <div className="flex border border-gray-300 rounded bg-white overflow-hidden">
+                                <button 
+                                    onClick={() => setTradeConfig(p => ({...p, qty: Math.max(baseLotSize, p.qty - baseLotSize)}))} 
+                                    className="px-4 py-1.5 bg-gray-50 text-gray-600 font-bold border-r border-gray-300 hover:bg-gray-100 transition-colors"
+                                >
+                                    −
+                                </button>
+                                <input 
+                                    type="number" 
+                                    value={tradeConfig.qty} 
+                                    onChange={(e) => setTradeConfig({...tradeConfig, qty: Number(e.target.value)})} 
+                                    className="w-full text-center outline-none text-[14px] font-semibold" 
+                                />
+                                <button 
+                                    onClick={() => setTradeConfig(p => ({...p, qty: p.qty + baseLotSize}))} 
+                                    className="px-4 py-1.5 bg-gray-50 text-gray-600 font-bold border-l border-gray-300 hover:bg-gray-100 transition-colors"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 🚨 THE MISSING SL & TP BLOCK RESTORED 🚨 */}
+                        <div className="grid grid-cols-2 gap-3 mt-1 shrink-0 pb-4">
+                            <div>
+                                <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Stop Loss (Pts)</label>
+                                <input 
+                                    type="number" placeholder="e.g. 20"
+                                    value={tradeConfig.slValue || ''}
+                                    onChange={(e) => setTradeConfig({...tradeConfig, slValue: Number(e.target.value)})}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-[13px] outline-none focus:border-red-400 font-medium"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Take Profit (Pts)</label>
+                                <input 
+                                    type="number" placeholder="e.g. 40"
+                                    value={tradeConfig.tpValue || ''}
+                                    onChange={(e) => setTradeConfig({...tradeConfig, tpValue: Number(e.target.value)})}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-[13px] outline-none focus:border-green-400 font-medium"
+                                />
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Footer: Dynamic Margin & Button */}
+                    <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0"> {/* 🚨 FIX: Added shrink-0 */}
+                        <div className="flex justify-between text-[11px] text-gray-500 mb-3 px-1">
+                            <span>Margin Required</span>
+                            {/* 🌟 UPGRADED DYNAMIC MARGIN CALCULATION (Buy vs Sell) 🌟 */}
+                            <span className="font-bold text-gray-800">
+                                {tradeConfig.instrument === 'Options' 
+                                    ? (tradeConfig.side === 'BUY'
+                                        // 🟢 BUY OPTION: सिर्फ Premium * Qty लगेगा
+                                        ? (tradeConfig.premium > 0 ? `~ ₹${(tradeConfig.qty * tradeConfig.premium).toLocaleString(undefined, {maximumFractionDigits: 2})}` : 'Calculating...')
+                                        
+                                        // 🔴 SELL OPTION: Naked Shorting Margin (लगभग Contract Value का 10%)
+                                        : (tradeConfig.nearestStrike > 0 ? `~ ₹${(tradeConfig.qty * tradeConfig.nearestStrike * 0.1).toLocaleString(undefined, {maximumFractionDigits: 0})} (Short Margin)` : 'Calculating...')
+                                    )
+                                    // ⚡ FUTURES: Contract Value का 10%
+                                    : `~ ₹${(tradeConfig.qty * tradeConfig.clickedPrice * 0.1).toLocaleString(undefined, {maximumFractionDigits: 0})} (10%)`
+                                }
+                            </span>
+                        </div>
+                        <button 
+                            className={`w-full py-3 rounded-md text-white font-bold text-[14px] shadow-sm transition-transform active:scale-[0.98] ${tradeConfig.side === 'BUY' ? 'bg-[#26a69a] hover:bg-[#208b81]' : 'bg-[#ef5350] hover:bg-[#d84a48]'}`}
+                            onClick={() => {
+                                if (!chartRef.current) return;
+
+                                const posId = `trade_${Date.now()}`;
+                                const spotEntry = tradeConfig.clickedPrice;
+
+                                const isBullish = (tradeConfig.side === 'BUY' && tradeConfig.optionType === 'CE') || 
+                                                  (tradeConfig.side === 'SELL' && tradeConfig.optionType === 'PE');
+
+                                let slSpot = 0; let tpSpot = 0;
+                                if (isBullish) {
+                                    slSpot = tradeConfig.slValue > 0 ? spotEntry - tradeConfig.slValue : 0;
+                                    tpSpot = tradeConfig.tpValue > 0 ? spotEntry + tradeConfig.tpValue : 0;
+                                } else {
+                                    slSpot = tradeConfig.slValue > 0 ? spotEntry + tradeConfig.slValue : 0;
+                                    tpSpot = tradeConfig.tpValue > 0 ? spotEntry - tradeConfig.tpValue : 0;
+                                }
+
+                                const hasSL = slSpot > 0; const hasTP = tpSpot > 0;
+                                const estSlLoss = hasSL ? `- ₹${(Math.abs(spotEntry - slSpot) * tradeConfig.qty).toLocaleString(undefined, {maximumFractionDigits: 0})}` : '';
+                                const estTpProfit = hasTP ? `+ ₹${(Math.abs(spotEntry - tpSpot) * tradeConfig.qty).toLocaleString(undefined, {maximumFractionDigits: 0})}` : '';
+
+                                // 💾 State में सेव करें
+                                setOpenPositions(prev => [...prev, {
+                                    id: posId, instrument: tradeConfig.instrument, side: tradeConfig.side,
+                                    optionType: tradeConfig.optionType, strike: tradeConfig.nearestStrike,
+                                    qty: tradeConfig.qty, entryPremium: tradeConfig.premium, entrySpot: spotEntry,
+                                    slSpot: slSpot, tpSpot: tpSpot, pnl: 0, status: 'OPEN'
+                                }]);
+
+                                const chart = chartRef.current;
+                                const entryPixelY = chart.convertToPixel({ value: spotEntry }).y;
+
+                                // 🔵 1. CREATE ENTRY LINE (Fixed)
+                                chart.createOverlay({
+                                    name: 'customEntryLine',
+                                    id: `${posId}_entry`,
+                                    groupId: posId,
+                                    extendData: { qty: tradeConfig.qty, pnl: '₹ 0.00' },
+                                    points: [{ value: spotEntry }]
+                                });
+
+                                // 🟡 2. CREATE SL LINE
+                                if (hasSL) {
+                                    chart.createOverlay({
+                                        name: 'customSlLine',
+                                        id: `${posId}_sl`,
+                                        groupId: posId,
+                                        extendData: { 
+                                            qty: tradeConfig.qty, spotEntry: spotEntry, isBullish: isBullish 
+                                        },
+                                        points: [{ value: slSpot }],
+                                        onDragEnd: function(event) {
+                                            const finalSl = event.overlay.points[0].value;
+                                            setOpenPositions(prev => prev.map(p => p.id === posId ? { ...p, slSpot: finalSl } : p));
+                                            setToastData({ title: "SL Updated", message: `New SL: ${finalSl.toFixed(2)}`, type: 'success' });
+                                            return true;
+                                        }
+                                    });
+                                }
+
+                                // 🟢 3. CREATE TP LINE
+                                if (hasTP) {
+                                    chart.createOverlay({
+                                        name: 'customTpLine',
+                                        id: `${posId}_tp`,
+                                        groupId: posId,
+                                        extendData: { 
+                                            qty: tradeConfig.qty, spotEntry: spotEntry, isBullish: isBullish 
+                                        },
+                                        points: [{ value: tpSpot }],
+                                        onDragEnd: function(event) {
+                                            const finalTp = event.overlay.points[0].value;
+                                            setOpenPositions(prev => prev.map(p => p.id === posId ? { ...p, tpSpot: finalTp } : p));
+                                            setToastData({ title: "TP Updated", message: `New TP: ${finalTp.toFixed(2)}`, type: 'success' });
+                                            return true;
+                                        }
+                                    });
+                                }
+
+                                // ✨ Clean UI
+                                setShowTradePanel(false);
+                                setToastData({ title: "Order Placed", message: `Bracket Order Active @ ${spotEntry.toFixed(2)}`, type: 'success' });
+                            }}
+                        >
+                            {tradeConfig.side} {tradeConfig.qty} {tradeConfig.instrument === 'Options' ? `${tradeConfig.nearestStrike} ${tradeConfig.optionType}` : 'FUT'}
+                        </button>
+                    </div>
+                </div>
+            )}
             
         </div>
     );

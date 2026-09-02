@@ -2,7 +2,7 @@
 
 // 1. OPTION INDICES
 export const OPTION_INDICES = [
-  { name: "NIFTY 50", lot: 65, segment: "Option" },
+  { name: "NIFTY", lot: 65, segment: "Option" },
   { name: "NIFTY BANK", lot: 30, segment: "Option" },
   { name: "NIFTY FIN SERVICE", lot: 60, segment: "Option" },
   { name: "SENSEX", lot: 20, segment: "Option" },

@@ -18,6 +18,10 @@ const AOC = () => {
     const [dataRange, setDataRange] = useState('Previous');
     const [showDataRangeMenu, setShowDataRangeMenu] = useState(false);
 
+    // 👁️ Chart Visibility States
+    const [showMagicalLines, setShowMagicalLines] = useState(true);
+    const [showOrderLines, setShowOrderLines] = useState(true);
+
     const DATA_RANGES = [
         'Previous', 
         'Last 1 Month', 
@@ -546,45 +550,68 @@ const AOC = () => {
                             </div>
 
                             {/* 🎯 2. NEW: Data Range Dropdown (इसे टाइमफ्रेम के ठीक बगल में लगाएँ) */}
-            <div className="data-range-dropdown relative flex items-center ml-1">
-                <div 
-                    className="flex items-center gap-1 cursor-pointer hover:bg-gray-200 px-2 py-0.5 rounded text-xs font-semibold text-gray-700 bg-gray-200 transition-colors border border-gray-300"
-                    onClick={() => {
-                        setShowDataRangeMenu(!showDataRangeMenu);
-                        setShowTimeframeMenu(false); // दूसरा मेन्यू बंद करें
-                    }}
-                >
-                    {dataRange}
-                    <ChevronDown size={12} className="text-gray-500" />
-                </div>
+                            <div className="data-range-dropdown relative flex items-center ml-1">
+                                <div 
+                                    className="flex items-center gap-1 cursor-pointer hover:bg-gray-200 px-2 py-0.5 rounded text-xs font-semibold text-gray-700 bg-gray-200 transition-colors border border-gray-300"
+                                    onClick={() => {
+                                        setShowDataRangeMenu(!showDataRangeMenu);
+                                        setShowTimeframeMenu(false); // दूसरा मेन्यू बंद करें
+                                    }}
+                                >
+                                    {dataRange}
+                                    <ChevronDown size={12} className="text-gray-500" />
+                                </div>
 
-                {/* 🔽 Range Dropdown Menu */}
-                {showDataRangeMenu && (
-                    <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-gray-200 shadow-xl rounded-md py-1 text-sm z-[100]">
-                        {DATA_RANGES.map((range) => (
-                            <button
-                                key={range}
-                                onClick={() => {
-                                    setDataRange(range);
-                                    setShowDataRangeMenu(false);
-                                }}
-                                className={`w-full text-left px-4 py-1.5 hover:bg-blue-50 transition-colors ${
-                                    dataRange === range ? 'text-blue-600 font-medium bg-blue-50' : 'text-gray-700'
-                                }`}
-                            >
-                                {range}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
+                                {/* 🔽 Range Dropdown Menu */}
+                                {showDataRangeMenu && (
+                                    <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-gray-200 shadow-xl rounded-md py-1 text-sm z-[100]">
+                                        {DATA_RANGES.map((range) => (
+                                            <button
+                                                key={range}
+                                                onClick={() => {
+                                                    setDataRange(range);
+                                                    setShowDataRangeMenu(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-1.5 hover:bg-blue-50 transition-colors ${
+                                                    dataRange === range ? 'text-blue-600 font-medium bg-blue-50' : 'text-gray-700'
+                                                }`}
+                                            >
+                                                {range}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                         </div>
+
+
+                        {/* 🎛️ RIGHT SIDE: CHART VISIBILITY TOGGLES */}
+                        <div className="flex items-center gap-4">
+                            {/* 1. AOC Magical Lines Toggle */}
+                            <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setShowMagicalLines(!showMagicalLines)}>
+                                <span className="text-[12px] font-bold text-gray-600">Magical Lines</span>
+                                <div className={`w-8 h-4 rounded-full flex items-center p-[2px] transition-colors duration-300 ${showMagicalLines ? 'bg-[#2962ff]' : 'bg-gray-300'}`}>
+                                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${showMagicalLines ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                </div>
+                            </div>
+
+                            {/* 2. Order Lines Toggle */}
+                            <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setShowOrderLines(!showOrderLines)}>
+                                <span className="text-[12px] font-bold text-gray-600">Order Lines</span>
+                                <div className={`w-8 h-4 rounded-full flex items-center p-[2px] transition-colors duration-300 ${showOrderLines ? 'bg-[#26a69a]' : 'bg-gray-300'}`}>
+                                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${showOrderLines ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    
                     
                     {/* 🚀 THE REAL CHART INTEGRATION */}
                     <div className="flex-1 w-full h-full relative overflow-hidden bg-white">
-                        <CustomChart symbol="NIFTY" date={date} timeframe={timeframe} dataRange={dataRange} time={time} playbackSpeed={playbackSpeed}/>
+                        <CustomChart symbol="NIFTY" date={date} timeframe={timeframe} dataRange={dataRange} time={time} playbackSpeed={playbackSpeed} aocStats={aocStats} 
+                            marketMetrics={marketMetrics} chainData={data.chain} showMagicalLines={showMagicalLines}  showOrderLines={showOrderLines}  />
                     </div>
                 </div>
 

@@ -143,7 +143,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
     updateLeg(legId, field, parseFloat(newValue.toFixed(2)));
   };
 
-  const renderStrikeTypeInput = (leg) => {
+    const renderStrikeTypeInput = (leg) => {
     const criteria = leg.strikeCriteria || "ATM pt";
     const generateStrikePoints = () => { const step = ATM_POINT_STEPS[selectedInstrumentName] || 50; const maxRange = 2000; let options = []; for (let i = maxRange; i >= step; i -= step) options.push(`ITM ${i}`); options.push("ATM"); for (let i = step; i <= maxRange; i += step) options.push(`OTM ${i}`); return options; };
     const generateStrikePercents = () => { const step = ATM_PERCENT_STEPS[selectedInstrumentName] || 1.0; const maxRange = 20.0; let options = []; for (let i = maxRange; i >= step; i -= step) options.push(`ITM ${i.toFixed(1)}%`); options.push("ATM"); for (let i = step; i <= maxRange; i += step) options.push(`OTM ${i.toFixed(1)}%`); return options; };
@@ -436,7 +436,7 @@ const StrategyLegsSection = ({ config, legs, addLeg, updateLeg, removeLeg, isCom
                                                     const newCriteria = e.target.value; 
                                                     let newInitialValue = "ATM"; 
                                                     if (newCriteria === 'Delta') newInitialValue = 0.5; 
-                                                    if (newCriteria === 'CP') newInitialValue = ""; 
+                                                    if (newCriteria === 'CP') newInitialValue = "";     
                                                     if (newCriteria.includes('CP')) newInitialValue = 0; 
                                                     
                                                     updateLeg(leg.id, 'strikeCriteria', newCriteria); 
