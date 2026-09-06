@@ -3,6 +3,8 @@ import axios from 'axios';
 import {Table, Settings, Play, Pause, SkipBack, SkipForward, Clock, SlidersHorizontal, ChevronDown, BarChart2 } from 'lucide-react';
 
 import CustomChart from '../../components/algoComponents/Aoc/CustomChart';
+// AOC.jsx में ऊपर इम्पोर्ट्स के साथ इसे जोड़ें
+import { useTradingMode } from '../../context/TradingModeContext';
 
 const AOC = () => {
     const [viewMode, setViewMode] = useState('data'); 
@@ -21,6 +23,11 @@ const AOC = () => {
     // 👁️ Chart Visibility States
     const [showMagicalLines, setShowMagicalLines] = useState(true);
     const [showOrderLines, setShowOrderLines] = useState(true);
+    const [sniperMode, setSniperMode] = useState(true);
+    const [maxShiftPts, setMaxShiftPts] = useState(20);
+
+
+    const { appMode, toggleMode } = useTradingMode();
 
     const DATA_RANGES = [
         'Previous', 
@@ -84,8 +91,16 @@ const AOC = () => {
         localStorage.setItem('aocDisplayConfig', JSON.stringify(displayConfig));
     }, [displayConfig]);
     
-    const [date, setDate] = useState('2026-08-28');
-    const [time, setTime] = useState('09:30'); 
+    const [date, setDate] = useState(() => {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    });
+    
+    // Time को 09:15 ही रहने दें ताकि सिमुलेशन रेडी रहे
+    const [time, setTime] = useState('09:15');
     const [expiry, setExpiry] = useState('');
     const [data, setData] = useState({ spotPrice: 0, chain: [] });
     const [sodChain, setSodChain] = useState([]);
@@ -145,7 +160,18 @@ const AOC = () => {
         return () => clearInterval(interval);
     }, [isPlaying, stepSize, playbackSpeed]);
 
+
+    // 🚨 1. Auto-Pause Simulator when switching to LIVE mode
+    useEffect(() => {
+        if (appMode === 'live' && isPlaying) {
+            setIsPlaying(false);
+        }
+    }, [appMode, isPlaying]);
+
     const fetchAOCData = async () => {
+        // 🚨 2. Live mode में पुरानी API कॉल को ब्लॉक करें (ताकि हिस्टोरिकल डेटा लाइव मार्केट को डिस्टर्ब न करे)
+        if (appMode === 'live') return; 
+
         setLoading(true);
         try {
             const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : 'http://65.0.164.229:5500';
@@ -158,6 +184,82 @@ const AOC = () => {
         }
         setLoading(false);
     };
+
+    // ==========================================
+    // 🔴 LIVE MARKET AOC POLLING ENGINE (Dummy for now)
+    // ==========================================
+    useEffect(() => {
+        if (appMode !== 'live') return;
+
+        const fetchLiveAOC = async () => {
+            try {
+                const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : 'http://65.0.164.229:5500';
+                
+                // 🎯 THE FIX: असली API Call चालू कर दी गई है!
+                const res = await axios.get(`${API_BASE_URL}/api/live/aoc`, { 
+                    params: { symbol: 'NIFTY', expiry: expiry } 
+                });
+                
+                if (res.data.success && res.data.chain.length > 0) {
+                    setData({ spotPrice: res.data.spotPrice, chain: res.data.chain });
+                }
+            } catch (error) {
+                console.error("Live AOC Fetch Error:", error);
+            }
+        };
+
+        // तुरंत एक बार डेटा मंगाएं
+        fetchLiveAOC();
+        
+        // हर 3 सेकंड में नया डेटा मंगाएं
+        const intervalId = setInterval(fetchLiveAOC, 3000); 
+
+        return () => clearInterval(intervalId);
+    }, [appMode, expiry]);
+
+
+    // ==========================================
+    // 🕒 THE LIVE CLOCK ENGINE
+    // ==========================================
+    useEffect(() => {
+        let liveClockInterval;
+
+        if (appMode === 'live') {
+            const syncLiveTime = () => {
+                const now = new Date();
+                
+                // Format YYYY-MM-DD
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const todayStr = `${yyyy}-${mm}-${dd}`;
+                
+                // Format HH:mm
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mins = String(now.getMinutes()).padStart(2, '0');
+                const timeStr = `${hh}:${mins}`;
+
+                setDate(todayStr);
+                setTime(timeStr);
+            };
+
+            // Live मोड में आते ही तुरंत टाइम सेट करें
+            syncLiveTime();
+
+            // हर 1 सेकंड में टाइम अपडेट करें
+            liveClockInterval = setInterval(syncLiveTime, 1000); 
+            
+        } else if (appMode === 'historical') {
+            // 🎯 THE FIX: वापस Historical आते ही टाइम को सुबह 09:15 कर दो
+            setTime('09:15');
+        }
+
+        return () => {
+            if (liveClockInterval) clearInterval(liveClockInterval);
+        };
+    }, [appMode]);
+
+
 
     const fetchSodData = async () => {
         if (!date) return;
@@ -347,6 +449,55 @@ const AOC = () => {
 
     const marketSentiment = getMarketSentiment();
 
+
+    
+    // ==========================================
+    // 🧠 THE ULTIMATE SNIPER BRAIN (100% SYNCED WITH UI ACTION BAR)
+    // ==========================================
+    const getChartOfAccuracyScenario = () => {
+        // 1. सीधे Raw Data से State पढ़ें (ताकि UI और Engine में कोई भेद न हो)
+        const ceWTB = aocStats.CE.Volume.state === 'WTB' || aocStats.CE.OI.state === 'WTB';
+        const ceWTT = aocStats.CE.Volume.state === 'WTT' || aocStats.CE.OI.state === 'WTT';
+        const peWTB = aocStats.PE.Volume.state === 'WTB' || aocStats.PE.OI.state === 'WTB';
+        const peWTT = aocStats.PE.Volume.state === 'WTT' || aocStats.PE.OI.state === 'WTT';
+
+        const ceShiftedTB = aocStats.CE.Volume.phrase?.includes("Shifted from Top to Bottom") || aocStats.CE.OI.phrase?.includes("Shifted from Top to Bottom");
+        const ceShiftedBT = aocStats.CE.Volume.phrase?.includes("Shifted from Bottom to Top") || aocStats.CE.OI.phrase?.includes("Shifted from Bottom to Top");
+        const peShiftedTB = aocStats.PE.Volume.phrase?.includes("Shifted from Top to Bottom") || aocStats.PE.OI.phrase?.includes("Shifted from Top to Bottom");
+        const peShiftedBT = aocStats.PE.Volume.phrase?.includes("Shifted from Bottom to Top") || aocStats.PE.OI.phrase?.includes("Shifted from Bottom to Top");
+
+        // 🩸 1. SCENARIO 7: BLOOD BATH (Highly Bearish)
+        if ((ceWTB || ceShiftedTB) && (peWTB || peShiftedTB)) {
+            return { scenario: 7, title: "BLOOD BATH 🩸📉", ceAction: "BLOCKED", peAction: "ALLOWED" };
+        }
+        
+        // 🚀 2. SCENARIO 6: BULL RUN (Highly Bullish)
+        if ((ceWTT || ceShiftedBT) && !ceShiftedTB && (peWTT || peShiftedBT)) {
+            return { scenario: 6, title: "BULL RUN 🚀🚀", ceAction: "ALLOWED", peAction: "BLOCKED" };
+        }
+        
+        // 🪤 3. PULLBACK TRAPS
+        if (ceShiftedTB && ceWTT) return { scenario: "TRAP", title: "BEARISH TRAP 📉", ceAction: "BLOCKED", peAction: "ALLOWED" };
+        if (peShiftedBT && peWTB) return { scenario: "TRAP", title: "BULLISH TRAP 🚀", ceAction: "ALLOWED", peAction: "BLOCKED" };
+
+        // 📉 4. SCENARIO 3 & 5: BEARISH PRESSURES
+        if ((ceWTB || ceShiftedTB) && !peWTB && !peWTT) return { scenario: 3, title: "BEARISH PRESSURE 📉", ceAction: "BLOCKED", peAction: "ALLOWED" };
+        if ((peWTB || peShiftedTB) && !ceWTB && !ceWTT) return { scenario: 5, title: "BEARISH PRESSURE 📉", ceAction: "BLOCKED", peAction: "ALLOWED" };
+
+        // 🚀 5. SCENARIO 2 & 4: BULLISH PRESSURES
+        if ((ceWTT || ceShiftedBT) && !peWTB && !peWTT) return { scenario: 2, title: "BULLISH PRESSURE 🚀", ceAction: "ALLOWED", peAction: "BLOCKED" };
+        if ((peWTT || peShiftedBT) && !ceWTB && !ceWTT) return { scenario: 4, title: "BULLISH PRESSURE 🚀", ceAction: "ALLOWED", peAction: "BLOCKED" };
+
+        // 🚫 6. SCENARIO 8 & 9: SQUEEZING / EXPANDING (No Trade Zone)
+        if (ceWTB && peWTT) return { scenario: 8, title: "MARKET SQUEEZING 🚫", ceAction: "BLOCKED", peAction: "BLOCKED" };
+        if (ceWTT && peWTB) return { scenario: 9, title: "MARKET EXPANDING 🚫", ceAction: "BLOCKED", peAction: "BLOCKED" };
+
+        // ⚖️ 7. SCENARIO 1: STABLE STRONG
+        return { scenario: 1, title: "STABLE STRONG ⚖️", ceAction: "ALLOWED", peAction: "ALLOWED" };
+    };
+
+    const sniperRules = getChartOfAccuracyScenario();
+
     const getChgOISentiment = () => {
         if (marketMetrics.bullPower >= 60) return { text: 'SHORT TRADE 📉', style: 'text-red-400' };
         if (marketMetrics.bearPower >= 60) return { text: 'LONG TRADE 🚀', style: 'text-green-400' };
@@ -443,53 +594,95 @@ const AOC = () => {
                         NIFTY 50
                     </div>
                     <div className="flex gap-2">
-                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={isPlaying} className="border border-gray-300 px-2 py-1 text-sm rounded bg-gray-50 outline-none font-bold text-gray-700 disabled:opacity-50 cursor-pointer hover:bg-gray-100" />
-                        <div className={`flex items-center border px-2 py-1 text-sm rounded font-bold transition-colors shadow-inner ${isPlaying ? 'bg-green-100 text-green-700 border-green-400' : 'bg-gray-50 border-gray-300 text-gray-700'}`}>
+                        {/* 🎯 FIX 1: Live Mode में Date Picker Disable करें */}
+                        <input 
+                            type="date" 
+                            value={date} 
+                            onChange={(e) => setDate(e.target.value)} 
+                            disabled={isPlaying || appMode === 'live'} 
+                            className={`border border-gray-300 px-2 py-1 text-sm rounded outline-none font-bold transition-colors cursor-pointer ${
+                                appMode === 'live' ? 'bg-red-50 text-red-700 opacity-90' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                            } disabled:cursor-not-allowed`} 
+                        />
+                        
+                        {/* 🎯 FIX 2: Live Mode में घड़ी को Red Color का Glow दें */}
+                        <div className={`flex items-center border px-2 py-1 text-sm rounded font-bold transition-colors shadow-inner ${
+                            appMode === 'live' ? 'bg-red-100 text-red-700 border-red-400' : 
+                            isPlaying ? 'bg-green-100 text-green-700 border-green-400' : 
+                            'bg-gray-50 border-gray-300 text-gray-700'
+                        }`}>
                             <Clock size={14} className="mr-1" /> {time}
                         </div>
                     </div>
                 </div>
 
-                {/* Center: Settings Toggle Menu */}
-                <div className="relative flex justify-center w-1/3">
-                    <button 
-                        onClick={() => setShowSettingsMenu(!showSettingsMenu)} 
-                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-extrabold border shadow-sm transition-all ${showSettingsMenu ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                {/* 🚀 Center: The Magic Toggle & Settings Menu */}
+                <div className="relative flex items-center justify-center gap-6 w-1/3">
+                    
+                    {/* 👇 1. HISTORICAL | LIVE TOGGLE SWITCH */}
+                    <div 
+                        onClick={toggleMode}
+                        className="flex items-center bg-gray-100 p-1 rounded-full cursor-pointer border border-gray-300 shadow-inner select-none"
                     >
-                        <SlidersHorizontal size={14} /> AOC CONFIG
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {showSettingsMenu && (
-                        <div className="absolute top-full mt-2 w-56 bg-white border border-gray-200 shadow-xl rounded-lg p-3 flex flex-col gap-3 z-50">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 border-b pb-1 tracking-wider">Toggle Display Elements</span>
-                            
-                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showOiInterpretation} onChange={() => toggleConfig('showOiInterpretation')} /> 
-                                🎯 Center OI Interpretation
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showOiBadges} onChange={() => toggleConfig('showOiBadges')} /> 
-                                🏷️ Call/Put Status Badges
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showPowerMeter} onChange={() => toggleConfig('showPowerMeter')} /> 
-                                📊 Live Power Meter (Bulls/Bears)
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showPCR} onChange={() => toggleConfig('showPCR')} /> 
-                                📉 PCR & Max Pain Ribbon
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showIV} onChange={() => toggleConfig('showIV')} /> 
-                                ⚡ Implied Volatility (IV)
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showGreeks} onChange={() => toggleConfig('showGreeks')} /> 
-                                Δ Greeks (Delta)
-                            </label>
+                        <div className={`px-5 py-1 text-xs font-extrabold rounded-full transition-all duration-300 ${
+                            appMode === 'historical' 
+                            ? 'bg-blue-600 text-white shadow-md' 
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}>
+                            ⏪ HISTORICAL
                         </div>
-                    )}
+                        
+                        <div className={`px-5 py-1 text-xs font-extrabold rounded-full transition-all duration-300 flex items-center gap-1.5 ${
+                            appMode === 'live' 
+                            ? 'bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)]' 
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}>
+                            {appMode === 'live' && <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>}
+                            LIVE
+                        </div>
+                    </div>
+
+                    {/* 👇 2. आपका पुराना AOC CONFIG बटन (जस का तस) */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowSettingsMenu(!showSettingsMenu)} 
+                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-extrabold border shadow-sm transition-all ${showSettingsMenu ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                        >
+                            <SlidersHorizontal size={14} /> AOC CONFIG
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showSettingsMenu && (
+                            <div className="absolute top-full mt-2 w-56 bg-white border border-gray-200 shadow-xl rounded-lg p-3 flex flex-col gap-3 z-50">
+                                <span className="text-[10px] uppercase font-bold text-gray-400 border-b pb-1 tracking-wider">Toggle Display Elements</span>
+                                
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
+                                    <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showOiInterpretation} onChange={() => toggleConfig('showOiInterpretation')} /> 
+                                    🎯 Center OI Interpretation
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
+                                    <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showOiBadges} onChange={() => toggleConfig('showOiBadges')} /> 
+                                    🏷️ Call/Put Status Badges
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
+                                    <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showPowerMeter} onChange={() => toggleConfig('showPowerMeter')} /> 
+                                    📊 Live Power Meter (Bulls/Bears)
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
+                                    <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showPCR} onChange={() => toggleConfig('showPCR')} /> 
+                                    📉 PCR & Max Pain Ribbon
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
+                                    <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showIV} onChange={() => toggleConfig('showIV')} /> 
+                                    ⚡ Implied Volatility (IV)
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 hover:text-blue-600 transition-colors">
+                                    <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={displayConfig.showGreeks} onChange={() => toggleConfig('showGreeks')} /> 
+                                    Δ Greeks (Delta)
+                                </label>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right: View Modes */}
@@ -590,7 +783,7 @@ const AOC = () => {
                         <div className="flex items-center gap-4">
                             {/* 1. AOC Magical Lines Toggle */}
                             <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setShowMagicalLines(!showMagicalLines)}>
-                                <span className="text-[12px] font-bold text-gray-600">Magical Lines</span>
+                                <span className="text-[12px] font-bold text-gray-600">✦ 6 Magical Lines</span>
                                 <div className={`w-8 h-4 rounded-full flex items-center p-[2px] transition-colors duration-300 ${showMagicalLines ? 'bg-[#2962ff]' : 'bg-gray-300'}`}>
                                     <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${showMagicalLines ? 'translate-x-4' : 'translate-x-0'}`}></div>
                                 </div>
@@ -603,6 +796,30 @@ const AOC = () => {
                                     <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${showOrderLines ? 'translate-x-4' : 'translate-x-0'}`}></div>
                                 </div>
                             </div>
+
+                            {/* 3. 🎯 NEW: Sniper Mode Toggle */}
+                            <div className="flex items-center gap-2 cursor-pointer select-none ml-2 border-l border-gray-300 pl-4" onClick={() => setSniperMode(!sniperMode)}>
+                                <span className={`text-[12px] font-extrabold flex items-center gap-1 transition-colors ${sniperMode ? 'text-red-600 drop-shadow-sm' : 'text-gray-500'}`}>
+                                    🎯 Sniper Mode
+                                </span>
+                                <div className={`w-8 h-4 rounded-full flex items-center p-[2px] transition-all duration-300 ${sniperMode ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-gray-300'}`}>
+                                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${sniperMode ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                </div>
+                            </div>
+
+                            {/* 4. 📐 NEW: Dynamic Max Shift Input (तभी दिखेगा जब Sniper ON हो) */}
+                            {sniperMode && (
+                                <div className="flex items-center gap-1.5 ml-3 border-l border-gray-200 pl-3">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Max Shift:</span>
+                                    <input 
+                                        type="number" 
+                                        value={maxShiftPts} 
+                                        onChange={(e) => setMaxShiftPts(Number(e.target.value))}
+                                        className="w-12 text-center text-xs font-extrabold text-red-600 bg-red-50 border border-red-200 rounded outline-none py-[2px] focus:ring-1 focus:ring-red-400"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-500">pts</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -611,7 +828,7 @@ const AOC = () => {
                     {/* 🚀 THE REAL CHART INTEGRATION */}
                     <div className="flex-1 w-full h-full relative overflow-hidden bg-white">
                         <CustomChart symbol="NIFTY" date={date} timeframe={timeframe} dataRange={dataRange} time={time} playbackSpeed={playbackSpeed} aocStats={aocStats} 
-                            marketMetrics={marketMetrics} chainData={data.chain} showMagicalLines={showMagicalLines}  showOrderLines={showOrderLines}  />
+                            marketMetrics={marketMetrics} chainData={data.chain} showMagicalLines={showMagicalLines}  showOrderLines={showOrderLines} sniperRules={sniperRules} sniperMode={sniperMode} maxShiftPts={maxShiftPts}  spotPrice={data.spotPrice}/>
                     </div>
                 </div>
 
@@ -851,37 +1068,48 @@ const AOC = () => {
                 </div>
             </div>
 
-            {/* SIMULATOR CONTROL BAR */}
-            <div className="bg-white border-t border-gray-300 px-4 py-2.5 flex items-center justify-center gap-6 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20 shrink-0">
-                <button onClick={() => setTime(prev => adjustTime(prev, -stepSize))} disabled={isPlaying} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-50">
-                    <SkipBack size={18} />
-                </button>
-                <button onClick={() => setIsPlaying(!isPlaying)} className={`px-5 py-1.5 rounded-full font-bold text-white flex items-center gap-2 shadow-md transition-all ${isPlaying ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                    {isPlaying ? <><Pause size={16} className="fill-current" /> Pause</> : <><Play size={16} className="fill-current" /> Play Simulator</>}
-                </button>
-                <button onClick={() => setTime(prev => adjustTime(prev, stepSize))} disabled={isPlaying} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-50">
-                    <SkipForward size={18} />
-                </button>
-                <div className="h-6 w-px bg-gray-300 mx-2"></div> 
-                <div className="flex items-center border border-gray-300 rounded overflow-hidden shadow-sm">
-                    <span className="px-2 py-1 bg-gray-100 text-[11px] font-bold text-gray-600 border-r border-gray-300">Step</span>
-                    <select value={stepSize} onChange={e => setStepSize(Number(e.target.value))} disabled={isPlaying} className="px-2 py-1 text-xs outline-none bg-white font-medium cursor-pointer disabled:bg-gray-50">
-                        <option value={1}>1 Min</option>
-                        <option value={3}>3 Min</option>
-                        <option value={5}>5 Min</option>
-                        <option value={15}>15 Min</option>
-                    </select>
+            {/* 👇 CONDITIONAL RENDER: SIMULATOR VS LIVE FOOTER */}
+            {appMode === 'historical' ? (
+                /* आपका पुराना Simulator Control Bar */
+                <div className="bg-white border-t border-gray-300 px-4 py-2.5 flex items-center justify-center gap-6 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20 shrink-0">
+                    <button onClick={() => setTime(prev => adjustTime(prev, -stepSize))} disabled={isPlaying} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-50">
+                        <SkipBack size={18} />
+                    </button>
+                    <button onClick={() => setIsPlaying(!isPlaying)} className={`px-5 py-1.5 rounded-full font-bold text-white flex items-center gap-2 shadow-md transition-all ${isPlaying ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                        {isPlaying ? <><Pause size={16} className="fill-current" /> Pause</> : <><Play size={16} className="fill-current" /> Play Simulator</>}
+                    </button>
+                    <button onClick={() => setTime(prev => adjustTime(prev, stepSize))} disabled={isPlaying} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-50">
+                        <SkipForward size={18} />
+                    </button>
+                    <div className="h-6 w-px bg-gray-300 mx-2"></div> 
+                    <div className="flex items-center border border-gray-300 rounded overflow-hidden shadow-sm">
+                        <span className="px-2 py-1 bg-gray-100 text-[11px] font-bold text-gray-600 border-r border-gray-300">Step</span>
+                        <select value={stepSize} onChange={e => setStepSize(Number(e.target.value))} disabled={isPlaying} className="px-2 py-1 text-xs outline-none bg-white font-medium cursor-pointer disabled:bg-gray-50">
+                            <option value={1}>1 Min</option>
+                            <option value={3}>3 Min</option>
+                            <option value={5}>5 Min</option>
+                            <option value={15}>15 Min</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center border border-gray-300 rounded overflow-hidden shadow-sm">
+                        <span className="px-2 py-1 bg-gray-100 text-[11px] font-bold text-gray-600 border-r border-gray-300">Speed</span>
+                        <select value={playbackSpeed} onChange={e => setPlaybackSpeed(Number(e.target.value))} className="px-2 py-1 text-xs outline-none bg-white font-medium cursor-pointer">
+                            <option value={60000}>Realtime (60s) 🔥</option>
+                            <option value={2000}>Slow</option>
+                            <option value={1500}>Normal</option>
+                            <option value={500}>Fast (2x)</option>
+                        </select>
+                    </div>
                 </div>
-                <div className="flex items-center border border-gray-300 rounded overflow-hidden shadow-sm">
-                    <span className="px-2 py-1 bg-gray-100 text-[11px] font-bold text-gray-600 border-r border-gray-300">Speed</span>
-                    <select value={playbackSpeed} onChange={e => setPlaybackSpeed(Number(e.target.value))} className="px-2 py-1 text-xs outline-none bg-white font-medium cursor-pointer">
-                        <option value={60000}>Realtime (60s) 🔥</option>
-                        <option value={2000}>Slow</option>
-                        <option value={1500}>Normal</option>
-                        <option value={500}>Fast (2x)</option>
-                    </select>
+            ) : (
+                /* 🔴 Live Mode Footer */
+                <div className="bg-gray-900 border-t border-gray-800 px-4 py-2 flex items-center justify-center shadow-[0_-4px_15px_rgba(0,0,0,0.2)] z-20 shrink-0">
+                    <div className="flex items-center gap-2 text-green-400 text-[11px] font-bold tracking-widest uppercase">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]"></span>
+                        Live Option Chain Syncing
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

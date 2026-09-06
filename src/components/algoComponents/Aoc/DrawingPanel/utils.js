@@ -30,15 +30,13 @@ export const aggregateCandles = (data1m, tfValue, tfUnit) => {
     let tfMinutes = tfValue;
     if (tfUnit === 'hour') tfMinutes = tfValue * 60;
     if (tfUnit === 'day') tfMinutes = tfValue * 1440;
-    
+
     const tfMs = tfMinutes * 60 * 1000;
     const aggregated = [];
     let currentCandle = null;
-
     // 🇮🇳 IST Timezone Offset (+5:30) -> 19800000 ms
     // भारतीय समय के हिसाब से कैंडल्स को सही जगह ग्रुप करने के लिए यह बहुत ज़रूरी है
     const IST_OFFSET = 19800000; 
-
     data1m.forEach(candle => {
         // समय को टाइमफ्रेम के ब्लॉक (Chunk) में सेट करें (जैसे 9:15 से 9:20)
         const alignedTime = Math.floor((candle.timestamp + IST_OFFSET) / tfMs) * tfMs - IST_OFFSET;
