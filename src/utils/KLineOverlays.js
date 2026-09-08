@@ -156,136 +156,162 @@ export const registerAllCustomOverlays = () => {
           window.aocLevelLineRegistered = true;
       }
 
-      // 🚀 4. INDEPENDENT ENTRY LINE (Perfect Center Aligned)
-      if (!window.entryLineOverlayRegistered) {
-          registerOverlay({
-              name: 'customEntryLine',
-              lock: true,
-              needDefaultPointFigure: true,
-              createPointFigures: ({ overlay, coordinates, bounding }) => {
-                  const y = coordinates[0].y;
-                  const ext = overlay.extendData || {};
-                  const startX = bounding.width - 300;
-                  return [
-                      { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#2962ff', size: 1 } },
-                      { type: 'text', 
-                          // 🌟 THE FIX: y की वैल्यू सिर्फ 'y' रखी है (कोई +6 नहीं)
-                          attrs: { x: startX, y: y - 6, text: ` ${ext.qty}  |  ${ext.pnl || '₹ 0.00'}  |  ✖ ` }, 
-                          styles: { 
-                              style: 'fill', color: '#ffffff', backgroundColor: '#2962ff', 
-                              paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
-                              borderRadius: 4, size: 12, weight: 'bold', 
-                              align: 'start', 
-                              // 🎯 THE MAGIC: यह लाइन टेक्स्ट बॉक्स को बिल्कुल बीचों-बीच खड़ा कर देगी!
-                              baseline: 'middle', 
-                              family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
-                          } 
-                      }
-                  ];
-              }
-          });
-          window.entryLineOverlayRegistered = true;
-      }
+    //   // 🚀 4. INDEPENDENT ENTRY LINE (Real P&L Ready)
+    // if (!window.entryLineOverlayRegistered) {
+    //     registerOverlay({
+    //         name: 'customEntryLine',
+    //         lock: true,
+    //         needDefaultPointFigure: true,
+    //         createPointFigures: ({ overlay, coordinates, bounding }) => {
+    //             const y = coordinates[0].y;
+    //             const ext = overlay.extendData || {};
+    //             const startX = bounding.width - 300;
+                
+    //             // 🎯 THE FIX: अब यह ext.realPnl दिखाएगा (जो सीधा AOC Option Chain से आएगा)
+    //             const pnlText = ext.realPnl ? (ext.realPnl > 0 ? `+ ₹${ext.realPnl}` : `- ₹${Math.abs(ext.realPnl)}`) : '₹ 0.00';
+    //             const pnlColor = ext.realPnl && ext.realPnl < 0 ? '#ff4d4d' : '#00e676'; // Profit हरा, Loss लाल
 
-      // 🚀 5. INDEPENDENT SL LINE (Points Display Fix)
-      if (!window.slLineOverlayRegistered) {
-          registerOverlay({
-              name: 'customSlLine',
-              lock: false, 
-              needDefaultPointFigure: true,
-              createPointFigures: ({ overlay, coordinates, bounding, yAxis }) => {
-                  let y = coordinates[0].y;
-                  let currentVal = overlay.points[0].value;
-                  const ext = overlay.extendData || {};
-                  const startX = bounding.width - 300;
+    //             return [
+    //                 { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#2962ff', size: 1 } },
+    //                 { type: 'text', 
+    //                     attrs: { x: startX, y: y, text: ` ${ext.qty} Lot  |  ${pnlText}  |  ✖ ` }, 
+    //                     styles: { 
+    //                         style: 'fill', color: '#ffffff', backgroundColor: '#2962ff', 
+    //                         paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+    //                         borderRadius: 4, size: 12, weight: 'bold', 
+    //                         align: 'start', baseline: 'middle', 
+    //                         family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
+    //                     } 
+    //                 }
+    //             ];
+    //         }
+    //     });
+    //     window.entryLineOverlayRegistered = true;
+    // }
 
-                  const spotEntry = ext.spotEntry || 0;
-                  const entryY = yAxis.convertToPixel(spotEntry);
+    // 🚀 4. INDEPENDENT ENTRY LINE (Real P&L & Smart Colors)
+    if (!window.entryLineOverlayRegistered) {
+        registerOverlay({
+            name: 'customEntryLine',
+            lock: true,
+            needDefaultPointFigure: true,
+            createPointFigures: ({ overlay, coordinates, bounding }) => {
+                const y = coordinates[0].y;
+                const ext = overlay.extendData || {};
+                const startX = bounding.width - 300;
+                
+                // 🎯 THE FIX: इंजन से सीधा 'ext.pnl' पकड़ो!
+                const pnlText = ext.pnl || '₹ 0.00';
+                
+                // 🎨 THE COLOR MAGIC: Text के हिसाब से रंग डिसाइड करो
+                const isProfit = pnlText.includes('+');
+                const isLoss = pnlText.includes('-');
+                const bgColor = isProfit ? '#00b300' : (isLoss ? '#ff4d4d' : '#2962ff'); 
 
-                  // 🛑 THE GLASS WALL LOCK
-                  if (ext.isBullish && currentVal > spotEntry) {
-                      currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
-                  } else if (!ext.isBullish && currentVal < spotEntry) {
-                      currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
-                  }
+                return [
+                    { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#2962ff', size: 1 } },
+                    { type: 'text', 
+                        attrs: { x: startX, y: y, text: ` ${ext.qty} Lot  |  ${pnlText}  |  ✖ ` }, 
+                        styles: { 
+                            style: 'fill', color: '#ffffff', 
+                            backgroundColor: bgColor, // 👈 यहाँ डायनामिक कलर लगा दिया!
+                            paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+                            borderRadius: 4, size: 12, weight: 'bold', 
+                            align: 'start', baseline: 'middle', 
+                            family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
+                        } 
+                    }
+                ];
+            }
+        });
+        window.entryLineOverlayRegistered = true;
+    }
 
-                  // 🧮 1. Calculate Points Difference
-                  const ptsDiff = Math.abs(spotEntry - currentVal);
-                  const ptsText = `${ptsDiff.toFixed(0)} pts`; // 👈 यहाँ हमने Points बना लिए
+    // 🚀 5. INDEPENDENT SL LINE (Delta Based Expected P&L)
+    if (!window.slLineOverlayRegistered) {
+        registerOverlay({
+            name: 'customSlLine',
+            lock: false, 
+            needDefaultPointFigure: true,
+            createPointFigures: ({ overlay, coordinates, bounding, yAxis }) => {
+                let y = coordinates[0].y;
+                let currentVal = overlay.points[0].value;
+                const ext = overlay.extendData || {};
+                const startX = bounding.width - 300;
+                const spotEntry = ext.spotEntry || 0;
+                const entryY = yAxis.convertToPixel(spotEntry);
 
-                  // 💸 2. Calculate P&L Amount
-                  const lossAmt = ptsDiff * (ext.qty || 1);
-                  const lossText = `- ₹${lossAmt.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+                if (ext.isBullish && currentVal > spotEntry) { currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry; } 
+                else if (!ext.isBullish && currentVal < spotEntry) { currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry; }
 
-                  return [
-                      { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#f57c00', size: 1 } },
-                      { type: 'text', 
-                          // 🌟 THE FIX: Qty की जगह Points (ptsText) दिखा रहे हैं
-                          attrs: { x: startX, y: y - 6, text: `𝐒𝐋 ${ptsText}  |  ${lossText}  |  ✖ ` }, 
-                          styles: { 
-                              style: 'fill', color: '#ffffff', backgroundColor: '#f57c00', 
-                              paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
-                              borderRadius: 4, size: 12, weight: 'bold', 
-                              align: 'start', baseline: 'middle', 
-                              family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
-                          } 
-                      },
-                      { type: 'line', attrs: { coordinates: [{x: startX, y: Math.min(y, entryY)}, {x: startX, y: Math.max(y, entryY)}] }, styles: { style: 'dashed', color: '#787b86', size: 1 } }
-                  ];
-              }
-          });
-          window.slLineOverlayRegistered = true;
-      }
+                const ptsDiff = Math.abs(spotEntry - currentVal);
+                const ptsText = `${ptsDiff.toFixed(1)} pts`; 
 
-      // 🚀 6. INDEPENDENT TP LINE (Points Display Fix)
-      if (!window.tpLineOverlayRegistered) {
-          registerOverlay({
-              name: 'customTpLine',
-              lock: false,
-              needDefaultPointFigure: true,
-              createPointFigures: ({ overlay, coordinates, bounding, yAxis }) => {
-                  let y = coordinates[0].y;
-                  let currentVal = overlay.points[0].value;
-                  const ext = overlay.extendData || {};
-                  const startX = bounding.width - 300;
+                // 🧬 THE DELTA MAGIC: Expected Premium Loss Calculation
+                const delta = ext.delta ? Math.abs(ext.delta) : 0.5; // अगर डेल्टा न मिले तो डिफ़ॉल्ट ATM 0.5 मानेंगे
+                const expectedPremiumPts = ptsDiff * delta;
+                const lossAmt = expectedPremiumPts * (ext.qty || 1);
+                const lossText = `Exp: - ₹${lossAmt.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
 
-                  const spotEntry = ext.spotEntry || 0;
-                  const entryY = yAxis.convertToPixel(spotEntry);
+                return [
+                    { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#f57c00', size: 1 } },
+                    { type: 'text', 
+                        attrs: { x: startX, y: y, text: `𝐒𝐋 ${ptsText}  |  ${lossText}  |  ✖ ` }, 
+                        styles: { 
+                            style: 'fill', color: '#ffffff', backgroundColor: '#f57c00', 
+                            paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+                            borderRadius: 4, size: 12, weight: 'bold', align: 'start', baseline: 'middle'
+                        } 
+                    },
+                    { type: 'line', attrs: { coordinates: [{x: startX, y: Math.min(y, entryY)}, {x: startX, y: Math.max(y, entryY)}] }, styles: { style: 'dashed', color: '#787b86', size: 1 } }
+                ];
+            }
+        });
+        window.slLineOverlayRegistered = true;
+    }
 
-                  // 🛑 THE GLASS WALL LOCK
-                  if (ext.isBullish && currentVal < spotEntry) {
-                      currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
-                  } else if (!ext.isBullish && currentVal > spotEntry) {
-                      currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry;
-                  }
+    // 🚀 6. INDEPENDENT TP LINE (Delta Based Expected P&L)
+    if (!window.tpLineOverlayRegistered) {
+        registerOverlay({
+            name: 'customTpLine',
+            lock: false,
+            needDefaultPointFigure: true,
+            createPointFigures: ({ overlay, coordinates, bounding, yAxis }) => {
+                let y = coordinates[0].y;
+                let currentVal = overlay.points[0].value;
+                const ext = overlay.extendData || {};
+                const startX = bounding.width - 300;
+                const spotEntry = ext.spotEntry || 0;
+                const entryY = yAxis.convertToPixel(spotEntry);
 
-                  // 🧮 1. Calculate Points Difference
-                  const ptsDiff = Math.abs(spotEntry - currentVal);
-                  const ptsText = `${ptsDiff.toFixed(2)} pts`; // 👈 यहाँ हमने Points बना लिए
+                if (ext.isBullish && currentVal < spotEntry) { currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry; } 
+                else if (!ext.isBullish && currentVal > spotEntry) { currentVal = spotEntry; y = entryY; overlay.points[0].value = spotEntry; }
 
-                  // 💸 2. Calculate P&L Amount
-                  const profAmt = ptsDiff * (ext.qty || 1);
-                  const profText = `+ ₹${profAmt.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+                const ptsDiff = Math.abs(spotEntry - currentVal);
+                const ptsText = `${ptsDiff.toFixed(1)} pts`; 
 
-                  return [
-                      { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#00b300', size: 1 } },
-                      { type: 'text', 
-                          // 🌟 THE FIX: Qty की जगह Points (ptsText) दिखा रहे हैं
-                          attrs: { x: startX, y: y - 6, text: ` 𝐓𝐏  ${ptsText}  |  ${profText}  |  ✖ ` }, 
-                          styles: { 
-                              style: 'fill', color: '#ffffff', backgroundColor: '#00b300', 
-                              paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
-                              borderRadius: 4, size: 12, weight: 'bold', 
-                              align: 'start', baseline: 'middle',
-                              family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' 
-                          } 
-                      },
-                      { type: 'line', attrs: { coordinates: [{x: startX, y: Math.min(y, entryY)}, {x: startX, y: Math.max(y, entryY)}] }, styles: { style: 'dashed', color: '#787b86', size: 1 } }
-                  ];
-              }
-          });
-          window.tpLineOverlayRegistered = true;
-      }
+                // 🧬 THE DELTA MAGIC: Expected Premium Profit Calculation
+                const delta = ext.delta ? Math.abs(ext.delta) : 0.5;
+                const expectedPremiumPts = ptsDiff * delta;
+                const profAmt = expectedPremiumPts * (ext.qty || 1);
+                const profText = `Exp: + ₹${profAmt.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+
+                return [
+                    { type: 'line', attrs: { coordinates: [{x: 0, y}, {x: startX, y}] }, styles: { style: 'solid', color: '#00b0ff', size: 1 } },
+                    { type: 'text', 
+                        attrs: { x: startX, y: y, text: `𝐓𝐏  ${ptsText}  |  ${profText}  |  ✖ ` }, 
+                        styles: { 
+                            style: 'fill', color: '#ffffff', backgroundColor: '#00b0ff', 
+                            paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, 
+                            borderRadius: 4, size: 12, weight: 'bold', align: 'start', baseline: 'middle'
+                        } 
+                    },
+                    { type: 'line', attrs: { coordinates: [{x: startX, y: Math.min(y, entryY)}, {x: startX, y: Math.max(y, entryY)}] }, styles: { style: 'dashed', color: '#787b86', size: 1 } }
+                ];
+            }
+        });
+        window.tpLineOverlayRegistered = true;
+    }
 
     console.log("✅ All KLine Custom Overlays Registered Successfully!");
 };

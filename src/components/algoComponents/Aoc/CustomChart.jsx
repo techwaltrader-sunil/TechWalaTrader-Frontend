@@ -30,8 +30,11 @@ import { AlertConfigModal } from './ui/AlertConfigModal';
 import { TradePanel } from './ui/TradePanel';
 import { CancelOrderModal } from './ui/CancelOrderModal';
 import { DeleteAlertModal } from './ui/DeleteAlertModal';
+import { TradeReportCard } from './ui/TradeReportCard';
 
 import { registerAllCustomOverlays } from '../../../utils/KLineOverlays';
+
+
 
 
 registerAllDrawingTools();
@@ -42,7 +45,8 @@ registerAllCustomOverlays();
 // ==========================================
 // 📊 MAIN CHART COMPONENT
 // ==========================================
-const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playbackSpeed, aocStats, marketMetrics, chainData, showMagicalLines, showOrderLines, sniperRules, sniperMode, maxShiftPts, spotPrice }) => {
+const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playbackSpeed, aocStats, marketMetrics, chainData, showMagicalLines, showOrderLines, sniperRules, sniperMode, maxShiftPts, spotPrice, showReport, setShowReport, marketActionText }) => {
+
     const { appMode } = useTradingMode();
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
@@ -107,7 +111,7 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
         openPositions,      // 👈
         setOpenPositions,   // 👈
         processPnL          // 👈 
-    } = useGhostEngine(chartRef, symbol, setToastData, sniperMode, sniperRules, maxShiftPts, setAlertConfigModal, setDeleteAlertModal, chartContainerRef);
+    } = useGhostEngine(chartRef, symbol, setToastData, sniperMode, sniperRules, maxShiftPts, setAlertConfigModal, setDeleteAlertModal, chartContainerRef, chainData, marketActionText);
 
     // ==========================================
     // 🔮 THE AOC QUANT ENGINE (6 Magical Lines)
@@ -406,6 +410,7 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
         symbol, setPriceAlerts, setOpenPositions, processPnL, 
         setToastData, liveUpdateCallbackRef, activeAlertsRef
     );
+
 
     // ==========================================
     // 🧮 OPTIONS CALCULATOR ENGINE (Strikes & Premiums)
@@ -762,7 +767,15 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                 setOpenPositions={setOpenPositions}
                 setToastData={setToastData}
                 setCancelOrderModal={setCancelOrderModal}
-            />           
+            />      
+
+            {/* 📊 THE TRADE REPORT MODAL */}
+            {showReport && (
+                <TradeReportCard 
+                    positions={openPositions} 
+                    onClose={() => setShowReport(false)} 
+                />
+            )}     
             
         </div>
     );

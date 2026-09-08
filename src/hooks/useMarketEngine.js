@@ -48,13 +48,51 @@ export const useMarketEngine = (
                             tpSpot: tpSpot, tpPrice: tpSpot,
                             isBullish: isBullish, 
                             slValue: tc.sl, tpValue: tc.tp,
-                            slType: 'Points', tpType: 'Points', isAocPending: false
+                            slType: 'Points', tpType: 'Points', isAocPending: false,
+                            
+                            // 🎯 THE NEW MAGIC PARAMETERS (ऑप्शंस के रियल डेटा के लिए)
+                            strike: tc.nearestStrike,       
+                            entryPremium: tc.premium,       
+                            delta: tc.delta || 0.5          
                         });
 
                         if (chartRef.current) {
-                            chartRef.current.createOverlay({ name: 'customEntryLine', id: `${ghostTradeId}_entry`, groupId: ghostTradeId, extendData: { type: 'ENTRY', price: targetPrice, qty: tc.qty, pnl: 'PENDING' }, points: [{ value: targetPrice }] });
-                            chartRef.current.createOverlay({ name: 'customSlLine', id: `${ghostTradeId}_sl`, groupId: ghostTradeId, extendData: { type: 'SL', price: slSpot, spotEntry: targetPrice, isBullish: isBullish, qty: tc.qty, pts: tc.sl, pnl: tc.sl * tc.qty }, points: [{ value: slSpot }] });
-                            if (tpSpot > 0) chartRef.current.createOverlay({ name: 'customTpLine', id: `${ghostTradeId}_tp`, groupId: ghostTradeId, extendData: { type: 'TP', price: tpSpot, spotEntry: targetPrice, isBullish: isBullish, qty: tc.qty, pts: tc.tp, pnl: tc.tp * tc.qty }, points: [{ value: tpSpot }] });
+                            // 1. ENTRY LINE (इसमें ड्रैग नहीं होता)
+                            chartRef.current.createOverlay({ 
+                                name: 'customEntryLine', id: `${ghostTradeId}_entry`, groupId: ghostTradeId, 
+                                extendData: { type: 'ENTRY', price: targetPrice, qty: tc.qty, pnl: 'PENDING' }, 
+                                points: [{ value: targetPrice }] 
+                            });
+                            
+                            // 🎯 2. THE FIX: SL Line में 'onDragEnd' सेंसर लगा दिया!
+                            chartRef.current.createOverlay({ 
+                                name: 'customSlLine', id: `${ghostTradeId}_sl`, groupId: ghostTradeId, 
+                                extendData: { type: 'SL', price: slSpot, spotEntry: targetPrice, isBullish: isBullish, qty: tc.qty, pts: tc.sl, delta: tc.delta || 0.5 }, 
+                                points: [{ value: slSpot }],
+                                onDragEnd: function(event) {
+                                    const newSl = event.overlay.points[0].value;
+                                    // जैसे ही लाइन छूटेगी, यह इंजन (State) को नया प्राइस बता देगा!
+                                    setOpenPositions(prev => prev.map(p => p.id === ghostTradeId ? { ...p, slSpot: newSl } : p));
+                                    chartRef.current.overrideOverlay({ id: event.overlay.id, points: [{ value: newSl }] });
+                                    return true;
+                                }
+                            });
+                            
+                            // 🎯 3. THE FIX: TP Line में 'onDragEnd' सेंसर लगा दिया!
+                            if (tpSpot > 0) {
+                                chartRef.current.createOverlay({ 
+                                    name: 'customTpLine', id: `${ghostTradeId}_tp`, groupId: ghostTradeId, 
+                                    extendData: { type: 'TP', price: tpSpot, spotEntry: targetPrice, isBullish: isBullish, qty: tc.qty, pts: tc.tp, delta: tc.delta || 0.5 }, 
+                                    points: [{ value: tpSpot }],
+                                    onDragEnd: function(event) {
+                                        const newTp = event.overlay.points[0].value;
+                                        // जैसे ही लाइन छूटेगी, यह इंजन (State) को नया प्राइस बता देगा!
+                                        setOpenPositions(prev => prev.map(p => p.id === ghostTradeId ? { ...p, tpSpot: newTp } : p));
+                                        chartRef.current.overrideOverlay({ id: event.overlay.id, points: [{ value: newTp }] });
+                                        return true;
+                                    }
+                                });
+                            }
                         }
 
                         setTimeout(() => setToastData({ 

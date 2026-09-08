@@ -5,6 +5,7 @@ import {Table, Settings, Play, Pause, SkipBack, SkipForward, Clock, SlidersHoriz
 import CustomChart from '../../components/algoComponents/Aoc/CustomChart';
 // AOC.jsx में ऊपर इम्पोर्ट्स के साथ इसे जोड़ें
 import { useTradingMode } from '../../context/TradingModeContext';
+import { TradeReportCard } from '../../components/algoComponents/Aoc/ui/TradeReportCard';
 
 const AOC = () => {
     const [viewMode, setViewMode] = useState('data'); 
@@ -28,6 +29,8 @@ const AOC = () => {
 
 
     const { appMode, toggleMode } = useTradingMode();
+
+    const [showReport, setShowReport] = useState(false);
 
     const DATA_RANGES = [
         'Previous', 
@@ -685,8 +688,18 @@ const AOC = () => {
                     </div>
                 </div>
 
-                {/* Right: View Modes */}
-                <div className="flex justify-end w-1/3">
+                {/* Right: View Modes & Report Button */}
+                <div className="flex justify-end items-center gap-3 w-1/3">
+                    
+                    {/* 📄 NEW: REPORT BUTTON */}
+                    <button 
+                        onClick={() => setShowReport(true)} 
+                        className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-md transition-all text-xs border border-blue-200 shadow-sm"
+                    >
+                        📄 Report
+                    </button>
+
+                    {/* OLD: CHART | SPLIT | DATA TOGGLE */}
                     <div className="flex bg-gray-100 p-0.5 rounded border border-gray-200">
                         <button onClick={() => setViewMode('chart')} className={`px-3 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${viewMode === 'chart' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><BarChart2 size={14} /> Chart</button>
                         <button onClick={() => setViewMode('split')} className={`px-3 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${viewMode === 'split' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><BarChart2 size={14} /><Table size={14} /> Split</button>
@@ -828,7 +841,7 @@ const AOC = () => {
                     {/* 🚀 THE REAL CHART INTEGRATION */}
                     <div className="flex-1 w-full h-full relative overflow-hidden bg-white">
                         <CustomChart symbol="NIFTY" date={date} timeframe={timeframe} dataRange={dataRange} time={time} playbackSpeed={playbackSpeed} aocStats={aocStats} 
-                            marketMetrics={marketMetrics} chainData={data.chain} showMagicalLines={showMagicalLines}  showOrderLines={showOrderLines} sniperRules={sniperRules} sniperMode={sniperMode} maxShiftPts={maxShiftPts}  spotPrice={data.spotPrice}/>
+                            marketMetrics={marketMetrics} chainData={data.chain} showMagicalLines={showMagicalLines}  showOrderLines={showOrderLines} sniperRules={sniperRules} sniperMode={sniperMode} maxShiftPts={maxShiftPts}  spotPrice={data.spotPrice} showReport={showReport} setShowReport={setShowReport} marketActionText={marketSentiment.text}/>
                     </div>
                 </div>
 
@@ -1110,6 +1123,8 @@ const AOC = () => {
                     </div>
                 </div>
             )}
+
+           
         </div>
     );
 };
