@@ -1,0 +1,171 @@
+
+import { isTradingHoliday } from './holidaysCalendar';
+
+/**
+ * =========================================================
+ * 🗓️ CENTRALIZED EXPIRY CALCULATOR (TIME MACHINE 3.0)
+ * =========================================================
+ * SEBI/Exchange rules change frequently. 
+ * Includes SEBI Mandate Nov 2024 (Discontinuation of Weekly Options)
+ */
+
+// 🔥 1. WEEKLY EXPIRY RULES (Time Machine) 🔥
+const WEEKLY_EXPIRY_RULES = {
+    "NIFTY": [
+        { start: "2000-01-01", end: "2025-08-31", dayOfWeek: 4 }, // 31 Aug 2025 tak Thursday (4)
+        { start: "2025-09-01", end: "2099-12-31", dayOfWeek: 2 }  // 1 Sep 2025 se Tuesday (2)
+    ],
+    "BANKNIFTY": [
+        { start: "2000-01-01", end: "2023-09-02", dayOfWeek: 4 }, // Pehle Thursday tha
+        { start: "2023-09-03", end: "2024-11-13", dayOfWeek: 3 }  // 🔥 SEBI Update: 13 Nov 2024 ko Weekly hamesha ke liye band!
+    ],
+    "FINNIFTY": [
+        { start: "2000-01-01", end: "2024-11-19", dayOfWeek: 2 }  // 🔥 SEBI Update: 19 Nov 2024 ko Weekly band!
+    ],
+    "MIDCPNIFTY": [
+        { start: "2000-01-01", end: "2024-11-18", dayOfWeek: 1 }  // 🔥 SEBI Update: 18 Nov 2024 ko Weekly band!
+    ],
+    "SENSEX": [
+        { start: "2023-05-12", end: "2024-12-31", dayOfWeek: 5 },  // Pahle (Friday)
+        { start: "2025-01-01", end: "2025-08-31", dayOfWeek: 2 },  // BSE Sensex ka weekly expiry abhi (Thursday) ko gaya hai
+        { start: "2025-09-01", end: "2099-12-31", dayOfWeek: 4 }  // BSE Sensex ka weekly expiry abhi (Thursday) ko gaya hai
+    ]
+};
+
+// 🔥 2. MONTHLY EXPIRY RULES (Universal for all NSE instruments) 🔥
+const MONTHLY_EXPIRY_RULES = [
+    { start: "2000-01-01", end: "2025-08-31", dayOfWeek: 4 }, // Pehle NSE ke sabhi Monthly Last Thursday (4) ko hote the
+    { start: "2025-09-01", end: "2099-12-31", dayOfWeek: 2 }  // NSE ne ab sabka Monthly Last Tuesday (2) kar diya hai!
+];
+
+// 🧠 Smart function jo WEEKLY expiry day nikalega
+function getWeeklyTargetDay(symbol, dateStr) {
+    let cleanSymbol = symbol.toUpperCase().replace(' 50', '').replace(' BANK', '').trim();
+    if (cleanSymbol === "NIFTY FINANCIAL SERVICES") cleanSymbol = "FINNIFTY";
+    if (cleanSymbol === "NIFTY MID SELECT") cleanSymbol = "MIDCPNIFTY";
+    if (cleanSymbol === "BSE SENSEX") cleanSymbol = "SENSEX";
+
+    const rules = WEEKLY_EXPIRY_RULES[cleanSymbol] || WEEKLY_EXPIRY_RULES["NIFTY"];
+    const currentDate = new Date(dateStr);
+
+    for (let rule of rules) {
+        if (currentDate >= new Date(rule.start) && currentDate <= new Date(rule.end)) {
+            return rule.dayOfWeek;
+        }
+    }
+    return 4; // Default Thursday
+}
+
+// 🧠 Smart function jo MONTHLY expiry day nikalega
+function getMonthlyTargetDay(symbol, dateStr) {
+    let cleanSymbol = symbol.toUpperCase();
+    if (cleanSymbol.includes("SENSEX")) return 4; // Sensex monthly Thursday
+
+    const currentDate = new Date(dateStr);
+    for (let rule of MONTHLY_EXPIRY_RULES) {
+        if (currentDate >= new Date(rule.start) && currentDate <= new Date(rule.end)) {
+            return rule.dayOfWeek;
+        }
+    }
+    return 2; // Default Tuesday
+}
+
+// 🎯 THE MAIN CALCULATOR ENGINE
+const getNearestExpiryString = (tradeDateStr, symbolStr, reqExpiry = "WEEKLY") => {
+    const d = new Date(tradeDateStr);
+    d.setHours(0, 0, 0, 0);
+    let expiryDate = new Date(d);
+
+    let upperReqExpiry = reqExpiry.toUpperCase();
+
+    // ====================================================================
+    // 🛡️ THE SEBI AUTO-CORRECTOR (Safety Net)
+    // Agar user ne galti se discontinued index ka WEEKLY select kar liya hai, 
+    // toh engine use error dene ke bajaye automatically MONTHLY me badal dega!
+    // ====================================================================
+    if (upperReqExpiry !== "MONTHLY") {
+        let checkSym = symbolStr.toUpperCase().replace(' 50', '').replace(' BANK', '').trim();
+        if (checkSym === "NIFTY FINANCIAL SERVICES") checkSym = "FINNIFTY";
+        if (checkSym === "NIFTY MID SELECT") checkSym = "MIDCPNIFTY";
+
+        if (checkSym === "BANKNIFTY" && d > new Date("2024-11-13")) upperReqExpiry = "MONTHLY";
+        if (checkSym === "FINNIFTY" && d > new Date("2024-11-19")) upperReqExpiry = "MONTHLY";
+        if (checkSym === "MIDCPNIFTY" && d > new Date("2024-11-18")) upperReqExpiry = "MONTHLY";
+    }
+
+    if (upperReqExpiry !== "MONTHLY") {
+        // 🎯 RULE 1: WEEKLY LOGIC (Only runs if legally active)
+        const targetDay = getWeeklyTargetDay(symbolStr, tradeDateStr);
+        let daysToTarget = targetDay - expiryDate.getDay();
+
+        if (daysToTarget < 0) daysToTarget += 7;
+        expiryDate.setDate(expiryDate.getDate() + daysToTarget);
+
+        if (upperReqExpiry === "NEXT WEEKLY" || upperReqExpiry === "NEXT WEEK") {
+            expiryDate.setDate(expiryDate.getDate() + 7);
+        }
+    } else {
+        // 🎯 RULE 2: MONTHLY LOGIC
+        const targetDay = getMonthlyTargetDay(symbolStr, tradeDateStr);
+        const lastDayOfMonth = new Date(expiryDate.getFullYear(), expiryDate.getMonth() + 1, 0);
+        expiryDate = new Date(lastDayOfMonth);
+
+        while (expiryDate.getDay() !== targetDay) {
+            expiryDate.setDate(expiryDate.getDate() - 1);
+        }
+
+        if (d > expiryDate) {
+            const lastDayOfNextMonth = new Date(d.getFullYear(), d.getMonth() + 2, 0);
+            expiryDate = new Date(lastDayOfNextMonth);
+            while (expiryDate.getDay() !== targetDay) {
+                expiryDate.setDate(expiryDate.getDate() - 1);
+            }
+        }
+    }
+
+    // 🔥 HOLIDAY SHIFTER
+    while (isTradingHoliday(expiryDate) || expiryDate.getDay() === 0 || expiryDate.getDay() === 6) {
+        expiryDate.setDate(expiryDate.getDate() - 1);
+    }
+
+    const formattedDate = `${String(expiryDate.getDate()).padStart(2, '0')}${expiryDate.toLocaleString('en-US', { month: 'short' }).toUpperCase()}${String(expiryDate.getFullYear()).slice(-2)}`;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return `${(expiryDate < today) ? "EXP" : "Upcoming EXP"} ${formattedDate}`;
+};
+
+
+// 🔥 NEW: Direct Boolean Checker for Margin Calculator & Gamma Blast Rules
+const isThisExpiryDay = (tradeDateStr, symbolStr, reqExpiry = "WEEKLY") => {
+    // Current date ko format karo (DDMMMYY)
+    const d = new Date(tradeDateStr);
+    const formattedCurrentDate = `${String(d.getDate()).padStart(2, '0')}${d.toLocaleString('en-US', { month: 'short' }).toUpperCase()}${String(d.getFullYear()).slice(-2)}`;
+
+    // Apne hi master function se expiry string nikalo
+    const expiryStringOutput = getNearestExpiryString(tradeDateStr, symbolStr, reqExpiry);
+
+    // Agar output string me aaj ki date shamil hai, matlab aaj hi Expiry (0 DTE) hai!
+    return expiryStringOutput.includes(formattedCurrentDate);
+};
+
+// 🔥 NEW: Precision DTE Calculator (Days to Expiry)
+const calculateDTE = (currentTimestamp, expiryDateStr) => {
+    const current = new Date(currentTimestamp);
+    const expiry = new Date(expiryDateStr);
+    
+    // Indian Market ke hisaab se expiry dopahar 3:30 PM (15:30) par hoti hai
+    expiry.setHours(15, 30, 0, 0);
+    
+    const diffMs = expiry - current;
+    const diffDays = diffMs / (1000 * 60 * 60 * 24); // Milliseconds ko Days me badla
+    
+    // Agar expiry ka time nikal chuka hai (0 ya negative), toh BSM error se bachne ke liye 0.001 return karenge
+    return diffDays > 0 ? diffDays : 0.001;
+};
+
+export {
+    getNearestExpiryString,
+    isThisExpiryDay,
+    calculateDTE,
+};

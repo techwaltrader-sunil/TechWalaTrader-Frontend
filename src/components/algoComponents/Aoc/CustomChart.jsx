@@ -437,6 +437,62 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
         visuallyActiveTool = selectedOverlay.name;
     }
 
+
+    // ==========================================
+    // 🔄 THE MANUAL SYNC ENGINE (रिफ्रेश बटन का लॉजिक)
+    // ==========================================
+    const handleSyncChart = () => {
+        if (!chartRef.current || base1mData.length === 0 || appMode !== 'historical') return;
+
+        // 1. यूज़र का मौजूदा ज़ूम और स्क्रॉल सेव करें
+        let currentOffset = typeof chartRef.current.getOffsetRightDistance === 'function' ? chartRef.current.getOffsetRightDistance() : 0;
+        let currentBarSpace = typeof chartRef.current.getBarSpace === 'function' ? chartRef.current.getBarSpace() : 0;
+
+        chartRef.current.setDataLoader({
+            getBars: async ({ callback }) => {
+                const [year, month, day] = date.split('-');
+                const [hour, minute] = time.split(':');
+                const cutoffTime = new Date(year, parseInt(month) - 1, day, hour, minute).getTime();
+                
+                // ✂️ कैंडल्स को सिमुलेटर के टाइम पर काटो
+                const slicedData = base1mData.filter(candle => candle.timestamp <= cutoffTime);
+                const aggregatedData = aggregateCandles(slicedData, timeframe.value, timeframe.unit);
+                
+                const sanitizedData = aggregatedData.map(c => ({
+                    timestamp: new Date(c.timestamp).getTime(),
+                    open: Number(c.open),
+                    high: Number(c.high),
+                    low: Number(c.low),
+                    close: Number(c.close),
+                    volume: Number(c.volume) || 0
+                }));
+
+                callback(sanitizedData);
+
+                // 2. ज़ूम और स्क्रॉल को वापस पुरानी जगह पर लगा दें
+                setTimeout(() => {
+                    if (chartRef.current) {
+                        if (currentBarSpace > 0 && typeof chartRef.current.setBarSpace === 'function') {
+                            chartRef.current.setBarSpace(currentBarSpace);
+                        }
+                        if (typeof chartRef.current.setOffsetRightDistance === 'function') {
+                            chartRef.current.setOffsetRightDistance(currentOffset);
+                        }
+                    }
+                }, 10); 
+            },
+            subscribeBar: ({ callback }) => { liveUpdateCallbackRef.current = callback; },
+            unsubscribeBar: () => { liveUpdateCallbackRef.current = null; }
+        });
+
+        // 3. चार्ट को रिफ्रेश करें!
+        if (typeof chartRef.current.clearData === 'function') {
+            chartRef.current.clearData(); 
+        } else {
+            chartRef.current.setPeriod({ span: timeframe.value, type: timeframe.unit });
+        }
+    };
+
     return (
         <div className="flex flex-row w-full h-full bg-white relative rounded-lg overflow-hidden border border-gray-200 shadow-sm">
             
@@ -478,6 +534,25 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
                 
                 {/* 📈 ACTUAL KLINECHART DOM NODE */}
                 <div ref={chartContainerRef} className="w-full h-full cursor-crosshair"></div>
+
+                {/* ========================================================= */}
+                {/* 🔄 THE MAGIC SYNC BUTTON (सिर्फ Historical Mode में दिखेगा) */}
+                {/* ========================================================= */}
+                {appMode === 'historical' && (
+                    <button 
+                        onClick={handleSyncChart}
+                        title={`Sync Chart to ${time}`}
+                        // 👇 THE FIX: 'right-16' हटाकर 'left-20' लगा दिया है!
+                        className="absolute bottom-8 left-0 z-[60] flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.4)] transition-all font-bold text-sm border border-indigo-400 active:scale-95 opacity-80 hover:opacity-100"
+                    >
+                        {/* रिफ्रेश / सिंक आइकॉन */}
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Sync to {time}
+                    </button>
+                )}
+                {/* ========================================================= */}
 
                 {/* 🎛️ SETTINGS MODAL (Imported Component) */}
                 {showSettingsModal && (

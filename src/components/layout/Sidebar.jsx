@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, LogOut, PieChart, Activity, Zap,
   BarChart2, Cpu, Network, History, TrendingUp, Tags,
-  ChevronsLeft, ChevronsRight
+  ChevronsLeft, ChevronsRight, ChartCandlestick
 } from "lucide-react";
 import ThemeToggle from "../ui/ThemeToggle";
 
@@ -33,7 +33,7 @@ const Sidebar = ({ isAlgoMode, setIsAlgoMode, onLinkClick, isMobileOpen, setIsMo
     { name: "Strategy Builder", path: "/strategy-builder", icon: <Cpu size={20} /> },
     { name: "Strategies", path: "/strategies", icon: <Cpu size={20} /> },
     { name: "Backtesting", path: "/backtest", icon: <TrendingUp size={20} /> },
-    { name: "Simulator", path: "/simulator", icon: <Activity size={20} /> },
+    { name: "Simulator", path: "/simulator", icon: <ChartCandlestick size={20} /> },
     { name: "Aoc", path: "/aoc", icon: <Activity size={20} /> },
     // { name: "Trade Logs", path: "/algo-logs", icon: <History size={20} /> },
     { name: "Reports", path: "/reports", icon: <History size={20} /> },

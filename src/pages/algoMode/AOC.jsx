@@ -5,10 +5,10 @@ import {Table, Settings, Play, Pause, SkipBack, SkipForward, Clock, SlidersHoriz
 import CustomChart from '../../components/algoComponents/Aoc/CustomChart';
 // AOC.jsx में ऊपर इम्पोर्ट्स के साथ इसे जोड़ें
 import { useTradingMode } from '../../context/TradingModeContext';
-import { TradeReportCard } from '../../components/algoComponents/Aoc/ui/TradeReportCard';
+
 
 const AOC = () => {
-    const [viewMode, setViewMode] = useState('data'); 
+    const [viewMode, setViewMode] = useState('split'); 
     const [loading, setLoading] = useState(false);
     
     const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -188,8 +188,43 @@ const AOC = () => {
         setLoading(false);
     };
 
+    // // ==========================================
+    // // 🔴 LIVE MARKET AOC POLLING ENGINE (Dummy for now)
+    // // ==========================================
+    // useEffect(() => {
+    //     if (appMode !== 'live') return;
+
+    //     const fetchLiveAOC = async () => {
+    //         try {
+    //             const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : 'http://65.0.164.229:5500';
+                
+    //             // 🎯 THE FIX: असली API Call चालू कर दी गई है!
+    //             const res = await axios.get(`${API_BASE_URL}/api/live/aoc`, { 
+    //                 params: { symbol: 'NIFTY', expiry: expiry } 
+    //             });
+                
+    //             if (res.data.success && res.data.chain.length > 0) {
+    //                 setData({ spotPrice: res.data.spotPrice, chain: res.data.chain });
+    //             }
+    //         } catch (error) {
+    //             console.error("Live AOC Fetch Error:", error);
+    //         }
+    //     };
+
+    //     // तुरंत एक बार डेटा मंगाएं
+    //     fetchLiveAOC();
+        
+    //     // हर 3 सेकंड में नया डेटा मंगाएं
+    //     const intervalId = setInterval(fetchLiveAOC, 3000); 
+
+    //     return () => clearInterval(intervalId);
+    // }, [appMode, expiry]);
+
+
+
+
     // ==========================================
-    // 🔴 LIVE MARKET AOC POLLING ENGINE (Dummy for now)
+    // 🟢 LIVE MARKET AOC POLLING ENGINE
     // ==========================================
     useEffect(() => {
         if (appMode !== 'live') return;
@@ -198,13 +233,25 @@ const AOC = () => {
             try {
                 const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : 'http://65.0.164.229:5500';
                 
-                // 🎯 THE FIX: असली API Call चालू कर दी गई है!
+                // 🎯 THE CACHE BUSTER FIX: 
                 const res = await axios.get(`${API_BASE_URL}/api/live/aoc`, { 
-                    params: { symbol: 'NIFTY', expiry: expiry } 
+                    params: { 
+                        symbol: 'NIFTY', 
+                        expiry: expiry,
+                        _t: Date.now() // 👈 यह लाइन ब्राउज़र को पुराना डेटा दिखाने से रोकेगी!
+                    } 
                 });
                 
                 if (res.data.success && res.data.chain.length > 0) {
                     setData({ spotPrice: res.data.spotPrice, chain: res.data.chain });
+
+                    // 📈 चार्ट पर लाइव कैंडल अपडेट करने का लॉजिक
+                    if (liveUpdateCallbackRef && liveUpdateCallbackRef.current) {
+                        liveUpdateCallbackRef.current({
+                            timestamp: new Date().getTime(),
+                            close: res.data.spotPrice, 
+                        });
+                    }
                 }
             } catch (error) {
                 console.error("Live AOC Fetch Error:", error);
@@ -214,8 +261,8 @@ const AOC = () => {
         // तुरंत एक बार डेटा मंगाएं
         fetchLiveAOC();
         
-        // हर 3 सेकंड में नया डेटा मंगाएं
-        const intervalId = setInterval(fetchLiveAOC, 3000); 
+        // 15 सेकंड में नया डेटा (Dhan API को ब्लॉक होने से बचाने के लिए)
+        const intervalId = setInterval(fetchLiveAOC, 10000); 
 
         return () => clearInterval(intervalId);
     }, [appMode, expiry]);
