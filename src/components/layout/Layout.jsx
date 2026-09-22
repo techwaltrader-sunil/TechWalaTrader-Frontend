@@ -104,7 +104,7 @@ const Layout = ({ children }) => {
     const algoPaths = [
       "/algo-dashboard", "/brokers", "/strategy-builder", 
       "/strategies", "/backtest", "/simulator", 
-      "/aoc", "/reports", "/subscriptions"
+      "/aoc", "/reports", "/subscriptions", "/insight-data"
     ];
     
     // Check karega ki kya current URL 'algoPaths' ki list me hai

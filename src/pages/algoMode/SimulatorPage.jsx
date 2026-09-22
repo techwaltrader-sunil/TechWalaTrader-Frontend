@@ -1188,6 +1188,21 @@ const SimulatorPage = () => {
     const [showLeftArrow, setShowLeftArrow] = useState(false); // Shuru me left arrow hide rahega
     const [showRightArrow, setShowRightArrow] = useState(true);
 
+
+    // 🎯 NAYA: Quant Engine Modal & Settings States
+    const [isQuantModalOpen, setIsQuantModalOpen] = useState(false);
+    const [quantSettings, setQuantSettings] = useState({
+        selectionBase: 'MULTI_LEG',
+        legsConfiguration: [],
+        ensureNetCredit: true,     // 🎯 NAYA: Credit Seeker on/off
+        minSpreadWidth: 300,       // 🎯 NAYA: Minimum gap (Plan B trigger)
+        premiumMin: 300,
+        slMin: 0.9, slMax: 1.3,
+        tpMin: 2.1, tpMax: 2.5,
+        eodExitTime: "15:20",
+        eodThreshold: -0.5
+    });
+
     // Screen size ke hisab se visible dates set karna
     useEffect(() => {
         const handleResize = () => {
@@ -1295,6 +1310,8 @@ const SimulatorPage = () => {
                         }
                     }
                 }
+
+
 
                 // 🎯 FIX 2: Auto-Fallback aab Expiry fix hone ke BAAD chalega
                 // Agar Expiry bilkul sahi hai, phir bhi chain empty hai (Yani Market Holiday hai) tabhi din pichhe jayega
@@ -2169,6 +2186,139 @@ useEffect(() => {
         window.addEventListener('resize', handleScroll);
         return () => window.removeEventListener('resize', handleScroll);
     }, [availableExpiries]);
+
+
+    // 🧠 THE MAGIC OBSERVER: User ke trades ko padhna aur pattern nikalna
+    const analyzeUserPattern = () => {
+    if (!positions || positions.length === 0) {
+        alert("Please take at least 1 trade in the simulator to analyze the pattern!");
+        return;
+    }
+
+    const spot = data.spotPrice || 24000;
+    const atmStrike = getAtmStrike();
+    
+    // ATM Straddle Premium (Base multiplier ke liye)
+    const atmRow = data.chain.find(r => r.strike === atmStrike);
+    let atmPremium = 300; 
+    if (atmRow) {
+        const ceLtp = atmRow.CE?.ltp ? parseFloat(atmRow.CE.ltp) : 0;
+        const peLtp = atmRow.PE?.ltp ? parseFloat(atmRow.PE.ltp) : 0;
+        atmPremium = (ceLtp + peLtp) || 300;
+    }
+
+    // 1. पोजीशंस को ATM से दूरी के हिसाब से सॉर्ट करें (ताकि Leg 1, Leg 2 सही क्रम में आएं)
+    let sortedPositions = [...positions].sort((a, b) => 
+        Math.abs(a.strike - atmStrike) - Math.abs(b.strike - atmStrike)
+    );
+
+    let detectedLegs = [];
+    let previousStrike = atmStrike;
+
+    // 2. हर लेग का पैटर्न निकालें
+    sortedPositions.forEach((pos, index) => {
+        const distanceFromAtm = Math.abs(pos.strike - atmStrike);
+        const distanceFromPrev = Math.abs(pos.strike - previousStrike);
+
+        // मल्टीप्लायर = (दूरी / ATM प्रीमियम)
+        const multiplier = index === 0 
+            ? (distanceFromAtm / atmPremium).toFixed(1) 
+            : (distanceFromPrev / atmPremium).toFixed(1);
+
+        detectedLegs.push({
+            id: index + 1,
+            type: pos.type, // CE / PE
+            side: pos.side, // B / S
+            lots: pos.lots,
+            reference: index === 0 ? 'ATM' : `Leg ${index}`, // पहला ATM से, बाकी पिछले लेग से
+            multiplier: parseFloat(multiplier),
+            rawDistance: index === 0 ? distanceFromAtm : distanceFromPrev // सिर्फ UI में दिखाने के लिए
+        });
+
+        previousStrike = pos.strike; // अगले लेग के लिए इसे बेस बना दें
+    });
+
+    // 3. स्टेट अपडेट करें और पॉपअप खोलें
+    setQuantSettings(prev => ({
+        ...prev,
+        selectionBase: 'MULTI_LEG',
+        legsConfiguration: detectedLegs,
+        atmPremiumCache: atmPremium.toFixed(0) // UI me dikhane ke liye
+    }));
+
+    setIsQuantModalOpen(true);
+};
+
+
+    const saveQuantBehaviorRule = async () => {
+    try {
+        // 1. JSON Payload तैयार करें
+        const rulePayload = {
+            strategyName: "Weekend Theta Spread", 
+            strikeSelection: {
+                selectionBase: quantSettings.selectionBase,
+                
+                // ✅ 100% PERFECT ARRAY (Hardcoded Test)
+                legsConfiguration: [
+                    { id: 1, type: 'CE', side: 'B', lots: 1, reference: 'ATM', multiplier: 0.6, rawDistance: 450 },
+                    { id: 2, type: 'CE', side: 'S', lots: 2, reference: 'Leg 1', multiplier: 0.5, rawDistance: 400 },
+                    { id: 3, type: 'CE', side: 'B', lots: 1, reference: 'Leg 2', multiplier: 1.6, rawDistance: 1200 }
+                ],
+                
+                ensureNetCredit: quantSettings.ensureNetCredit,
+                minSpreadWidth: quantSettings.minSpreadWidth,
+
+                // 🛡️ Safety Fallbacks added (|| 0)
+                targetDelta: { 
+                    min: Number(quantSettings.minDelta || 0), 
+                    max: Number(quantSettings.maxDelta || 0) 
+                },
+                dynamicPremiumOffset: { 
+                    enabled: quantSettings.selectionBase === 'PREMIUM', 
+                    multiplier: Number(quantSettings.premiumMultiplier || 1.5) 
+                }
+            },
+            timingRules: { 
+                relativeExpiry: "NW", 
+                preferredEntryDay: "Friday" 
+            },
+            riskManagement: {
+                slPercent: { 
+                    min: Number(quantSettings.slMin || 0), 
+                    max: Number(quantSettings.slMax || 0) 
+                },
+                tpPercent: { 
+                    min: Number(quantSettings.tpMin || 0), 
+                    max: Number(quantSettings.tpMax || 0) 
+                },
+                emergencyEodExit: {
+                    enabled: true,
+                    startTime: "15:00",
+                    endTime: quantSettings.eodExitTime || "15:20",
+                    mtmThresholdPercent: Number(quantSettings.eodThreshold || -0.5)
+                }
+            },
+            liquidityFilter: { enforceRoundStrikes: true, roundMultiple: 100, shiftDirection: "OTM" },
+            isActive: true
+        };
+
+        // 2. Smart Backend URL
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+                ? 'http://localhost:5500' 
+                : 'http://65.0.164.229:5500';
+
+        // 3. API POST Request 
+        const response = await axios.post(`${API_BASE_URL}/api/behavior-rule`, rulePayload);
+
+        if (response.data.success) {
+            alert("✅ Multi-Leg Quant Strategy Successfully Saved to MongoDB!");
+            setIsQuantModalOpen(false); 
+        }
+    } catch (error) {
+        console.error("❌ Error saving rule:", error);
+        alert("Failed to save rule. Check console.");
+    }
+};
 
     return (
         <div className="bg-gray-50 flex flex-col xl:h-screen xl:overflow-hidden text-[13px] font-sans text-gray-800">
@@ -3159,6 +3309,14 @@ useEffect(() => {
                                             <button className="px-2 py-0.5 hover:bg-gray-100 text-gray-500">-</button>
                                             <span className="px-3 py-0.5 font-bold border-x border-gray-300">1</span>
                                             <button className="px-2 py-0.5 hover:bg-gray-100 text-gray-500">+</button>
+                                            
+                                            <button 
+                                                onClick={analyzeUserPattern}
+                                                className="px-3 py-1 bg-purple-600 text-white rounded font-medium shadow-sm flex items-center gap-1 hover:bg-purple-700 transition-colors"
+                                            >
+                                                🚀 Push to Quant Engine
+                                            </button>
+
                                         </div>
                                         <span className="text-gray-400 ml-2">Lot Size: {lotSize}</span>
                                         <button className="text-blue-600 font-medium ml-4">Add Alert</button>
@@ -3233,6 +3391,145 @@ useEffect(() => {
                     )}
                 </div>
             </div>
+
+            {/* 🎯 NAYA: Quant Settings Modal */}
+            {isQuantModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+                        
+                        {/* Header */}
+                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                            <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                                ⚙️ Quant Engine Settings
+                            </h2>
+                            <button onClick={() => setIsQuantModalOpen(false)} className="text-gray-400 hover:text-red-500 font-bold">✕</button>
+                        </div>
+
+                        {/* Body (Inputs) */}
+                        <div className="p-4 space-y-4 text-[13px] text-gray-700">
+                            
+                            {/* 🎯 NEW: Multi-Leg Strategy Pattern UI */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
+                                <div className="font-bold text-blue-800 text-xs mb-2 flex justify-between items-center">
+                                    <span>🤖 AI Pattern Detected: Multi-Leg Strategy</span>
+                                    <span className="text-gray-500 font-medium text-[10px]">Base ATM Premium: ₹{quantSettings.atmPremiumCache}</span>
+                                </div>
+                                
+                                <div className="space-y-2 mt-3">
+                                    <div className="text-[10px] font-bold text-gray-500 grid grid-cols-12 gap-2 px-2 border-b border-blue-200 pb-1">
+                                        <div className="col-span-2">LEG</div>
+                                        <div className="col-span-3">ACTION</div>
+                                        <div className="col-span-7">DISTANCE FORMULA (Auto-Adjusting)</div>
+                                    </div>
+                                    
+                                    {quantSettings.legsConfiguration.map((leg, idx) => (
+                                        <div key={idx} className="bg-white border border-gray-200 rounded p-2 text-xs grid grid-cols-12 gap-2 items-center shadow-sm">
+                                            <div className="col-span-2 font-bold text-gray-700">Leg {leg.id}</div>
+                                            
+                                            <div className="col-span-3">
+                                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${leg.side === 'B' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                    {leg.side === 'B' ? 'BUY' : 'SELL'}
+                                                </span>
+                                                <span className="ml-1 font-semibold">{leg.lots}x {leg.type}</span>
+                                            </div>
+                                            
+                                            <div className="col-span-7 flex items-center gap-1 text-[11px] text-gray-600 whitespace-nowrap">
+                                                <span className="font-semibold bg-gray-100 px-1 rounded">{leg.reference}</span>
+                                                <span>± (</span>
+                                                <input 
+                                                    type="number" step="0.1" 
+                                                    value={leg.multiplier} 
+                                                    onChange={(e) => {
+                                                        const newLegs = [...quantSettings.legsConfiguration];
+                                                        newLegs[idx].multiplier = parseFloat(e.target.value) || 0;
+                                                        setQuantSettings({...quantSettings, legsConfiguration: newLegs});
+                                                    }}
+                                                    className="border border-gray-300 rounded px-1 py-0.5 w-12 text-center outline-none focus:border-blue-500 font-bold" 
+                                                />
+                                                <span>× ATM Prem)</span>
+                                                
+                                                {/* 🎯 NAYA CODE: Yahan Points dikhenge */}
+                                                <span className="ml-1 font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                                    ≈ {Math.round(leg.multiplier * quantSettings.atmPremiumCache)} pts
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="text-[10px] text-gray-500 mt-2 text-right italic">
+                                    * Engine will automatically round off strikes to nearest 100 for liquidity.
+                                </div>
+                            </div>
+
+                            {/* 🧠 NAYA: Smart Credit Seeker UI */}
+                            <div className="mb-4 bg-green-50 border border-green-200 rounded p-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={quantSettings.ensureNetCredit} 
+                                        onChange={(e) => setQuantSettings({...quantSettings, ensureNetCredit: e.target.checked})} 
+                                        className="accent-green-600 w-4 h-4" 
+                                    />
+                                    <span className="text-xs font-bold text-green-800">Ensure Net Credit Entry (Smart Auto-Adjust)</span>
+                                </label>
+                                
+                                {quantSettings.ensureNetCredit && (
+                                    <div className="ml-6 mt-2 flex items-center gap-2 border-t border-green-100 pt-2">
+                                        <span className="text-[11px] text-gray-600 font-medium">Minimum Spread Width (Leg 1 & 2):</span>
+                                        <input 
+                                            type="number" step="50" 
+                                            value={quantSettings.minSpreadWidth} 
+                                            onChange={(e) => setQuantSettings({...quantSettings, minSpreadWidth: parseInt(e.target.value) || 0})} 
+                                            className="border border-gray-300 rounded px-2 py-0.5 w-16 text-xs outline-none focus:border-green-500 text-center font-bold" 
+                                        />
+                                        <span className="text-[11px] text-gray-600">Points</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* SL & TP Rule */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="font-semibold block mb-1">SL % Range</label>
+                                    <div className="flex gap-1">
+                                        <input type="number" step="0.1" value={quantSettings.slMin} onChange={e => setQuantSettings({...quantSettings, slMin: e.target.value})} className="border border-gray-300 rounded px-2 py-1.5 w-full outline-none" />
+                                        <input type="number" step="0.1" value={quantSettings.slMax} onChange={e => setQuantSettings({...quantSettings, slMax: e.target.value})} className="border border-gray-300 rounded px-2 py-1.5 w-full outline-none" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="font-semibold block mb-1">TP % Range</label>
+                                    <div className="flex gap-1">
+                                        <input type="number" step="0.1" value={quantSettings.tpMin} onChange={e => setQuantSettings({...quantSettings, tpMin: e.target.value})} className="border border-gray-300 rounded px-2 py-1.5 w-full outline-none" />
+                                        <input type="number" step="0.1" value={quantSettings.tpMax} onChange={e => setQuantSettings({...quantSettings, tpMax: e.target.value})} className="border border-gray-300 rounded px-2 py-1.5 w-full outline-none" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Premium & EOD */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="font-semibold block mb-1">Min Premium (₹)</label>
+                                    <input type="number" value={quantSettings.premiumMin} onChange={e => setQuantSettings({...quantSettings, premiumMin: e.target.value})} className="border border-gray-300 rounded px-2 py-1.5 w-full outline-none" />
+                                </div>
+                                <div>
+                                    <label className="font-semibold block mb-1">Expiry Day Exit Time</label>
+                                    <input type="time" value={quantSettings.eodExitTime} onChange={e => setQuantSettings({...quantSettings, eodExitTime: e.target.value})} className="border border-gray-300 rounded px-2 py-1.5 w-full outline-none" />
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+                            <button onClick={() => setIsQuantModalOpen(false)} className="px-4 py-1.5 border border-gray-300 text-gray-600 rounded hover:bg-gray-100 font-medium text-[13px]">Cancel</button>
+                            <button onClick={saveQuantBehaviorRule} className="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-[13px] flex items-center gap-1">
+                                💾 Save to Database
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

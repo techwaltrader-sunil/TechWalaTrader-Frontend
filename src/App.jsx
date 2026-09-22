@@ -18,13 +18,14 @@ import StrategyBuilderPage from "./pages/algoMode/StrategyBuilder";
 import BacktestPage from "./pages/algoMode/Backtest"; 
 import ReportsPage from "./pages/algoMode/Reports"; 
 import SubscriptionsPage from "./pages/algoMode/Subscriptions"; 
+import SimulatorPage from "./pages/algoMode/SimulatorPage";
+import InsightDataPage from "./pages/algoMode/InsightData";
 
 import BrokerLogin from './pages/algoMode/BrokerLogin';
 // Note: Jab aage Strategies aur Brokers page banayenge to wo bhi yahi import honge
 
 import ImportNotion from "./components/forms/ImportNotion";
 import AddBrokers from "./components/algoComponents/AlgoDashboard/AddBrokers";
-import SimulatorPage from "./pages/algoMode/SimulatorPage";
 import AOC from './pages/algoMode/AOC';
 
 
@@ -60,6 +61,7 @@ function App() {
           <Route path="/broker-login/:brokerId" element={<BrokerLogin />} />
 
           <Route path="/simulator" element={<SimulatorPage />} />
+          <Route path="/insight-data" element={<InsightDataPage />} />
 
           <Route path="/aoc" element={<AOC />} />
           
