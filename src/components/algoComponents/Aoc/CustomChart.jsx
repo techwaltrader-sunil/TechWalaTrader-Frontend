@@ -302,73 +302,62 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
     }, [showMagicalLines, showOrderLines, openPositions, chainData, aocStats]);
     
 
-    // 2️⃣ API CALL: डेट, सिंबल या डेटा-रेंज बदलने पर डेटा मँगाएगा
+    // 2️⃣ API CALL: डेट, सिंबल, डेटा-रेंज या टाइमफ्रेम बदलने पर डेटा मँगाएगा
     useEffect(() => {
-        if (!date || !symbol) return;
+        if (!date || !symbol || !timeframe) return; 
         
         const fetchData = async () => {
             setLoading(true);
             try {
                 const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : 'http://65.0.164.229:5500';
                 
-                // 🎯 1. Start Date कैलकुलेट करने का लॉजिक
                 let startDateStr = date; 
                 
                 if (dataRange !== 'Custom Date') {
                     const endDateObj = new Date(date);
                     
-                    // 🌟 नया लॉजिक: 'Previous' के लिए पिछले 4 दिन का डेटा लाएँ (Weekend को ध्यान में रखते हुए)
                     if (dataRange === 'Previous') {
-                        endDateObj.setDate(endDateObj.getDate() - 1); // 1 दिन पीछे जाओ
-                        
-                        // 0 = Sunday, 6 = Saturday
-                        // अगर पीछे जाने पर Sunday मिले, तो 2 दिन और पीछे जाओ (Friday)
+                        endDateObj.setDate(endDateObj.getDate() - 1); 
                         if (endDateObj.getDay() === 0) {
                             endDateObj.setDate(endDateObj.getDate() - 2);
-                        } 
-                        // अगर पीछे जाने पर Saturday मिले, तो 1 दिन और पीछे जाओ (Friday)
-                        else if (endDateObj.getDay() === 6) {
+                        } else if (endDateObj.getDay() === 6) {
                             endDateObj.setDate(endDateObj.getDate() - 1);
                         }
                     }
-                    else if (dataRange === 'Last 1 Month') {
-                        endDateObj.setMonth(endDateObj.getMonth() - 1);
-                    }
-                    else if (dataRange === 'Last 3 Months') {
-                        endDateObj.setMonth(endDateObj.getMonth() - 3);
-                    }
-                    else if (dataRange === 'Last 6 Months') {
-                        endDateObj.setMonth(endDateObj.getMonth() - 6);
-                    }
-                    else if (dataRange === 'Last 9 Months') {
-                        endDateObj.setMonth(endDateObj.getMonth() - 9);
-                    }
+                    else if (dataRange === 'Last 1 Month') endDateObj.setMonth(endDateObj.getMonth() - 1);
+                    else if (dataRange === 'Last 3 Months') endDateObj.setMonth(endDateObj.getMonth() - 3);
+                    else if (dataRange === 'Last 6 Months') endDateObj.setMonth(endDateObj.getMonth() - 6);
+                    else if (dataRange === 'Last 9 Months') endDateObj.setMonth(endDateObj.getMonth() - 9);
                     
-                    // डेट को YYYY-MM-DD फॉर्मेट में बदलना
                     startDateStr = endDateObj.toISOString().split('T')[0]; 
                 }
 
-                // 🎯 2. API कॉल (यहाँ कोई बदलाव नहीं)
-                const res = await axios.get(`${API_BASE_URL}/api/aoc/chart-data`, { 
+                // 🎯 2. THE NEW MAGIC: Bulletproof Date Parsing (कोई Invalid Date नहीं)
+                const startObj = new Date(startDateStr);
+                // 9:15 AM सेट करना
+                const fromMs = new Date(startObj.getFullYear(), startObj.getMonth(), startObj.getDate(), 9, 15, 0).getTime();
+
+                const endObj = new Date(date);
+                // 3:30 PM सेट करना
+                const toMs = new Date(endObj.getFullYear(), endObj.getMonth(), endObj.getDate(), 15, 30, 0).getTime();
+
+                // 🎯 3. API कॉल
+                const res = await axios.get(`${API_BASE_URL}/api/chart/historical`, { 
                     params: { 
                         symbol: symbol, 
-                        startDate: startDateStr, 
-                        endDate: date            
+                        resolution: timeframe.value || 1, 
+                        from: fromMs, 
+                        to: toMs            
                     } 
                 });
 
                 if (res.data.success && res.data.data && res.data.data.length > 0) {
-                    const formattedData = res.data.data
-                        .map(c => ({ timestamp: new Date(c.timestamp).getTime(), open: parseFloat(c.open), high: parseFloat(c.high), low: parseFloat(c.low), close: parseFloat(c.close), volume: parseFloat(c.volume) || 0 }))
-                        .filter(c => !isNaN(c.open) && !isNaN(c.close))
-                        .sort((a, b) => a.timestamp - b.timestamp);
-                    
-                    setBase1mData(formattedData); 
+                    setBase1mData(res.data.data); 
                 } else {
                     setBase1mData([]);
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching historical chart data:", error);
                 setBase1mData([]);
             } finally {
                 setLoading(false);
@@ -376,7 +365,7 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
         };
 
         fetchData();
-    }, [symbol, date, dataRange]);
+    }, [symbol, date, dataRange, timeframe]);
 
 
     // 3️⃣ MAGIC UPDATE: टाइमफ्रेम बदलते ही चार्ट का पीरियड अपडेट करेगा
@@ -386,6 +375,22 @@ const CustomChart = ({ symbol = 'NIFTY', date, timeframe, dataRange, time, playb
             chartRef.current.resize();
         }
     }, [timeframe]);
+
+
+    // ==========================================
+    // 🚀 THE CLIMAX: TICK-BY-TICK LIVE CANDLE UPDATE
+    // ==========================================
+    useEffect(() => {
+        // यह जादू सिर्फ तभी चलेगा जब ऐप 'Live' मोड में हो!
+        if (appMode !== 'historical' && chartRef.current && spotPrice > 0) {
+            const currentTime = new Date().getTime();
+
+            chartRef.current.updateData({
+                timestamp: currentTime,
+                close: spotPrice // 👈 यह तुम्हारा प्रॉप है जो AOC से आ रहा है
+            });
+        }
+    }, [spotPrice, appMode]);
 
     
 
