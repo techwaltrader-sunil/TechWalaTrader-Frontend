@@ -225,50 +225,7 @@ const AOC = () => {
         setLoading(false);
     };
 
-    // // ==========================================
-    // // 🟢 LIVE MARKET AOC POLLING ENGINE
-    // // ==========================================
-    // useEffect(() => {
-    //     if (appMode !== 'live') return;
-
-    //     const fetchLiveAOC = async () => {
-    //         try {
-    //             const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : 'http://65.0.164.229:5500';
-                
-    //             // 🎯 THE CACHE BUSTER FIX: 
-    //             const res = await axios.get(`${API_BASE_URL}/api/live/aoc`, { 
-    //                 params: { 
-    //                     symbol: 'NIFTY', 
-    //                     expiry: expiry,
-    //                     _t: Date.now() // 👈 यह लाइन ब्राउज़र को पुराना डेटा दिखाने से रोकेगी!
-    //                 } 
-    //             });
-                
-    //             if (res.data.success && res.data.chain.length > 0) {
-    //                 setData({ spotPrice: res.data.spotPrice, chain: res.data.chain });
-
-    //                 // 📈 चार्ट पर लाइव कैंडल अपडेट करने का लॉजिक
-    //                 if (liveUpdateCallbackRef && liveUpdateCallbackRef.current) {
-    //                     liveUpdateCallbackRef.current({
-    //                         timestamp: new Date().getTime(),
-    //                         close: res.data.spotPrice, 
-    //                     });
-    //                 }
-    //             }
-    //         } catch (error) {
-    //             console.error("Live AOC Fetch Error:", error);
-    //         }
-    //     };
-
-    //     // तुरंत एक बार डेटा मंगाएं
-    //     fetchLiveAOC();
         
-    //     // 15 सेकंड में नया डेटा (Dhan API को ब्लॉक होने से बचाने के लिए)
-    //     const intervalId = setInterval(fetchLiveAOC, 10000); 
-
-    //     return () => clearInterval(intervalId);
-    // }, [appMode, expiry]);
-    
     // ==========================================
     // 🟢 LIVE MARKET SOCKET ENGINE (Pro Way)
     // ==========================================
